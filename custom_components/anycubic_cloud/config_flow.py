@@ -67,7 +67,7 @@ class AnycubicCloudConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Handle a flow initialized by the user."""
         if user_input is not None:
-            self.auth_mode = AnycubicAuthMode(int(user_input[CONF_USER_AUTH_MODE]))
+            self.auth_mode = AnycubicAuthMode(user_input[CONF_USER_AUTH_MODE])
             if self.auth_mode == AnycubicAuthMode.Web:
                 return await self.async_step_auth_mode_web()
             elif self.auth_mode == AnycubicAuthMode.SlicerNext:
@@ -78,10 +78,10 @@ class AnycubicCloudConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema({
-                vol.Required(CONF_USER_AUTH_MODE, default=str(AnycubicAuthMode.Web.value)): vol.In({
-                    str(AnycubicAuthMode.Web.value): "Web Interface Token",
-                    str(AnycubicAuthMode.SlicerNext.value): "Anycubic Slicer Next Token",
-                    str(AnycubicAuthMode.Android.value): "Android App Credentials",
+                vol.Required(CONF_USER_AUTH_MODE, default=AnycubicAuthMode.Web.value): vol.In({
+                    AnycubicAuthMode.Web.value: "Web Interface Token",
+                    AnycubicAuthMode.SlicerNext.value: "Anycubic Slicer Next Token",
+                    AnycubicAuthMode.Android.value: "Android App Credentials",
                 })
             }),
             errors={},
