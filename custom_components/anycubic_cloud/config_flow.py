@@ -92,7 +92,7 @@ class AnycubicCloudConfigFlow(ConfigFlow, domain=DOMAIN):
                     vol.Required(CONF_USER_AUTH_MODE, default="1"): vol.In(
                         {
                             "1": "Web Interface Token",
-                            "2": "Anycubic Slicer Next Token (CURRENTLY BROKEN)",
+                            "2": "Anycubic Slicer Next Token (Currently Broken)",
                             "3": "Android App Credentials",
                         }
                     )
@@ -103,8 +103,8 @@ class AnycubicCloudConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def _validate_token_and_get_printers(self) -> dict[str, str] | None:
         """Validate credentials against Anycubic API and retrieve printer list."""
+        # Korrekter Import der echten Klasse aus anycubic_api.py analog zum Coordinator
         from .anycubic_cloud_api.anycubic_api import AnycubicMQTTAPI as AnycubicAPI
-        from .anycubic_cloud_api.models.auth import AnycubicAuthMode
 
         errors = {}
         try:
@@ -112,35 +112,49 @@ class AnycubicCloudConfigFlow(ConfigFlow, domain=DOMAIN):
                 self.hass, cookie_jar=CookieJar(unsafe=True)
             )
 
-            api_auth_mode = AnycubicAuthMode(self.auth_mode)
-
+            # Instanzierung ohne direkte Übergabe der Token im __init__
             self.api_client = AnycubicAPI(
                 session=session,
-                auth_mode=api_auth_mode,
-                token=self.user_token,
+                cookie_jar=session.cookie_jar,
+                debug_logger=LOGGER,
+            )
+            
+            # Authentifizierung setzen wie im Coordinator
+            self.api_client.set_authentication(
+                auth_token=self.user_token,
+                auth_mode=self.auth_mode,
                 device_id=self.device_id,
             )
 
-            login_success = await self.api_client.login_with_token()
-            if not login_success:
+            # Token aktiv prüfen
+            success = await self.api_client.check_api_tokens()
+            if not success:
                 errors["base"] = "invalid_token"
                 return errors
 
-            printer_list = await self.api_client.get_printer_list()
-            if not printer_list:
+            # Drucker abrufen
+            printers = await self.api_client.list_my_printers(ignore_init_errors=True)
+            
+            if not printers:
                 errors["base"] = "no_printers"
                 return errors
 
-            self.printer_id_list = [
-                int(p.get("id")) for p in printer_list if p.get("id") is not None
-            ]
+            # Extrahiert die IDs aus den AnycubicPrinter-Objektattributen (.id)
+            self.printer_id_list = []
+            for p in printers:
+                if p is not None and getattr(p, "id", None) is not None:
+                    self.printer_id_list.append(int(p.id))
+
             if not self.printer_id_list:
                 errors["base"] = "no_printers"
                 return errors
 
-        except Exception:
+        except Exception as err:
             LOGGER.error(f"Error validating Anycubic Token: {traceback.format_exc()}")
-            errors["base"] = "cannot_connect"
+            if "auth" in str(err).lower() or "unauthorized" in str(err).lower():
+                errors["base"] = "invalid_token"
+            else:
+                errors["base"] = "cannot_connect"
             return errors
 
         return None
@@ -225,9 +239,9 @@ class AnycubicCloudConfigFlow(ConfigFlow, domain=DOMAIN):
             if not selected_printers:
                 errors["base"] = "no_printers"
             else:
-                user_id = (
-                    self.api_client.user_id if self.api_client else "anycubic_user"
-                )
+                user_id = "anycubic_user"
+                if self.api_client and hasattr(self.api_client, "anycubic_auth"):
+                    user_id = getattr(self.api_client.anycubic_auth, "api_user_id", "anycubic_user")
 
                 await self.async_set_unique_id(f"anycubic_cloud_{user_id}")
                 self._abort_if_unique_id_configured()

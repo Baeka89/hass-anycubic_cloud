@@ -31,9 +31,16 @@ class AnycubicMQTTConnectMode(IntEnum):
 
 def build_printer_device_info(
     coordinator_data: dict[str, Any],
-    printer_id: int,
+    printer_id: int | str,
 ) -> DeviceInfo:
-    printer_data = coordinator_data['printers'][printer_id]['states']
+    printers = coordinator_data.get('printers', {})
+    # Sucht flexibel nach Integer ODER String-Schlüssel
+    printer = printers.get(int(printer_id)) or printers.get(str(printer_id))
+    
+    if not printer:
+        raise KeyError(f"Printer ID {printer_id} not found in coordinator data. Available: {list(printers.keys())}")
+
+    printer_data = printer['states']
     user_data = coordinator_data['user_info']
     return DeviceInfo(
         identifiers={(DOMAIN, f"{user_data['id']}-{printer_data['id']}")},
@@ -62,26 +69,31 @@ def get_drying_preset_from_entry_options(
 
 def printer_state_for_key(
     coordinator: AnycubicCloudDataUpdateCoordinator,
-    printer_id: int,
+    printer_id: int | str,
     state_key: str,
 ) -> Any:
-    # Sicherer Zugriff, um KeyError zu vermeiden
-    printer = coordinator.data.get('printers', {}).get(printer_id, {})
+    printers = coordinator.data.get('printers', {})
+    printer = printers.get(int(printer_id)) or printers.get(str(printer_id), {})
     return printer.get('states', {}).get(state_key)
 
 
 def printer_attributes_for_key(
     coordinator: AnycubicCloudDataUpdateCoordinator,
-    printer_id: int,
+    printer_id: int | str,
     attribute_key: str,
 ) -> dict[str, Any] | None:
-    attr: dict[str, Any] | None = coordinator.data['printers'][printer_id]['attributes'].get(attribute_key)
-    return attr
+    printers = coordinator.data.get('printers', {})
+    printer = printers.get(int(printer_id)) or printers.get(str(printer_id))
+    
+    if not printer or 'attributes' not in printer:
+        return None
+        
+    return printer['attributes'].get(attribute_key)
 
 
 def printer_state_connected_ace_units(
     coordinator: AnycubicCloudDataUpdateCoordinator,
-    printer_id: int,
+    printer_id: int | str,
 ) -> int:
     val = printer_state_for_key(coordinator, printer_id, 'connected_ace_units')
     return int(val) if val is not None else 0
@@ -89,7 +101,7 @@ def printer_state_connected_ace_units(
 
 def printer_state_supports_ace(
     coordinator: AnycubicCloudDataUpdateCoordinator,
-    printer_id: int,
+    printer_id: int | str,
 ) -> bool:
     val = printer_state_for_key(coordinator, printer_id, 'supports_function_multi_color_box')
     return bool(val) if val is not None else False
@@ -207,7 +219,7 @@ def check_descriptor_state_drying_unavailable(
 
 def printer_entity_unique_id(
     coordinator: AnycubicCloudDataUpdateCoordinator,
-    printer_id: int,
+    printer_id: int | str,
     entity_suffix: str,
 ) -> str:
     mac = printer_state_for_key(coordinator, printer_id, 'machine_mac')

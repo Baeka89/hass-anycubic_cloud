@@ -41,6 +41,11 @@ class AnycubicCloudEntity(CoordinatorEntity, Entity):
         self.entity_description = entity_description
         self._attr_unique_id = printer_entity_unique_id(coordinator, self._printer_id, entity_description.key)
 
+        # Holen der Drucker-Informationen aus den Zuständen des Coordinators für Namen etc.
+        printer_data = coordinator.data.get('printers', {}).get(self._printer_id, {})
+        states = printer_data.get('states', {})
+        printer_name = states.get("name", f"Anycubic Drucker {self._printer_id}")
+
         # Dynamische Zuordnung der DeviceInfo basierend auf dem Typ der Entität
         entity_type = entity_description.printer_entity_type
 
@@ -51,14 +56,24 @@ class AnycubicCloudEntity(CoordinatorEntity, Entity):
                 "identifiers": {(DOMAIN, f"cloud_bridge_{user_id}")},
             }
         elif entity_type in (PrinterEntityType.DRY_PRESET_PRIMARY, PrinterEntityType.ACE_PRIMARY):
-            # Ordne die Entität der ersten ACE Pro Box zu
+            # Ordne die Entität der ersten ACE Pro Box zu und gib ihr vollständige DeviceInfo mit
+            ace_primary_fw = states.get("multi_color_box_fw_version")
             self._attr_device_info = {
                 "identifiers": {(DOMAIN, f"ace_primary_{self._printer_id}")},
+                "name": f"{printer_name} ACE Pro 1",
+                "manufacturer": "Anycubic",
+                "model": "ACE Pro Multi-Color Box",
+                "sw_version": ace_primary_fw,
             }
-        elif entity_type in (PrinterEntityType.DRY_PRESET_SECONDARY, PrinterEntityType.ACE_SECONDARY):
-            # Ordne die Entität der zweiten ACE Pro Box zu
+        elif entity_type in (Transformation := (PrinterEntityType.DRY_PRESET_SECONDARY, PrinterEntityType.ACE_SECONDARY)):
+            # Ordne die Entität der zweiten ACE Pro Box zu und gib ihr vollständige DeviceInfo mit
+            ace_secondary_fw = states.get("secondary_multi_color_box_fw_version")
             self._attr_device_info = {
                 "identifiers": {(DOMAIN, f"ace_secondary_{self._printer_id}")},
+                "name": f"{printer_name} ACE Pro 2",
+                "manufacturer": "Anycubic",
+                "model": "ACE Pro Multi-Color Box",
+                "sw_version": ace_secondary_fw,
             }
         else:
             # Nutze exakt die originale build_printer_device_info Logik der Integration

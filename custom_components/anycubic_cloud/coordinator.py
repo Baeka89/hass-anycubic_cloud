@@ -779,7 +779,8 @@ class AnycubicCloudDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
 
         for printer_id in self.entry.data[CONF_PRINTER_ID_LIST]:
-            printer_data = data_dict['printers'].get(printer_id, {})
+            # Sicherstellen, dass die ID als Integer/String kompatibel geladen wird
+            printer_data = data_dict['printers'].get(int(printer_id)) or data_dict['printers'].get(str(printer_id), {})
             states = printer_data.get('states', {})
             
             # 2. Drucker-Gerät holen, indem wir die originalen Helpers nutzen
@@ -801,11 +802,11 @@ class AnycubicCloudDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 sw_version=printer_fw,
                 via_device=(DOMAIN, f"cloud_bridge_{user_id}")
             )
-            self._printer_device_map[printer_device.id] = printer_id
+            self._printer_device_map[printer_device.id] = int(printer_id)
             
             # 3. Erste ACE Pro Box registrieren, falls vom Drucker unterstützt
             if states.get("supports_function_multi_color_box"):
-                ace_primary_identifiers = {(DOMAIN, f"ace_primary_{printer_id}")}
+                ace_primary_identifiers = {(DOMAIN, f"ace_primary_{int(printer_id)}")}
                 ace_primary_fw = states.get("multi_color_box_fw_version")
                 dev_reg.async_get_or_create(
                     config_entry_id=self.entry.entry_id,
@@ -820,7 +821,7 @@ class AnycubicCloudDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 # 4. Zweite ACE Pro Box registrieren, falls physisch angeschlossen
                 connected_units = states.get("connected_ace_units", 1)
                 if connected_units is not None and int(connected_units) >= 2:
-                    ace_secondary_identifiers = {(DOMAIN, f"ace_secondary_{printer_id}")}
+                    ace_secondary_identifiers = {(DOMAIN, f"ace_secondary_{int(printer_id)}")}
                     ace_secondary_fw = states.get("secondary_multi_color_box_fw_version")
                     dev_reg.async_get_or_create(
                         config_entry_id=self.entry.entry_id,
