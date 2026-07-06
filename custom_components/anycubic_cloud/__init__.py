@@ -29,14 +29,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(update_listener))
 
-    # register service calls
-    for service_name, service in SERVICES:
-        if not hass.services.has_service(DOMAIN, service_name):
+    # register service calls - Sicherer Abgleich der Service-Struktur
+    for service_item in SERVICES:
+        # Falls SERVICES Tupel enthält, andernfalls direkt als Objekt behandeln
+        if isinstance(service_item, tuple):
+            service_name, service_class = service_item
+        else:
+            service_class = service_item
+            service_name = getattr(service_class, "name", None)
+
+        if service_name and not hass.services.has_service(DOMAIN, service_name):
+            service_instance = service_class(hass)
             hass.services.async_register(
                 DOMAIN,
                 service_name,
-                service(hass).async_call_service,
-                service.schema,
+                service_instance.async_call_service,
+                getattr(service_class, "schema", None),
             )
 
     # register panel
@@ -66,8 +74,14 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # unregister service calls
     if unload_ok and not hass.data[DOMAIN]:  # check if this is the last entry to unload
-        for service_name, _ in SERVICES:
-            hass.services.async_remove(DOMAIN, service_name)
+        for service_item in SERVICES:
+            if isinstance(service_item, tuple):
+                service_name = service_item[0]
+            else:
+                service_name = getattr(service_item, "name", None)
+            
+            if service_name:
+                hass.services.async_remove(DOMAIN, service_name)
 
         # unregister panel
         await async_unregister_panel(hass)
