@@ -12,7 +12,7 @@
     "panel_custom"
   ],
   "documentation": "https://github.com/Baeka89/hass-anycubic_cloud",
-  "iot_class": "cloud_polling",
+  "integration_type": "hub",
   "issue_tracker": "https://github.com/Baeka89/hass-anycubic_cloud/issues",
   "loggers": [],
   "requirements": [

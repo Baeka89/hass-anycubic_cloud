@@ -25,6 +25,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         COORDINATOR: coordinator,
     }
 
+    # Modernisiertes Laden der Plattformen für HA 2026.05.1
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(update_listener))
 
@@ -68,7 +69,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         for service_name, _ in SERVICES:
             hass.services.async_remove(DOMAIN, service_name)
 
-    # unregister panel
-    async_unregister_panel(hass)
+        # unregister panel
+        await async_unregister_panel(hass)
 
     return unload_ok

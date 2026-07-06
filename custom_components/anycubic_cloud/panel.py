@@ -67,6 +67,9 @@ async def async_register_panel(
         )
 
 
-def async_unregister_panel(hass: HomeAssistant) -> None:
-    frontend.async_remove_panel(hass, DOMAIN)
-    LOGGER.debug("Removing panel")
+async def async_unregister_panel(
+    hass: HomeAssistant,
+) -> None:
+    """Unregister the Anycubic Cloud frontend panel."""
+    if DOMAIN in hass.data.get("frontend_panels", {}):
+        panel_custom.async_unregister_panel(hass, DOMAIN)

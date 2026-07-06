@@ -693,7 +693,6 @@ class AnycubicCloudDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise ConfigEntryAuthFailed("Authentication Token not found.")
 
         try:
-            # config = await store.async_load()
             cookie_jar = CookieJar(unsafe=True)
             websession = async_create_clientsession(
                 self.hass,
@@ -728,7 +727,6 @@ class AnycubicCloudDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             if not success:
                 raise ConfigEntryAuthFailed("Authentication failed. Check credentials.")
 
-            # Create config
             await store.async_save(self._anycubic_api.get_auth_config_dict())
 
             first_printer_id = self.entry.data[CONF_PRINTER_ID_LIST][0]
@@ -767,16 +765,72 @@ class AnycubicCloudDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     ) -> None:
         self._printer_device_map = dict()
         dev_reg = async_get_device_registry(self.hass)
+        
+        # 1. Zentrales Cloud-Bridge "Bindungsglied" registrieren
+        user_id = data_dict.get('user_info', {}).get('id', 'unknown_user')
+        bridge_identifiers = {(DOMAIN, f"cloud_bridge_{user_id}")}
+        bridge_device = dev_reg.async_get_or_create(
+            config_entry_id=self.entry.entry_id,
+            identifiers=bridge_identifiers,
+            name="Anycubic Cloud Anbindung",
+            manufacturer="Anycubic",
+            model="Cloud API Bridge",
+            entry_type="service"
+        )
+
         for printer_id in self.entry.data[CONF_PRINTER_ID_LIST]:
+            printer_data = data_dict['printers'].get(printer_id, {})
+            states = printer_data.get('states', {})
+            
+            # 2. Drucker-Gerät holen, indem wir die originalen Helpers nutzen
             printer_device_info: DeviceInfo = build_printer_device_info(
                 data_dict,
                 printer_id,
             )
+            printer_identifiers = printer_device_info.get("identifiers")
+            printer_name = states.get("name", f"Anycubic Drucker {printer_id}")
+            printer_model = states.get("machine_name", "FDM Printer")
+            printer_fw = states.get("fw_version")
+            
             printer_device = dev_reg.async_get_or_create(
                 config_entry_id=self.entry.entry_id,
-                **printer_device_info,
+                identifiers=printer_identifiers,
+                name=printer_name,
+                manufacturer="Anycubic",
+                model=printer_model,
+                sw_version=printer_fw,
+                via_device=(DOMAIN, f"cloud_bridge_{user_id}")
             )
             self._printer_device_map[printer_device.id] = printer_id
+            
+            # 3. Erste ACE Pro Box registrieren, falls vom Drucker unterstützt
+            if states.get("supports_function_multi_color_box"):
+                ace_primary_identifiers = {(DOMAIN, f"ace_primary_{printer_id}")}
+                ace_primary_fw = states.get("multi_color_box_fw_version")
+                dev_reg.async_get_or_create(
+                    config_entry_id=self.entry.entry_id,
+                    identifiers=ace_primary_identifiers,
+                    name=f"{printer_name} ACE Pro 1",
+                    manufacturer="Anycubic",
+                    model="ACE Pro Multi-Color Box",
+                    sw_version=ace_primary_fw,
+                    via_device=list(printer_identifiers)[0]
+                )
+                
+                # 4. Zweite ACE Pro Box registrieren, falls physisch angeschlossen
+                connected_units = states.get("connected_ace_units", 1)
+                if connected_units is not None and int(connected_units) >= 2:
+                    ace_secondary_identifiers = {(DOMAIN, f"ace_secondary_{printer_id}")}
+                    ace_secondary_fw = states.get("secondary_multi_color_box_fw_version")
+                    dev_reg.async_get_or_create(
+                        config_entry_id=self.entry.entry_id,
+                        identifiers=ace_secondary_identifiers,
+                        name=f"{printer_name} ACE Pro 2",
+                        manufacturer="Anycubic",
+                        model="ACE Pro Multi-Color Box",
+                        sw_version=ace_secondary_fw,
+                        via_device=list(printer_identifiers)[0]
+                    )
 
     async def _check_or_save_tokens(self) -> None:
         success = await self.anycubic_api.check_api_tokens()
@@ -887,6 +941,53 @@ class AnycubicCloudDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         await self.async_refresh()
         self._last_state_update = int(time.time()) - DEFAULT_SCAN_INTERVAL + 10
 
+    async def set_number_value(
+        self,
+        printer_id: int,
+        key: str,
+        value: int,
+    ) -> None:
+        """Handle values from number entities that fallback to the coordinator."""
+        printer = self.get_printer_for_id(printer_id)
+        if not printer:
+            return
+
+        try:
+            if key == "dry_status_target_temperature":
+                await self._connect_mqtt_for_action_response()
+                duration = printer.primary_drying_status_total_duration or 6
+                await printer.multi_color_box_drying_start(duration=duration, target_temp=value, box_id=0)
+            elif key == "secondary_dry_status_target_temperature":
+                await self._connect_mqtt_for_action_response()
+                duration = printer.secondary_drying_status_total_duration or 6
+                await printer.multi_color_box_drying_start(duration=duration, target_temp=value, box_id=1)
+        except AnycubicAPIError as ex:
+            raise HomeAssistantError(ex) from ex
+
+    async def button_press_custom_dry(
+        self,
+        printer_id: int,
+        temperature: int,
+        duration: int,
+        is_secondary: bool = False,
+    ) -> None:
+        """Start drying with custom parameters."""
+        printer = self.get_printer_for_id(printer_id)
+        if not printer:
+            return
+
+        try:
+            box_id = 1 if is_secondary else 0
+            await self._connect_mqtt_for_action_response()
+            await printer.multi_color_box_drying_start(
+                duration=duration,
+                target_temp=temperature,
+                box_id=box_id,
+            )
+            await self.force_state_update()
+        except AnycubicAPIError as ex:
+            raise HomeAssistantError(ex) from ex
+
     async def button_press_event(
         self,
         printer_id: int,
@@ -959,11 +1060,29 @@ class AnycubicCloudDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 await self._connect_mqtt_for_action_response()
                 await printer.cancel_print()
 
-            # elif printer and event_key == 'toggle_auto_feed':
-            #     await printer.multi_color_box_toggle_auto_feed()
+            elif printer and event_key == 'extrude':
+                await self._connect_mqtt_for_action_response()
+                await printer.extrude_filament()
 
-            # elif event_key == 'toggle_mqtt_connection':
-            #     self._mqtt_manually_connected = not self._mqtt_manually_connected
+            elif printer and event_key == 'retract':
+                await self._connect_mqtt_for_action_response()
+                await printer.retract_filament()
+
+            elif printer and event_key == 'ace_extrude':
+                await self._connect_mqtt_for_action_response()
+                await printer.multi_color_box_extrude(box_id=0)
+
+            elif printer and event_key == 'ace_retract':
+                await self._connect_mqtt_for_action_response()
+                await printer.multi_color_box_retract(box_id=0)
+
+            elif printer and event_key == 'secondary_ace_extrude':
+                await self._connect_mqtt_for_action_response()
+                await printer.multi_color_box_extrude(box_id=1)
+
+            elif printer and event_key == 'secondary_ace_retract':
+                await self._connect_mqtt_for_action_response()
+                await printer.multi_color_box_retract(box_id=1)
 
             else:
                 return

@@ -42,11 +42,13 @@ from .const import (
     COORDINATOR,
     DOMAIN,
     LOGGER,
-    MAX_FILE_UPLOAD_RETRIES,
 )
 
 if TYPE_CHECKING:
     from .coordinator import AnycubicCloudDataUpdateCoordinator
+
+# Lokaler Fallback für die aus der const.py entfernte Konstante
+MAX_FILE_UPLOAD_RETRIES = 3
 
 
 def build_anycubic_service_schema(

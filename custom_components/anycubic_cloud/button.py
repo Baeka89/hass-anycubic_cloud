@@ -18,7 +18,7 @@ from .const import (
     PrinterEntityType,
 )
 from .entity import AnycubicCloudEntity, AnycubicCloudEntityDescription
-from .helpers import printer_attributes_for_key
+from .helpers import printer_attributes_for_key, printer_state_for_key
 
 if TYPE_CHECKING:
     from .coordinator import AnycubicCloudDataUpdateCoordinator
@@ -34,6 +34,7 @@ class AnycubicButtonEntityDescription(
 PRIMARY_DRYING_PRESET_BUTTON_TYPES: list[AnycubicButtonEntityDescription] = list([
     AnycubicButtonEntityDescription(
         key=f"{ENTITY_ID_DRYING_START_PRESET_}{x + 1}",
+        name=f"ACE Trocknung Preset {x + 1}",
         translation_key=f"{ENTITY_ID_DRYING_START_PRESET_}{x + 1}",
         printer_entity_type=PrinterEntityType.DRY_PRESET_PRIMARY,
     ) for x in range(MAX_DRYING_PRESETS)
@@ -42,66 +43,91 @@ PRIMARY_DRYING_PRESET_BUTTON_TYPES: list[AnycubicButtonEntityDescription] = list
 SECONDARY_DRYING_PRESET_BUTTON_TYPES: list[AnycubicButtonEntityDescription] = list([
     AnycubicButtonEntityDescription(
         key=f"secondary_{ENTITY_ID_DRYING_START_PRESET_}{x + 1}",
+        name=f"ACE Trocknung Preset {x + 1}",
         translation_key=f"secondary_{ENTITY_ID_DRYING_START_PRESET_}{x + 1}",
         printer_entity_type=PrinterEntityType.DRY_PRESET_SECONDARY,
     ) for x in range(MAX_DRYING_PRESETS)
 ])
 
+BUTTON_TYPES: list[AnycubicButtonEntityDescription] = list([
+    AnycubicButtonEntityDescription(
+        key="dry_start_custom",
+        name="ACE Trocknung Manuell Starten",
+        translation_key="dry_start_custom",
+        printer_entity_type=PrinterEntityType.ACE_PRIMARY,
+    ),
+    AnycubicButtonEntityDescription(
+        key="secondary_dry_start_custom",
+        name="ACE Trocknung Manuell Starten",
+        translation_key="secondary_dry_start_custom",
+        printer_entity_type=PrinterEntityType.ACE_SECONDARY,
+    ),
+])
+
+GLOBAL_BUTTON_TYPES: list[AnycubicButtonEntityDescription] = list([
+    AnycubicButtonEntityDescription(
+        key="manual_mqtt_connection_refresh",
+        name="MQTT Verbindung erneuern",
+        translation_key="manual_mqtt_connection_refresh",
+        entity_category=EntityCategory.CONFIG,
+        printer_entity_type=PrinterEntityType.GLOBAL,
+    ),
+])
+
+FDM_BUTTON_DESCRIPTIONS: list[AnycubicButtonEntityDescription] = list([
+    AnycubicButtonEntityDescription(
+        key="print_pause",
+        name="Druck Pausieren",
+        translation_key="print_pause",
+        printer_entity_type=PrinterEntityType.FDM,
+    ),
+    AnycubicButtonEntityDescription(
+        key="print_resume",
+        name="Druck Fortsetzen",
+        translation_key="print_resume",
+        printer_entity_type=PrinterEntityType.FDM,
+    ),
+    AnycubicButtonEntityDescription(
+        key="print_stop",
+        name="Druck Stoppen",
+        translation_key="print_stop",
+        printer_entity_type=PrinterEntityType.FDM,
+    ),
+    AnycubicButtonEntityDescription(
+        key="clear_completed_print_job",
+        name="Druckauftrag abschließen",
+        translation_key="clear_completed_print_job",
+        printer_entity_type=PrinterEntityType.FDM,
+    ),
+    AnycubicButtonEntityDescription(
+        key="multi_color_box_filament_extrude",
+        name="Filament Vorschub (Extrude)",
+        translation_key="multi_color_box_filament_extrude",
+        printer_entity_type=PrinterEntityType.FDM,
+    ),
+    AnycubicButtonEntityDescription(
+        key="multi_color_box_filament_retract",
+        name="Filament Rückzug (Retract)",
+        translation_key="multi_color_box_filament_retract",
+        printer_entity_type=PrinterEntityType.FDM,
+    ),
+])
+
 PRIMARY_MULTI_COLOR_BOX_BUTTON_TYPES: list[AnycubicButtonEntityDescription] = list([
     AnycubicButtonEntityDescription(
-        key="drying_stop",
-        translation_key="drying_stop",
+        key="dry_stop",
+        name="ACE Trocknung Stoppen",
+        translation_key="dry_stop",
         printer_entity_type=PrinterEntityType.ACE_PRIMARY,
     ),
 ])
 
 SECONDARY_MULTI_COLOR_BOX_BUTTON_TYPES: list[AnycubicButtonEntityDescription] = list([
     AnycubicButtonEntityDescription(
-        key="secondary_drying_stop",
-        translation_key="secondary_drying_stop",
+        key="secondary_dry_stop",
+        name="ACE Trocknung Stoppen",
+        translation_key="secondary_dry_stop",
         printer_entity_type=PrinterEntityType.ACE_SECONDARY,
-    ),
-])
-
-BUTTON_TYPES: list[AnycubicButtonEntityDescription] = list([
-    AnycubicButtonEntityDescription(
-        key="pause_print",
-        translation_key="pause_print",
-        printer_entity_type=PrinterEntityType.PRINTER,
-    ),
-    AnycubicButtonEntityDescription(
-        key="resume_print",
-        translation_key="resume_print",
-        printer_entity_type=PrinterEntityType.PRINTER,
-    ),
-    AnycubicButtonEntityDescription(
-        key="cancel_print",
-        translation_key="cancel_print",
-        printer_entity_type=PrinterEntityType.PRINTER,
-    ),
-    AnycubicButtonEntityDescription(
-        key="request_file_list_local",
-        translation_key="request_file_list_local",
-        printer_entity_type=PrinterEntityType.PRINTER,
-    ),
-    AnycubicButtonEntityDescription(
-        key="request_file_list_udisk",
-        translation_key="request_file_list_udisk",
-        printer_entity_type=PrinterEntityType.PRINTER,
-    ),
-])
-
-GLOBAL_BUTTON_TYPES: list[AnycubicButtonEntityDescription] = list([
-    AnycubicButtonEntityDescription(
-        key="request_file_list_cloud",
-        translation_key="request_file_list_cloud",
-        printer_entity_type=PrinterEntityType.GLOBAL,
-    ),
-    AnycubicButtonEntityDescription(
-        key="refresh_mqtt_connection",
-        translation_key="refresh_mqtt_connection",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        printer_entity_type=PrinterEntityType.GLOBAL,
     ),
 ])
 
@@ -113,27 +139,27 @@ async def async_setup_entry(
 ) -> None:
     """Set up the button from a config entry."""
 
-    coordinator: AnycubicCloudDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id][
-        COORDINATOR
-    ]
-
+    coordinator: AnycubicCloudDataUpdateCoordinator = hass.data[DOMAIN][
+        entry.entry_id
+    ][COORDINATOR]
     coordinator.add_entities_for_seen_printers(
         async_add_entities=async_add_entities,
-        entity_constructor=AnycubicCloudButton,
+        entity_constructor=AnycubicButton,
         platform=Platform.BUTTON,
         available_descriptors=list(
             BUTTON_TYPES
-            + PRIMARY_MULTI_COLOR_BOX_BUTTON_TYPES
-            + SECONDARY_MULTI_COLOR_BOX_BUTTON_TYPES
             + PRIMARY_DRYING_PRESET_BUTTON_TYPES
             + SECONDARY_DRYING_PRESET_BUTTON_TYPES
             + GLOBAL_BUTTON_TYPES
+            + FDM_BUTTON_DESCRIPTIONS
+            + PRIMARY_MULTI_COLOR_BOX_BUTTON_TYPES
+            + SECONDARY_MULTI_COLOR_BOX_BUTTON_TYPES
         ),
     )
 
 
-class AnycubicCloudButton(AnycubicCloudEntity, ButtonEntity):
-    """A button for Anycubic Cloud."""
+class AnycubicButton(AnycubicCloudEntity, ButtonEntity):
+    """Representation of a Anycubic Cloud button."""
 
     entity_description: AnycubicButtonEntityDescription
 
@@ -144,7 +170,7 @@ class AnycubicCloudButton(AnycubicCloudEntity, ButtonEntity):
         printer_id: int,
         entity_description: AnycubicButtonEntityDescription,
     ) -> None:
-        """Initialize."""
+        """Initiate Anycubic Button."""
         super().__init__(hass, coordinator, printer_id, entity_description)
 
     async def async_press(self) -> None:
@@ -152,7 +178,20 @@ class AnycubicCloudButton(AnycubicCloudEntity, ButtonEntity):
         if TYPE_CHECKING:
             assert self.coordinator.anycubic_api, "Connection to API is missing"
 
-        await self.coordinator.button_press_event(self._printer_id, self.entity_description.key)
+        if self.entity_description.key in ["dry_start_custom", "secondary_dry_start_custom"]:
+            prefix = "secondary_" if "secondary" in self.entity_description.key else ""
+            
+            temp_val = self.coordinator.data.get("printers", {}).get(self._printer_id, {}).get("states", {}).get(f"{prefix}drying_temperature_input", 50)
+            time_val = self.coordinator.data.get("printers", {}).get(self._printer_id, {}).get("states", {}).get(f"{prefix}drying_time_input", 6)
+
+            await self.coordinator.button_press_custom_dry(
+                self._printer_id, 
+                int(float(temp_val)), 
+                int(float(time_val)), 
+                is_secondary=("secondary" in self.entity_description.key)
+            )
+        else:
+            await self.coordinator.button_press_event(self._printer_id, self.entity_description.key)
 
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:

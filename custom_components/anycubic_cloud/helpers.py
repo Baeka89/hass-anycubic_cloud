@@ -65,7 +65,9 @@ def printer_state_for_key(
     printer_id: int,
     state_key: str,
 ) -> Any:
-    return coordinator.data['printers'][printer_id]['states'][state_key]
+    # Sicherer Zugriff, um KeyError zu vermeiden
+    printer = coordinator.data.get('printers', {}).get(printer_id, {})
+    return printer.get('states', {}).get(state_key)
 
 
 def printer_attributes_for_key(
@@ -81,26 +83,16 @@ def printer_state_connected_ace_units(
     coordinator: AnycubicCloudDataUpdateCoordinator,
     printer_id: int,
 ) -> int:
-    return int(
-        printer_state_for_key(
-            coordinator,
-            printer_id,
-            'connected_ace_units',
-        )
-    )
+    val = printer_state_for_key(coordinator, printer_id, 'connected_ace_units')
+    return int(val) if val is not None else 0
 
 
 def printer_state_supports_ace(
     coordinator: AnycubicCloudDataUpdateCoordinator,
     printer_id: int,
 ) -> bool:
-    return bool(
-        printer_state_for_key(
-            coordinator,
-            printer_id,
-            'supports_function_multi_color_box',
-        )
-    )
+    val = printer_state_for_key(coordinator, printer_id, 'supports_function_multi_color_box')
+    return bool(val) if val is not None else False
 
 
 def check_descriptor_status_not_lcd(
@@ -218,7 +210,8 @@ def printer_entity_unique_id(
     printer_id: int,
     entity_suffix: str,
 ) -> str:
-    return f"{printer_state_for_key(coordinator, printer_id, 'machine_mac')}-{entity_suffix}"
+    mac = printer_state_for_key(coordinator, printer_id, 'machine_mac')
+    return f"{mac}-{entity_suffix}" if mac else f"{printer_id}-{entity_suffix}"
 
 
 def state_string_active(state: Any) -> str:
@@ -229,29 +222,13 @@ def state_string_loaded(state: Any) -> str:
     return "loaded" if state is not None else "not loaded"
 
 
-# REGEX_TOKEN_STRING = re.compile(r"^['\"]?([_-A-Za-z0-9+\/.]{236,238})['\"]?$")
-
-
-# def clean_user_token(input_token):
-#     token_length = len(input_token)
-#     if token_length == 236:
-#         return input_token
-#     if token_length > 236:
-#         matches = REGEX_TOKEN_STRING.findall(input_token)
-#         if len(matches) == 1:
-#             return matches[0]
-#     raise TypeError(f"Invalid token, expected 236 or 238 chars, got {token_length}.")
-
-
 REGEX_NOQUOTE_STRING = re.compile(r"^['\"]?([^'\"]+)['\"]?$")
 
 
 def remove_quotes_from_string(input_string: str) -> str:
     matches = REGEX_NOQUOTE_STRING.findall(input_string)
-
     if len(matches) == 1:
         return str(matches[0])
-
     raise TypeError("Unexpected quotes in string.")
 
 
@@ -267,7 +244,6 @@ def validate_value_is_type[_T: Any](
         return value
     elif isinstance(value, value_type):
         return value
-
     return None
 
 
@@ -288,7 +264,6 @@ def get_value_from_dict_if_type[_T: Any](
         )
     ):
         return val
-
     return None
 
 
@@ -307,10 +282,8 @@ def extract_panel_card_config(
     input_conf: dict[str, Any],
 ) -> dict[str, Any]:
     card_conf: dict[str, Any] = {}
-
     if len(input_conf) == 0:
         return card_conf
-
     update_dict_and_validate(card_conf, input_conf, 'vertical', bool)
     update_dict_and_validate(card_conf, input_conf, 'round', bool)
     update_dict_and_validate(card_conf, input_conf, 'use_24hr', bool)
@@ -323,5 +296,4 @@ def extract_panel_card_config(
     update_dict_and_validate(card_conf, input_conf, 'slotColors', str, allow_lists=True)
     update_dict_and_validate(card_conf, input_conf, 'showSettingsButton', bool)
     update_dict_and_validate(card_conf, input_conf, 'alwaysShow', bool)
-
     return card_conf
