@@ -9,7 +9,7 @@
     "file_upload",
     "http",
     "image",
-    "panel_custom"
+    "frontend"
   ],
   "documentation": "https://github.com/Baeka89/hass-anycubic_cloud",
   "integration_type": "hub",
@@ -18,5 +18,5 @@
   "requirements": [
     "paho-mqtt"
   ],
-  "version": "0.5.30"
+  "version": "0.5.31"
 }

@@ -68,19 +68,6 @@ If you find this integration useful, please consider supporting its development:
 
 ---
 
-## Gallery
-
-<p align="center">
-  <img width="300" src="https://raw.githubusercontent.com/WaresWichall/hass-anycubic_cloud/master/screenshots/kobra3-1.png"> 
-  <img width="300" src="https://raw.githubusercontent.com/WaresWichall/hass-anycubic_cloud/master/screenshots/anycubic-ace-ui.gif"> 
-  <img width="300" src="https://raw.githubusercontent.com/WaresWichall/hass-anycubic_cloud/master/screenshots/kobra2-2.png">
-  <br>
-  <img width="300" src="https://raw.githubusercontent.com/WaresWichall/hass-anycubic_cloud/master/screenshots/kobra3-print.png"> 
-  <img width="200" src="https://raw.githubusercontent.com/WaresWichall/hass-anycubic_cloud/master/screenshots/kobra2-1.png">
-</p>
-
----
-
 ## How to Install / Installation
 
 1. **Add Repository:** Add this URL to **HACS** as a "Custom Repository" (Category: Integration).
@@ -90,15 +77,15 @@ If you find this integration useful, please consider supporting its development:
 
 ### Authentication Methods
 
-#### 1. Slicer Next (Recommended for Kobra 3 / S1 / Kobra 2 Series)
-1. Open `%AppData%\AnycubicSlicerNext\AnycubicSlicerNext.conf` (Windows) or `~/Library/Application Support/AnycubicSlicerNext/AnycubicSlicerNext.conf` (macOS).
-2. Copy the long `access_token` string.
-3. Paste it into the Home Assistant config flow.
-
-#### 2. Web Authentication
+#### 1. Web Authentication (Recommended)
 1. Log in to [Anycubic Cloud Web](https://cloud-universe.anycubic.com/file).
 2. Open Browser Dev Tools (F12) -> Console.
 3. Type `window.localStorage["XX-Token"]` and copy the result.
+
+#### 2. Slicer Next (currently broken)
+1. Open `%AppData%\AnycubicSlicerNext\AnycubicSlicerNext.conf` (Windows) or `~/Library/Application Support/AnycubicSlicerNext/AnycubicSlicerNext.conf` (macOS).
+2. Copy the long `access_token` string.
+3. Paste it into the Home Assistant config flow.
 
 ---
 
