@@ -177,12 +177,15 @@ def check_descriptor_state_drying_available(
     supports_ace: bool,
     connected_ace_units: int,
 ) -> bool:
-    return (
-        supports_ace
-        and (
+    # Wichtig: `and` bindet in Python stärker als `or`. Ohne die äußere Klammer
+    # würde `supports_ace` nur den ersten (primären) Zweig gaten und der
+    # sekundäre Zweig wäre unabhängig von `supports_ace` auswertbar.
+    return supports_ace and (
+        (
             description.printer_entity_type == PrinterEntityType.DRY_PRESET_PRIMARY
             and connected_ace_units >= 1
-        ) or (
+        )
+        or (
             description.printer_entity_type == PrinterEntityType.DRY_PRESET_SECONDARY
             and connected_ace_units >= 2
         )

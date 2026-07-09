@@ -70,6 +70,22 @@ async def async_register_panel(
 async def async_unregister_panel(
     hass: HomeAssistant,
 ) -> None:
-    """Unregister the Anycubic Cloud frontend panel."""
+    """Unregister the Anycubic Cloud frontend panel.
+
+    `panel_custom` can only *register* panels - it has no unregister
+    counterpart. Removing a panel from the sidebar is done through the
+    generic `frontend.async_remove_panel(hass, frontend_url_path)` API
+    (the same `frontend_url_path`/DOMAIN that was passed to
+    `async_register_panel` above).
+
+    Wrapped in try/except on purpose: a failure here must never abort
+    `async_unload_entry` (see __init__.py) - if it does, HA reports the
+    whole unload/reload as failed even though the platforms were already
+    unloaded, which leaves the entry in a broken state with no entities
+    and no way to recover without a full HA restart.
+    """
     if DOMAIN in hass.data.get("frontend_panels", {}):
-        panel_custom.async_unregister_panel(hass, DOMAIN)
+        try:
+            frontend.async_remove_panel(hass, DOMAIN)
+        except Exception:  # noqa: BLE001 - defensive, see docstring above
+            LOGGER.exception("Failed to unregister the Anycubic Cloud panel")

@@ -8,13 +8,14 @@ from .const import (
     CONF_CARD_CONFIG,
     COORDINATOR,
     DOMAIN,
+    LOGGER,
     PLATFORMS,
 )
+from .coordinator import AnycubicCloudDataUpdateCoordinator
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Anycubic Cloud from a config entry."""
-    from .coordinator import AnycubicCloudDataUpdateCoordinator
     from .panel import async_register_panel
     from .services import SERVICES
 
@@ -68,10 +69,21 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # unregister service calls
     if unload_ok and not hass.data[DOMAIN]:  # check if this is the last entry to unload
-        for service_name, _ in SERVICES:
-            hass.services.async_remove(DOMAIN, service_name)
+        try:
+            for service_name, _ in SERVICES:
+                hass.services.async_remove(DOMAIN, service_name)
 
-        # unregister panel
-        await async_unregister_panel(hass)
+            # unregister panel
+            await async_unregister_panel(hass)
+        except Exception:  # noqa: BLE001 - see rationale below
+            # Diese Aufräumschritte (Services/Panel) dürfen niemals den
+            # eigentlichen Unload/Reload zum Absturz bringen. Ein Fehler
+            # hier hat vorher dazu geführt, dass unload_ok nie zurückgegeben
+            # wurde, obwohl die Plattformen (und damit alle Entities) schon
+            # entladen waren - der Reload blieb danach in einem kaputten
+            # Zwischenzustand ohne Entities hängen.
+            LOGGER.exception(
+                "Error cleaning up services/panel while unloading Anycubic Cloud entry"
+            )
 
     return unload_ok

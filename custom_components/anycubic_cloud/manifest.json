@@ -15,8 +15,9 @@
   "integration_type": "hub",
   "issue_tracker": "https://github.com/Baeka89/hass-anycubic_cloud/issues",
   "loggers": [],
+  "min_ha_version": "2026.5.0",
   "requirements": [
     "paho-mqtt"
   ],
-  "version": "0.5.32"
+  "version": "0.5.33"
 }
