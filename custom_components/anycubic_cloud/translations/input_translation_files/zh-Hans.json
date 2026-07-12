@@ -1,0 +1,712 @@
+{
+  "common": {
+    "user_token": "用户Token",
+    "user_auth_mode": "认证模式",
+    "user_device_id": "设备ID (Android需要)",
+    "ace_set_slot_name": "ACE 设置槽位 - {0}",
+    "ace_set_slot_descr": "在ACE单元中设置{0}槽位属性。",
+    "secondary": "辅助",
+    "job": "任务",
+    "target": "目标",
+    "request": "请求",
+    "file_list": "文件列表",
+    "drying": "烘干",
+    "drying_preset": "[%key:common::drying%]预设",
+    "dry_preset": "烘干预设",
+    "temperature": "温度",
+    "duration": "持续时间",
+    "firmware": "固件",
+    "total_duration": "总持续时间",
+    "remaining_time": "剩余时间",
+    "nozzle_temperature": "喷嘴[%key:common::temperature%]",
+    "hotbed_temperature": "热床[%key:common::temperature%]",
+    "fan_speed": "风扇速度",
+    "speed_mode": "速度模式",
+    "bottom_layers": "底层数",
+    "bottom_time": "底层曝光时间",
+    "off_time": "关灯时间",
+    "on_time": "开灯时间",
+    "print_settings": {
+      "change_print": "修改打印",
+      "aux_fan_speed": "辅助[%key:common::fan_speed%]",
+      "box_fan_speed": "箱体[%key:common::fan_speed%]"
+    },
+    "service_meta": {
+      "ace_filament_extrude": {
+        "name": "ACE 进料",
+        "description": "ACE进料。"
+      },
+      "ace_filament_retract": {
+        "name": "ACE 退料",
+        "description": "ACE退料。"
+      },
+      "print_save_in_cloud": {
+        "name": "打印并上传 (保存到用户云)。",
+        "description": "打印并上传，保存到用户云存储。"
+      },
+      "print_no_cloud_save": {
+        "name": "打印并上传 (不保存到云)。",
+        "description": "打印并上传，但不保存到用户云存储。"
+      },
+      "delete_file_local": {
+        "name": "删除文件 (本地)",
+        "description": "从打印机本地存储删除文件。"
+      },
+      "delete_file_udisk": {
+        "name": "删除文件 (U盘)",
+        "description": "从打印机U盘删除文件。"
+      },
+      "delete_file_cloud": {
+        "name": "删除文件 (云)",
+        "description": "从用户云存储删除文件。"
+      }
+    },
+    "service_fields": {
+      "config_entry": {
+        "name": "配置条目",
+        "description": "用于此服务的配置条目。"
+      },
+      "device_id": {
+        "name": "打印机设备",
+        "description": "打印机设备 (如果不使用ID)。"
+      },
+      "printer_id": {
+        "name": "打印机ID",
+        "description": "打印机ID (如果不使用设备)。"
+      },
+      "box_id": {
+        "name": "盒子ID",
+        "description": "盒子ID (0-1)。"
+      },
+      "slot_number#single": {
+        "name": "槽位编号",
+        "description": "槽位编号 (1-4)。"
+      },
+      "slot_number#list": {
+        "name": "槽位编号列表",
+        "description": "槽位编号列表 (1-4)，用于映射打印颜色。例如 [1, 2]"
+      },
+      "slot_color_red": {
+        "name": "槽位颜色-红",
+        "description": "槽位颜色-红 (0-255)。"
+      },
+      "slot_color_green": {
+        "name": "槽位颜色-绿",
+        "description": "槽位颜色-绿 (0-255)。"
+      },
+      "slot_color_blue": {
+        "name": "槽位颜色-蓝",
+        "description": "槽位颜色-蓝 (0-255)。"
+      },
+      "uploaded_gcode_file": {
+        "name": "Gcode 文件",
+        "description": "切片后的 .gcode 文件。"
+      },
+      "filename": {
+        "name": "文件名",
+        "description": "完整文件名 (含扩展名)"
+      },
+      "file_id": {
+        "name": "文件ID",
+        "description": "云端文件ID"
+      },
+      "finished#extrude": {
+        "name": "进料完成",
+        "description": "结束进料命令。"
+      }
+    },
+    "service_fieldsets": {
+      "fields#ace_set_slot": {
+        "[%dictkey:common::service_fields::config_entry%]": {},
+        "[%dictkey:common::service_fields::device_id%]": {},
+        "[%dictkey:common::service_fields::printer_id%]": {},
+        "[%dictkey:common::service_fields::box_id%]": {},
+        "[%dictkey:common::service_fields::slot_number#single%]": {},
+        "[%dictkey:common::service_fields::slot_color_red%]": {},
+        "[%dictkey:common::service_fields::slot_color_green%]": {},
+        "[%dictkey:common::service_fields::slot_color_blue%]": {}
+      },
+      "fields#print": {
+        "[%dictkey:common::service_fields::config_entry%]": {},
+        "[%dictkey:common::service_fields::device_id%]": {},
+        "[%dictkey:common::service_fields::printer_id%]": {},
+        "[%dictkey:common::service_fields::slot_number#list%]": {},
+        "[%dictkey:common::service_fields::uploaded_gcode_file%]": {}
+      },
+      "fields#local_filename": {
+        "[%dictkey:common::service_fields::config_entry%]": {},
+        "[%dictkey:common::service_fields::device_id%]": {},
+        "[%dictkey:common::service_fields::printer_id%]": {},
+        "[%dictkey:common::service_fields::filename%]": {}
+      }
+    }
+  },
+  "config": {
+    "abort": {
+      "already_configured": "已配置。",
+      "reauth_successful": "重新认证成功。"
+    },
+    "error": {
+      "invalid_auth": "无效的认证。",
+      "invalid_token": "无效的用户Token。",
+      "cannot_connect": "无法连接。",
+      "no_printers": "未找到打印机。",
+      "invalid_printer": "无效的打印机。"
+    },
+    "step": {
+      "auth_mode_web": {
+        "title": "认证模式 - Web",
+        "description": "按照readme中的步骤从 https://cloud-universe.anycubic.com/file 获取您的Token。",
+        "data": {
+          "user_token": "[%key:common::user_token%]"
+        }
+      },
+      "auth_mode_slicer": {
+        "title": "认证模式 - Slicer Next",
+        "description": "按照readme中的步骤从 %AppData%\\AnycubicSlicerNext\\AnycubicSlicerNext.conf 获取您的Token。",
+        "data": {
+          "user_token": "Slicer 访问Token"
+        }
+      },
+      "auth_mode_android": {
+        "title": "认证模式 - Android App",
+        "description": "需要同时提供Token和device_id。",
+        "data": {
+          "user_token": "[%key:common::user_token%]",
+          "user_device_id": "[%key:common::user_device_id%]"
+        }
+      },
+      "printer": {
+        "title": "选择您的打印机。",
+        "data": {
+          "printer_ids": "选中的打印机"
+        }
+      },
+      "auth_mode_pick": {
+        "title": "认证模式",
+        "description": "您想使用哪种认证模式？",
+        "menu_options": {
+          "auth_mode_web": "Web (无MQTT)",
+          "auth_mode_slicer": "Slicer Next (Win)",
+          "auth_mode_android": "Android"
+        }
+      },
+      "reauth_or_choose_printer": {
+        "title": "重新认证或选择打印机",
+        "description": "您是重新认证还是更改选中的打印机？",
+        "menu_options": {
+          "reauth": "重新认证",
+          "printer": "更改打印机"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "options_menu": {
+        "title": "纵维立方云选项",
+        "menu_options": {
+          "mqtt": "MQTT 设置",
+          "drying": "[%key:common::drying%]预设",
+          "card_config": "面板卡片配置",
+          "debug": "调试设置"
+        }
+      },
+      "mqtt": {
+        "title": "MQTT 设置",
+        "data": {
+          "mqtt_connect_mode": "MQTT 连接模式"
+        }
+      },
+      "drying": {
+        "title": "[%key:common::drying%] Presets",
+        "data": {
+          "drying_preset_duration_1": "[%key:common::dry_preset%] 1 Duration",
+          "drying_preset_temperature_1": "[%key:common::dry_preset%] 1 [%key:common::temperature%]",
+          "drying_preset_duration_2": "[%key:common::dry_preset%] 2 Duration",
+          "drying_preset_temperature_2": "[%key:common::dry_preset%] 2 [%key:common::temperature%]",
+          "drying_preset_duration_3": "[%key:common::dry_preset%] 3 Duration",
+          "drying_preset_temperature_3": "[%key:common::dry_preset%] 3 [%key:common::temperature%]",
+          "drying_preset_duration_4": "[%key:common::dry_preset%] 4 Duration",
+          "drying_preset_temperature_4": "[%key:common::dry_preset%] 4 [%key:common::temperature%]"
+        }
+      },
+      "card_config": {
+        "title": "面板卡片配置",
+        "data": {
+          "card_config": "面板卡片配置 (YAML格式)"
+        }
+      },
+      "debug": {
+        "title": "调试设置",
+        "data": {
+          "debug_mqtt_msg": "调试记录所有MQTT消息",
+          "debug_api_calls": "调试记录所有API调用"
+        }
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "job_in_progress": {
+        "name": "[%key:common::job%] 进行中"
+      },
+      "job_complete": {
+        "name": "[%key:common::job%] 完成"
+      },
+      "job_failed": {
+        "name": "[%key:common::job%] 失败"
+      },
+      "job_is_paused": {
+        "name": "[%key:common::job%] 暂停"
+      },
+      "printer_online": {
+        "name": "打印机在线"
+      },
+      "mqtt_connection_active": {
+        "name": "MQTT连接活跃"
+      },
+      "is_busy": {
+        "name": "忙碌中"
+      },
+      "is_available": {
+        "name": "可用"
+      },
+      "dry_status_is_drying": {
+        "name": "[%key:common::drying%] Active"
+      },
+      "secondary_dry_status_is_drying": {
+        "name": "[%key:common::secondary%] [%key:common::drying%] Active"
+      }
+    },
+    "button": {
+      "drying_start_preset_1": {
+        "name": "[%key:common::drying_preset%] 1"
+      },
+      "drying_start_preset_2": {
+        "name": "[%key:common::drying_preset%] 2"
+      },
+      "drying_start_preset_3": {
+        "name": "[%key:common::drying_preset%] 3"
+      },
+      "drying_start_preset_4": {
+        "name": "[%key:common::drying_preset%] 4"
+      },
+      "drying_stop": {
+        "name": "[%key:common::drying%]  停止"
+      },
+      "secondary_drying_start_preset_1": {
+        "name": "[%key:common::secondary%] [%key:common::drying_preset%] 1"
+      },
+      "secondary_drying_start_preset_2": {
+        "name": "[%key:common::secondary%] [%key:common::drying_preset%] 2"
+      },
+      "secondary_drying_start_preset_3": {
+        "name": "[%key:common::secondary%] [%key:common::drying_preset%] 3"
+      },
+      "secondary_drying_start_preset_4": {
+        "name": "[%key:common::secondary%] [%key:common::drying_preset%] 4"
+      },
+      "secondary_drying_stop": {
+        "name": "[%key:common::secondary%] [%key:common::drying%]  停止"
+      },
+      "pause_print": {
+        "name": "暂停打印"
+      },
+      "resume_print": {
+        "name": "恢复打印"
+      },
+      "cancel_print": {
+        "name": "取消打印"
+      },
+      "request_file_list_local": {
+        "name": "[%key:common::request%] [%key:common::file_list%] (本地)"
+      },
+      "request_file_list_udisk": {
+        "name": "[%key:common::request%] [%key:common::file_list%] (U盘)"
+      },
+      "request_file_list_cloud": {
+        "name": "[%key:common::request%] [%key:common::file_list%] (云端)"
+      },
+      "refresh_mqtt_connection": {
+        "name": "刷新MQTT连接"
+      }
+    },
+    "image": {
+      "job_image_url": {
+        "name": "[%key:common::job%] 预览"
+      }
+    },
+    "sensor": {
+      "current_status": {
+        "name": "当前状态"
+      },
+      "curr_nozzle_temp": {
+        "name": "[%key:common::nozzle_temperature%]"
+      },
+      "curr_hotbed_temp": {
+        "name": "[%key:common::hotbed_temperature%]"
+      },
+      "job_name": {
+        "name": "[%key:common::job%] 名称"
+      },
+      "job_progress": {
+        "name": "[%key:common::job%]进度 %"
+      },
+      "job_time_elapsed": {
+        "name": "[%key:common::job%]已用时间"
+      },
+      "job_time_remaining": {
+        "name": "[%key:common::job%]剩余时间"
+      },
+      "job_eta": {
+        "name": "[%key:common::job%]预计完成"
+      },
+      "job_state": {
+        "name": "[%key:common::job%]状态"
+      },
+      "job_current_layer": {
+        "name": "[%key:common::job%]当前层"
+      },
+      "job_total_layers": {
+        "name": "[%key:common::job%]总层数"
+      },
+      "job_speed_mode": {
+        "name": "[%key:common::job%] [%key:common::speed_mode%]"
+      },
+      "job_z_thick": {
+        "name": "[%key:common::job%] Z 厚度"
+      },
+      "job_model_height": {
+        "name": "[%key:common::job%]模型高度"
+      },
+      "job_anti_alias_count": {
+        "name": "[%key:common::job%]抗锯齿"
+      },
+      "job_on_time": {
+        "name": "[%key:common::job%] [%key:common::on_time%]"
+      },
+      "job_off_time": {
+        "name": "[%key:common::job%] [%key:common::off_time%]"
+      },
+      "job_bottom_time": {
+        "name": "[%key:common::job%] [%key:common::bottom_time%]"
+      },
+      "job_bottom_layers": {
+        "name": "[%key:common::job%] [%key:common::bottom_layers%]"
+      },
+      "job_z_up_height": {
+        "name": "[%key:common::job%] Z 抬高高度"
+      },
+      "job_z_up_speed": {
+        "name": "[%key:common::job%] Z 抬高速度"
+      },
+      "job_z_down_speed": {
+        "name": "[%key:common::job%] Z 下降速度"
+      },
+      "target_nozzle_temp": {
+        "name": "[%key:common::target%] [%key:common::nozzle_temperature%]"
+      },
+      "target_hotbed_temp": {
+        "name": "[%key:common::target%] [%key:common::hotbed_temperature%]"
+      },
+      "print_speed_pct": {
+        "name": "打印速度 %"
+      },
+      "fan_speed_pct": {
+        "name": "[%key:common::fan_speed%] %"
+      },
+      "file_list_local": {
+        "name": "[%key:common::file_list%] (Local)"
+      },
+      "file_list_udisk": {
+        "name": "[%key:common::file_list%] (USB Disk)"
+      },
+      "file_list_cloud": {
+        "name": "[%key:common::file_list%] (Cloud)"
+      },
+      "ace_spools": {
+        "name": "ACE 料盘"
+      },
+      "ace_current_temperature": {
+        "name": "ACE Current [%key:common::temperature%]"
+      },
+      "dry_status_target_temperature": {
+        "name": "[%key:common::drying%] [%key:common::target%] [%key:common::temperature%]"
+      },
+      "dry_status_total_duration": {
+        "name": "[%key:common::drying%] [%key:common::total_duration%]"
+      },
+      "dry_status_remaining_time": {
+        "name": "[%key:common::drying%] [%key:common::remaining_time%]"
+      },
+      "secondary_ace_spools": {
+        "name": "[%key:common::secondary%] ACE 料盘"
+      },
+      "secondary_ace_current_temperature": {
+        "name": "[%key:common::secondary%] ACE Current [%key:common::temperature%]"
+      },
+      "secondary_dry_status_target_temperature": {
+        "name": "[%key:common::secondary%] [%key:common::drying%] [%key:common::target%] [%key:common::temperature%]"
+      },
+      "secondary_dry_status_total_duration": {
+        "name": "[%key:common::secondary%] [%key:common::drying%] [%key:common::total_duration%]"
+      },
+      "secondary_dry_status_remaining_time": {
+        "name": "[%key:common::secondary%] [%key:common::drying%] [%key:common::remaining_time%]"
+      }
+    },
+    "switch": {
+      "multi_color_box_runout_refill": {
+        "name": "ACE 缺料续料"
+      },
+      "secondary_multi_color_box_runout_refill": {
+        "name": "[%key:common::secondary%] ACE Run-out Refill"
+      },
+      "manual_mqtt_connection_enabled": {
+        "name": "手动MQTT连接已启用"
+      }
+    },
+    "update": {
+      "fw_version": {
+        "name": "打印机[%key:common::firmware%]"
+      },
+      "multi_color_box_fw_version": {
+        "name": "ACE [%key:common::firmware%]"
+      },
+      "secondary_multi_color_box_fw_version": {
+        "name": "[%key:common::secondary%] ACE [%key:common::firmware%]"
+      }
+    }
+  },
+  "services": {
+    "multi_color_box_set_slot_pla": {
+      "name": "[%key:common::ace_set_slot_name{PLA}%]",
+      "description": "[%key:common::ace_set_slot_descr{PLA}%]",
+      "[%dictkey:common::service_fieldsets::fields#ace_set_slot%]": {}
+    },
+    "multi_color_box_set_slot_petg": {
+      "name": "[%key:common::ace_set_slot_name{PETG}%]",
+      "description": "[%key:common::ace_set_slot_descr{PETG}%]",
+      "[%dictkey:common::service_fieldsets::fields#ace_set_slot%]": {}
+    },
+    "multi_color_box_set_slot_abs": {
+      "name": "[%key:common::ace_set_slot_name{ABS}%]",
+      "description": "[%key:common::ace_set_slot_descr{ABS}%]",
+      "[%dictkey:common::service_fieldsets::fields#ace_set_slot%]": {}
+    },
+    "multi_color_box_set_slot_pacf": {
+      "name": "[%key:common::ace_set_slot_name{PACF}%]",
+      "description": "[%key:common::ace_set_slot_descr{PACF}%]",
+      "[%dictkey:common::service_fieldsets::fields#ace_set_slot%]": {}
+    },
+    "multi_color_box_set_slot_pc": {
+      "name": "[%key:common::ace_set_slot_name{PC}%]",
+      "description": "[%key:common::ace_set_slot_descr{PC}%]",
+      "[%dictkey:common::service_fieldsets::fields#ace_set_slot%]": {}
+    },
+    "multi_color_box_set_slot_asa": {
+      "name": "[%key:common::ace_set_slot_name{ASA}%]",
+      "description": "[%key:common::ace_set_slot_descr{ASA}%]",
+      "[%dictkey:common::service_fieldsets::fields#ace_set_slot%]": {}
+    },
+    "multi_color_box_set_slot_hips": {
+      "name": "[%key:common::ace_set_slot_name{HIPS}%]",
+      "description": "[%key:common::ace_set_slot_descr{HIPS}%]",
+      "[%dictkey:common::service_fieldsets::fields#ace_set_slot%]": {}
+    },
+    "multi_color_box_set_slot_pa": {
+      "name": "[%key:common::ace_set_slot_name{PA}%]",
+      "description": "[%key:common::ace_set_slot_descr{PA}%]",
+      "[%dictkey:common::service_fieldsets::fields#ace_set_slot%]": {}
+    },
+    "multi_color_box_set_slot_pla_se": {
+      "name": "[%key:common::ace_set_slot_name{PLA SE}%]",
+      "description": "[%key:common::ace_set_slot_descr{PLA SE}%]",
+      "[%dictkey:common::service_fieldsets::fields#ace_set_slot%]": {}
+    },
+    "multi_color_box_filament_extrude": {
+      "name": "[%key:common::service_meta::ace_filament_extrude::name%]",
+      "description": "[%key:common::service_meta::ace_filament_extrude::description%]",
+      "fields": {
+        "[%dictkey:common::service_fields::config_entry%]": {},
+        "[%dictkey:common::service_fields::device_id%]": {},
+        "[%dictkey:common::service_fields::printer_id%]": {},
+        "[%dictkey:common::service_fields::box_id%]": {},
+        "[%dictkey:common::service_fields::slot_number#single%]": {},
+        "[%dictkey:common::service_fields::finished#extrude%]": {}
+      }
+    },
+    "multi_color_box_filament_retract": {
+      "name": "[%key:common::service_meta::ace_filament_retract::name%]",
+      "description": "[%key:common::service_meta::ace_filament_retract::description%]",
+      "fields": {
+        "[%dictkey:common::service_fields::config_entry%]": {},
+        "[%dictkey:common::service_fields::device_id%]": {},
+        "[%dictkey:common::service_fields::printer_id%]": {},
+        "[%dictkey:common::service_fields::box_id%]": {}
+      }
+    },
+    "print_and_upload_save_in_cloud": {
+      "name": "[%key:common::service_meta::print_save_in_cloud::name%]",
+      "description": "[%key:common::service_meta::print_save_in_cloud::description%]",
+      "[%dictkey:common::service_fieldsets::fields#print%]": {}
+    },
+    "print_and_upload_no_cloud_save": {
+      "name": "[%key:common::service_meta::print_no_cloud_save::name%]",
+      "description": "[%key:common::service_meta::print_no_cloud_save::description%]",
+      "[%dictkey:common::service_fieldsets::fields#print%]": {}
+    },
+    "delete_file_local": {
+      "name": "[%key:common::service_meta::delete_file_local::name%]",
+      "description": "[%key:common::service_meta::delete_file_local::description%]",
+      "[%dictkey:common::service_fieldsets::fields#local_filename%]": {}
+    },
+    "delete_file_udisk": {
+      "name": "[%key:common::service_meta::delete_file_udisk::name%]",
+      "description": "[%key:common::service_meta::delete_file_udisk::description%]",
+      "[%dictkey:common::service_fieldsets::fields#local_filename%]": {}
+    },
+    "delete_file_cloud": {
+      "name": "[%key:common::service_meta::delete_file_cloud::name%]",
+      "description": "[%key:common::service_meta::delete_file_cloud::description%]",
+      "fields": {
+        "[%dictkey:common::service_fields::config_entry%]": {},
+        "[%dictkey:common::service_fields::device_id%]": {},
+        "[%dictkey:common::service_fields::printer_id%]": {},
+        "[%dictkey:common::service_fields::file_id%]": {}
+      }
+    },
+    "change_print_speed_mode": {
+      "name": "[%key:common::print_settings::change_print%] [%key:common::speed_mode%]",
+      "description": "[%key:common::print_settings::change_print%] [%key:common::speed_mode%]",
+      "fields": {
+        "[%dictkey:common::service_fields::config_entry%]": {},
+        "[%dictkey:common::service_fields::device_id%]": {},
+        "[%dictkey:common::service_fields::printer_id%]": {},
+        "speed_mode": {
+          "name": "[%key:common::speed_mode%]",
+          "description": "[%key:common::speed_mode%]"
+        }
+      }
+    },
+    "change_print_target_nozzle_temperature": {
+      "name": "[%key:common::print_settings::change_print%] [%key:common::nozzle_temperature%]",
+      "description": "[%key:common::print_settings::change_print%] [%key:common::nozzle_temperature%]",
+      "fields": {
+        "[%dictkey:common::service_fields::config_entry%]": {},
+        "[%dictkey:common::service_fields::device_id%]": {},
+        "[%dictkey:common::service_fields::printer_id%]": {},
+        "temperature": {
+          "name": "[%key:common::nozzle_temperature%]",
+          "description": "[%key:common::nozzle_temperature%]"
+        }
+      }
+    },
+    "change_print_target_hotbed_temperature": {
+      "name": "[%key:common::print_settings::change_print%] [%key:common::hotbed_temperature%]",
+      "description": "[%key:common::print_settings::change_print%] [%key:common::hotbed_temperature%]",
+      "fields": {
+        "[%dictkey:common::service_fields::config_entry%]": {},
+        "[%dictkey:common::service_fields::device_id%]": {},
+        "[%dictkey:common::service_fields::printer_id%]": {},
+        "temperature": {
+          "name": "[%key:common::hotbed_temperature%]",
+          "description": "[%key:common::hotbed_temperature%]"
+        }
+      }
+    },
+    "change_print_fan_speed": {
+      "name": "[%key:common::print_settings::change_print%] [%key:common::fan_speed%]",
+      "description": "[%key:common::print_settings::change_print%] [%key:common::fan_speed%]",
+      "fields": {
+        "[%dictkey:common::service_fields::config_entry%]": {},
+        "[%dictkey:common::service_fields::device_id%]": {},
+        "[%dictkey:common::service_fields::printer_id%]": {},
+        "speed": {
+          "name": "[%key:common::fan_speed%]",
+          "description": "[%key:common::fan_speed%]"
+        }
+      }
+    },
+    "change_print_aux_fan_speed": {
+      "name": "[%key:common::print_settings::change_print%] [%key:common::print_settings::aux_fan_speed%]",
+      "description": "[%key:common::print_settings::change_print%] [%key:common::print_settings::aux_fan_speed%]",
+      "fields": {
+        "[%dictkey:common::service_fields::config_entry%]": {},
+        "[%dictkey:common::service_fields::device_id%]": {},
+        "[%dictkey:common::service_fields::printer_id%]": {},
+        "speed": {
+          "name": "[%key:common::print_settings::aux_fan_speed%]",
+          "description": "[%key:common::print_settings::aux_fan_speed%]"
+        }
+      }
+    },
+    "change_print_box_fan_speed": {
+      "name": "[%key:common::print_settings::change_print%] [%key:common::print_settings::box_fan_speed%]",
+      "description": "[%key:common::print_settings::change_print%] [%key:common::print_settings::box_fan_speed%]",
+      "fields": {
+        "[%dictkey:common::service_fields::config_entry%]": {},
+        "[%dictkey:common::service_fields::device_id%]": {},
+        "[%dictkey:common::service_fields::printer_id%]": {},
+        "speed": {
+          "name": "[%key:common::print_settings::box_fan_speed%]",
+          "description": "[%key:common::print_settings::box_fan_speed%]"
+        }
+      }
+    },
+    "change_print_bottom_layers": {
+      "name": "[%key:common::print_settings::change_print%] [%key:common::bottom_layers%]",
+      "description": "[%key:common::print_settings::change_print%] [%key:common::bottom_layers%]",
+      "fields": {
+        "[%dictkey:common::service_fields::config_entry%]": {},
+        "[%dictkey:common::service_fields::device_id%]": {},
+        "[%dictkey:common::service_fields::printer_id%]": {},
+        "layers": {
+          "name": "[%key:common::bottom_layers%]",
+          "description": "[%key:common::bottom_layers%]"
+        }
+      }
+    },
+    "change_print_bottom_time": {
+      "name": "[%key:common::print_settings::change_print%] [%key:common::bottom_time%]",
+      "description": "[%key:common::print_settings::change_print%] [%key:common::bottom_time%]",
+      "fields": {
+        "[%dictkey:common::service_fields::config_entry%]": {},
+        "[%dictkey:common::service_fields::device_id%]": {},
+        "[%dictkey:common::service_fields::printer_id%]": {},
+        "time": {
+          "name": "[%key:common::bottom_time%]",
+          "description": "[%key:common::bottom_time%]"
+        }
+      }
+    },
+    "change_print_off_time": {
+      "name": "[%key:common::print_settings::change_print%] [%key:common::off_time%]",
+      "description": "[%key:common::print_settings::change_print%] [%key:common::off_time%]",
+      "fields": {
+        "[%dictkey:common::service_fields::config_entry%]": {},
+        "[%dictkey:common::service_fields::device_id%]": {},
+        "[%dictkey:common::service_fields::printer_id%]": {},
+        "time": {
+          "name": "[%key:common::off_time%]",
+          "description": "[%key:common::off_time%]"
+        }
+      }
+    },
+    "change_print_on_time": {
+      "name": "[%key:common::print_settings::change_print%] [%key:common::on_time%]",
+      "description": "[%key:common::print_settings::change_print%] [%key:common::on_time%]",
+      "fields": {
+        "[%dictkey:common::service_fields::config_entry%]": {},
+        "[%dictkey:common::service_fields::device_id%]": {},
+        "[%dictkey:common::service_fields::printer_id%]": {},
+        "time": {
+          "name": "[%key:common::on_time%]",
+          "description": "[%key:common::on_time%]"
+        }
+      }
+    }
+  },
+  "exceptions": {}
+}
