@@ -154,6 +154,17 @@
       "invalid_printer": "Invalid printer."
     },
     "step": {
+      "user": {
+        "title": "Anycubic Cloud v2",
+        "description": "Choose how Home Assistant should authenticate with your Anycubic account.",
+        "data": {
+          "user_auth_mode": "[%key:common::user_auth_mode%]"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate Anycubic Cloud",
+        "description": "Your stored Anycubic Cloud token stopped working (it may have expired or been replaced). Click Submit to enter a new one - your printers and settings will be kept."
+      },
       "auth_mode_web": {
         "title": "Authentication Mode - Web",
         "description": "Retrieve your token from https://cloud-universe.anycubic.com/file following the steps in the readme.",
@@ -163,7 +174,7 @@
       },
       "auth_mode_slicer": {
         "title": "Authentication Mode - Slicer Next",
-        "description": "Retrieve your token from %AppData%\\AnycubicSlicerNext\\AnycubicSlicerNext.conf following the steps in the readme.",
+        "description": "Slicer Next 1.4.1.2 and newer no longer store the token as plain text in AnycubicSlicerNext.conf. Instead, open the newest debug_*.log file in %AppData%\\AnycubicSlicerNext\\log\\ and copy the value after the last 'accessToken = ' entry (see the readme for a ready-to-use PowerShell command). On older Slicer Next versions the token can still be read directly from AnycubicSlicerNext.conf.",
         "data": {
           "user_token": "Slicer Access Token"
         }

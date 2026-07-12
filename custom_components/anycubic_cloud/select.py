@@ -115,10 +115,12 @@ class AnycubicSelect(AnycubicCloudEntity, SelectEntity):
         """Change the selected option."""
         mode_id = INV_SPEED_MODES.get(option, 1)
         key = self.entity_description.key
-        
-        if key == "print_speed_mode":
-            await self.coordinator.api.set_speed_mode(mode_id)
-        else:
-            await self.coordinator.set_select_option(self._printer_id, key, option)
-            
+
+        # Läuft zentral über den Coordinator, der die passende Printer-API-Methode
+        # aufruft (siehe coordinator.set_select_option). Es gibt kein
+        # `coordinator.api` - die AnycubicAPI-Instanz heißt `anycubic_api` und
+        # bietet keine `set_speed_mode`-Methode; die eigentliche Aktion läuft
+        # über `printer.change_print_setting_speed_mode(...)`.
+        await self.coordinator.set_select_option(self._printer_id, key, mode_id)
+
         await self.coordinator.async_request_refresh()

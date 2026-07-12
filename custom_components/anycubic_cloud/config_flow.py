@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import traceback
+from collections.abc import Mapping
 from enum import IntEnum
 from typing import Any
 
@@ -9,6 +10,7 @@ import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from aiohttp import CookieJar
 from homeassistant.config_entries import (
+    SOURCE_REAUTH,
     ConfigEntry,
     ConfigFlow,
     ConfigFlowResult,
@@ -18,6 +20,7 @@ from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.selector import BooleanSelector, ObjectSelector
 
+from .anycubic_cloud_api.models.auth import AnycubicAuthMode
 from .const import (
     CONF_CARD_CONFIG,
     CONF_DEBUG_API_CALLS,
@@ -77,12 +80,29 @@ class AnycubicCloudConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Handle a flow initialized by the user."""
         if user_input is not None:
-            self.auth_mode = int(user_input[CONF_USER_AUTH_MODE])
-            if self.auth_mode == 1:
+            # WICHTIG: Die Dropdown-Reihenfolge unten (Web, Slicer, Android) ist
+            # rein für die UX so gewählt und entspricht NICHT den echten
+            # AnycubicAuthMode-Enum-Werten (WEB=1, ANDROID=2, SLICER=3).
+            # self.auth_mode wurde vorher direkt auf die UI-Auswahl (1/2/3)
+            # gesetzt und ungeprüft an set_authentication() durchgereicht -
+            # dadurch lief "Slicer" (UI-Wert 2) intern als AnycubicAuthMode.
+            # ANDROID (ebenfalls 2), und "Android" (UI-Wert 3) als SLICER.
+            # Das war der Grund für "Invalid user token" bei jedem
+            # Slicer-Next-Versuch: der Code hat nie den Access-Token-Tausch
+            # ausgeführt, weil requires_access_token nur bei echtem SLICER
+            # greift, und hat stattdessen (falsche) Android-Header verwendet.
+            ui_selection = int(user_input[CONF_USER_AUTH_MODE])
+            self.auth_mode = {
+                1: AnycubicAuthMode.WEB,
+                2: AnycubicAuthMode.SLICER,
+                3: AnycubicAuthMode.ANDROID,
+            }[ui_selection]
+
+            if self.auth_mode == AnycubicAuthMode.WEB:
                 return await self.async_step_auth_mode_web()
-            elif self.auth_mode == 2:
+            elif self.auth_mode == AnycubicAuthMode.SLICER:
                 return await self.async_step_auth_mode_slicer()
-            elif self.auth_mode == 3:
+            elif self.auth_mode == AnycubicAuthMode.ANDROID:
                 return await self.async_step_auth_mode_android()
 
         return self.async_show_form(
@@ -92,7 +112,7 @@ class AnycubicCloudConfigFlow(ConfigFlow, domain=DOMAIN):
                     vol.Required(CONF_USER_AUTH_MODE, default="1"): vol.In(
                         {
                             "1": "Web Interface Token",
-                            "2": "Anycubic Slicer Next Token (Currently Broken)",
+                            "2": "Anycubic Slicer Next Token",
                             "3": "Android App Credentials",
                         }
                     )
@@ -159,6 +179,56 @@ class AnycubicCloudConfigFlow(ConfigFlow, domain=DOMAIN):
 
         return None
 
+    async def async_step_reauth(
+        self, entry_data: Mapping[str, Any]
+    ) -> ConfigFlowResult:
+        """Handle re-authentication, e.g. after an expired/invalid token.
+
+        Triggered automatically by Home Assistant whenever the coordinator
+        raises ConfigEntryAuthFailed. Reuses the normal auth-mode picker and
+        credential steps, but ends by updating the existing entry instead of
+        creating a new one - printers and options are kept untouched.
+        """
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Ask for confirmation before starting the re-authentication."""
+        if user_input is not None:
+            return await self.async_step_user()
+
+        return self.async_show_form(step_id="reauth_confirm")
+
+    async def _finish_credentials_step(self) -> ConfigFlowResult:
+        """Continue after a successfully validated token.
+
+        During re-authentication this updates the existing config entry
+        (auth fields only, CONF_PRINTER_ID_LIST and all options are kept)
+        and aborts. Otherwise this is the normal first-setup flow, which
+        continues on to printer selection.
+
+        Uses async_update_and_abort() (non-reloading) on purpose: the
+        integration already has a config-entry update listener in
+        __init__.py that reloads on any entry change. Combining that
+        listener with a *also-reloading* helper here (e.g.
+        async_update_reload_and_abort()) is deprecated since HA Core 2026.6
+        and becomes a hard error from 2026.12 - see
+        https://developers.home-assistant.io/blog/2026/05/07/config-entry-listener-together-with-reloading-methods/
+        """
+        if self.source == SOURCE_REAUTH:
+            reauth_entry = self._get_reauth_entry()
+            return self.async_update_and_abort(
+                reauth_entry,
+                data={
+                    **reauth_entry.data,
+                    CONF_USER_AUTH_MODE: self.auth_mode,
+                    CONF_USER_TOKEN: self.user_token,
+                    CONF_USER_DEVICE_ID: self.device_id,
+                },
+            )
+        return await self.async_step_printer()
+
     async def async_step_auth_mode_web(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -169,7 +239,7 @@ class AnycubicCloudConfigFlow(ConfigFlow, domain=DOMAIN):
                 user_input[CONF_USER_TOKEN]
             )
             if not (errors := await self._validate_token_and_get_printers() or {}):
-                return await self.async_step_printer()
+                return await self._finish_credentials_step()
 
         return self.async_show_form(
             step_id="auth_mode_web",
@@ -191,7 +261,7 @@ class AnycubicCloudConfigFlow(ConfigFlow, domain=DOMAIN):
                 user_input[CONF_USER_TOKEN]
             )
             if not (errors := await self._validate_token_and_get_printers() or {}):
-                return await self.async_step_printer()
+                return await self._finish_credentials_step()
 
         return self.async_show_form(
             step_id="auth_mode_slicer",
@@ -216,7 +286,7 @@ class AnycubicCloudConfigFlow(ConfigFlow, domain=DOMAIN):
                 user_input[CONF_USER_DEVICE_ID]
             )
             if not (errors := await self._validate_token_and_get_printers() or {}):
-                return await self.async_step_printer()
+                return await self._finish_credentials_step()
 
         return self.async_show_form(
             step_id="auth_mode_android",
@@ -244,7 +314,10 @@ class AnycubicCloudConfigFlow(ConfigFlow, domain=DOMAIN):
                     user_id = getattr(self.api_client.anycubic_auth, "api_user_id", "anycubic_user")
 
                 await self.async_set_unique_id(f"anycubic_cloud_{user_id}")
-                self._abort_if_unique_id_configured()
+                # HA >= 2026.6: Config-Entry-Listener + Reload-Methoden gemeinsam sind deprecated
+                # (Fehler ab 2026.12). reload_on_update=False vermeidet den doppelten Reload/Race
+                # condition mit dem update_listener in __init__.py.
+                self._abort_if_unique_id_configured(reload_on_update=False)
 
                 return self.async_create_entry(
                     title=f"Anycubic Cloud ({user_id})",
@@ -285,6 +358,15 @@ class AnycubicCloudConfigFlow(ConfigFlow, domain=DOMAIN):
 class AnycubicCloudOptionsFlowHandler(OptionsFlow):
     """Handle Anycubic Cloud options."""
 
+    def __init__(self) -> None:
+        """Initialize local state to accumulate options across the multi-step flow."""
+        super().__init__()
+        # Jeder Schritt (mqtt_presets, card_config, debug) liefert nur seine
+        # eigenen Formulardaten zurück. Ohne diese Sammlung würden die Daten
+        # der vorherigen Schritte beim Aufruf des nächsten Schritts verworfen
+        # und nur die Debug-Felder landen am Ende in entry.options.
+        self._collected_options: dict[str, Any] = {}
+
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -296,6 +378,7 @@ class AnycubicCloudOptionsFlowHandler(OptionsFlow):
     ) -> ConfigFlowResult:
         """Manage MQTT connection and Drying presets configurations."""
         if user_input is not None:
+            self._collected_options.update(user_input)
             return await self.async_step_card_config()
 
         fields = {
@@ -347,6 +430,7 @@ class AnycubicCloudOptionsFlowHandler(OptionsFlow):
     ) -> ConfigFlowResult:
         """Manage Custom Panel Layout Configurations."""
         if user_input is not None:
+            self._collected_options.update(user_input)
             return await self.async_step_debug()
 
         default_card_config = self.config_entry.options.get(CONF_CARD_CONFIG, None)
@@ -368,7 +452,8 @@ class AnycubicCloudOptionsFlowHandler(OptionsFlow):
     ) -> ConfigFlowResult:
         """Manage Anycubic Cloud debug options."""
         if user_input is not None:
-            return self.async_create_entry(title="", data=user_input)
+            self._collected_options.update(user_input)
+            return self.async_create_entry(title="", data=self._collected_options)
 
         default_debug_all = self.config_entry.options.get(CONF_DEBUG_DEPRECATED, False)
         default_debug_api = self.config_entry.options.get(

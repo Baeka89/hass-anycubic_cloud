@@ -180,9 +180,17 @@ class AnycubicButton(AnycubicCloudEntity, ButtonEntity):
 
         if self.entity_description.key in ["dry_start_custom", "secondary_dry_start_custom"]:
             prefix = "secondary_" if "secondary" in self.entity_description.key else ""
-            
-            temp_val = self.coordinator.data.get("printers", {}).get(self._printer_id, {}).get("states", {}).get(f"{prefix}drying_temperature_input", 50)
-            time_val = self.coordinator.data.get("printers", {}).get(self._printer_id, {}).get("states", {}).get(f"{prefix}drying_time_input", 6)
+
+            # Die manuellen Eingabefelder (number.py) speichern ihren Wert nicht in
+            # coordinator.data['states'] (das wird ausschließlich aus den Cloud-
+            # Statuswerten gebaut), sondern zentral auf dem Coordinator. Nur so
+            # sieht dieser Button den Wert, den der Nutzer im Number-Entity gesetzt hat.
+            temp_val = self.coordinator.get_manual_drying_input(
+                self._printer_id, f"{prefix}drying_temperature_input", 50.0
+            )
+            time_val = self.coordinator.get_manual_drying_input(
+                self._printer_id, f"{prefix}drying_time_input", 6.0
+            )
 
             await self.coordinator.button_press_custom_dry(
                 self._printer_id, 
