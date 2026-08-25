@@ -6,6 +6,7 @@ from homeassistant.core import HomeAssistant
 
 from .const import (
     CONF_CARD_CONFIG,
+    CONF_ENABLE_PANEL,
     COORDINATOR,
     DOMAIN,
     LOGGER,
@@ -16,7 +17,7 @@ from .coordinator import AnycubicCloudDataUpdateCoordinator
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Anycubic Cloud from a config entry."""
-    from .panel import async_register_panel
+    from .panel import async_register_panel, async_unregister_panel
     from .services import SERVICES
 
     coordinator = AnycubicCloudDataUpdateCoordinator(hass, entry)
@@ -40,11 +41,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 service.schema,
             )
 
-    # register panel
-    await async_register_panel(
-        hass,
-        entry.options.get(CONF_CARD_CONFIG)
-    )
+    # Panel je nach Nutzer-Einstellung registrieren oder entfernen. Default
+    # True, damit sich für bestehende Installationen (ohne die Option
+    # gesetzt) nichts ändert. So kann das Deaktivieren über den Options-Flow
+    # (der einen Reload auslöst) das Panel auch nachträglich wieder entfernen.
+    if entry.options.get(CONF_ENABLE_PANEL, True):
+        await async_register_panel(
+            hass,
+            entry.options.get(CONF_CARD_CONFIG)
+        )
+    else:
+        await async_unregister_panel(hass)
 
     return True
 

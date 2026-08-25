@@ -160,6 +160,24 @@ export class AnycubicPrintercardPrintsettingsModal extends LitElement {
   private _buttonPrintCancel: string;
 
   @state()
+  private _buttonFinishJob: string;
+
+  @state()
+  private _buttonRetractFilament: string;
+
+  @state()
+  private _buttonExtrudeFilament: string;
+
+  @state()
+  private _pressingRetract: boolean = false;
+
+  @state()
+  private _pressingExtrude: boolean = false;
+
+  @state()
+  private _pressingFinishJob: boolean = false;
+
+  @state()
   private _buttonSaveSpeedMode: string;
 
   @state()
@@ -240,6 +258,18 @@ export class AnycubicPrintercardPrintsettingsModal extends LitElement {
       );
       this._buttonPrintCancel = localize(
         "card.print_settings.print_cancel",
+        this.language,
+      );
+      this._buttonFinishJob = localize(
+        "card.print_settings.print_finish_job",
+        this.language,
+      );
+      this._buttonRetractFilament = localize(
+        "card.print_settings.retract_filament",
+        this.language,
+      );
+      this._buttonExtrudeFilament = localize(
+        "card.print_settings.extrude_filament",
         this.language,
       );
       this._buttonSaveSpeedMode = localize(
@@ -439,6 +469,32 @@ export class AnycubicPrintercardPrintsettingsModal extends LitElement {
           </div>
           ${this.isFDM
             ? html`
+                <div class="ac-settings-row ac-settings-buttonrow">
+                  <ha-control-button
+                    .disabled=${this._pressingFinishJob}
+                    @click=${this._pressFinishJob}
+                  >
+                    ${this._buttonFinishJob}
+                  </ha-control-button>
+                </div>
+                <div class="ac-settings-row ac-settings-buttonrow-split">
+                  <ha-control-button
+                    .disabled=${this._pressingRetract}
+                    @click=${this._pressRetractFilament}
+                  >
+                    ${this._buttonRetractFilament}
+                  </ha-control-button>
+                  <ha-control-button
+                    .disabled=${this._pressingExtrude}
+                    @click=${this._pressExtrudeFilament}
+                  >
+                    ${this._buttonExtrudeFilament}
+                  </ha-control-button>
+                </div>
+              `
+            : nothing}
+          ${this.isFDM
+            ? html`
                 <div class="ac-settings-row">
                   <anycubic-ui-select-dropdown
                     .availableOptions=${this.availableSpeedModes}
@@ -453,16 +509,21 @@ export class AnycubicPrintercardPrintsettingsModal extends LitElement {
                   </ha-control-button>
                 </div>
                 <div class="ac-settings-row">
-                  <ha-textfield
-                    .value=${this.currentTargetTempNozzle}
-                    .placeholder=${this.currentTargetTempNozzle}
-                    .label=${this._labelNozzleTemperature}
-                    .type=${"number"}
-                    .min=${this.minTargetTempNozzle}
-                    .max=${this.maxTargetTempNozzle}
-                    @input=${this._handleTargetTempNozzleChange}
-                    @keydown=${this._handleTargetTempNozzleKeyDown}
-                  ></ha-textfield>
+                  <div class="ac-input-group">
+                    <label class="ac-input-label"
+                      >${this._labelNozzleTemperature}</label
+                    >
+                    <input
+                      class="ac-number-input"
+                      type="number"
+                      min=${this.minTargetTempNozzle}
+                      max=${this.maxTargetTempNozzle}
+                      .value=${String(this.currentTargetTempNozzle)}
+                      placeholder=${this.currentTargetTempNozzle}
+                      @input=${this._handleTargetTempNozzleChange}
+                      @keydown=${this._handleTargetTempNozzleKeyDown}
+                    />
+                  </div>
                   <ha-control-button
                     .disabled=${this._changingSettings}
                     @click=${this._handleSaveTargetTempNozzleButton}
@@ -471,16 +532,21 @@ export class AnycubicPrintercardPrintsettingsModal extends LitElement {
                   </ha-control-button>
                 </div>
                 <div class="ac-settings-row">
-                  <ha-textfield
-                    .value=${this.currentTargetTempHotbed}
-                    .placeholder=${this.currentTargetTempHotbed}
-                    .label=${this._labelHotbedTemperature}
-                    .type=${"number"}
-                    .min=${this.minTargetTempHotbed}
-                    .max=${this.maxTargetTempHotbed}
-                    @input=${this._handleTargetTempHotbedChange}
-                    @keydown=${this._handleTargetTempHotbedKeyDown}
-                  ></ha-textfield>
+                  <div class="ac-input-group">
+                    <label class="ac-input-label"
+                      >${this._labelHotbedTemperature}</label
+                    >
+                    <input
+                      class="ac-number-input"
+                      type="number"
+                      min=${this.minTargetTempHotbed}
+                      max=${this.maxTargetTempHotbed}
+                      .value=${String(this.currentTargetTempHotbed)}
+                      placeholder=${this.currentTargetTempHotbed}
+                      @input=${this._handleTargetTempHotbedChange}
+                      @keydown=${this._handleTargetTempHotbedKeyDown}
+                    />
+                  </div>
                   <ha-control-button
                     .disabled=${this._changingSettings}
                     @click=${this._handleSaveTargetTempHotbedButton}
@@ -489,16 +555,19 @@ export class AnycubicPrintercardPrintsettingsModal extends LitElement {
                   </ha-control-button>
                 </div>
                 <div class="ac-settings-row">
-                  <ha-textfield
-                    .value=${this.currentFanSpeed}
-                    .placeholder=${this.currentFanSpeed}
-                    .label=${this._labelFanSpeed}
-                    .type=${"number"}
-                    .min=${0}
-                    .max=${100}
-                    @input=${this._handleFanSpeedChange}
-                    @keydown=${this._handleFanSpeedKeyDown}
-                  ></ha-textfield>
+                  <div class="ac-input-group">
+                    <label class="ac-input-label">${this._labelFanSpeed}</label>
+                    <input
+                      class="ac-number-input"
+                      type="number"
+                      .value=${String(this.currentFanSpeed)}
+                      placeholder=${this.currentFanSpeed}
+                      min="0"
+                      max="100"
+                      @input=${this._handleFanSpeedChange}
+                      @keydown=${this._handleFanSpeedKeyDown}
+                    />
+                  </div>
                   <ha-control-button
                     .disabled=${this._changingSettings}
                     @click=${this._handleSaveFanSpeedButton}
@@ -582,6 +651,60 @@ export class AnycubicPrintercardPrintsettingsModal extends LitElement {
       });
   }
 
+  private _pressFinishJob = (): void => {
+    this._pressingFinishJob = true;
+    this.hass
+      .callService("button", "press", {
+        entity_id: getPrinterEntityId(
+          this.printerEntityIdPart,
+          "button",
+          "clear_completed_print_job",
+        ),
+      })
+      .then(() => {
+        this._pressingFinishJob = false;
+      })
+      .catch((_e: unknown) => {
+        this._pressingFinishJob = false;
+      });
+  };
+
+  private _pressRetractFilament = (): void => {
+    this._pressingRetract = true;
+    this.hass
+      .callService("button", "press", {
+        entity_id: getPrinterEntityId(
+          this.printerEntityIdPart,
+          "button",
+          "retract_filament",
+        ),
+      })
+      .then(() => {
+        this._pressingRetract = false;
+      })
+      .catch((_e: unknown) => {
+        this._pressingRetract = false;
+      });
+  };
+
+  private _pressExtrudeFilament = (): void => {
+    this._pressingExtrude = true;
+    this.hass
+      .callService("button", "press", {
+        entity_id: getPrinterEntityId(
+          this.printerEntityIdPart,
+          "button",
+          "extrude_filament",
+        ),
+      })
+      .then(() => {
+        this._pressingExtrude = false;
+      })
+      .catch((_e: unknown) => {
+        this._pressingExtrude = false;
+      });
+  };
+
   private _handleConfirmApprove = (): void => {
     switch (this._confirmationType) {
       case AnycubicPrintOptionConfirmationType.PAUSE:
@@ -591,7 +714,7 @@ export class AnycubicPrintercardPrintsettingsModal extends LitElement {
         this._pressHassButton("resume_print");
         break;
       case AnycubicPrintOptionConfirmationType.CANCEL:
-        this._pressHassButton("cancel_print");
+        this._pressHassButton("stop_print");
         break;
       default:
         break;
@@ -909,6 +1032,40 @@ export class AnycubicPrintercardPrintsettingsModal extends LitElement {
         width: 100%;
       }
 
+      .ac-input-group {
+        min-width: 150px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+      }
+
+      .ac-input-label {
+        font-size: 12px;
+        color: var(--secondary-text-color, #7f7f7f);
+        margin-bottom: 4px;
+      }
+
+      .ac-number-input {
+        box-sizing: border-box;
+        width: 100%;
+        height: 40px;
+        padding: 0px 12px;
+        font-size: 16px;
+        border-radius: 8px;
+        border: 1px solid var(--divider-color, #ccc);
+        background-color: var(
+          --card-background-color,
+          var(--primary-background-color, white)
+        );
+        color: var(--primary-text-color);
+      }
+
+      .ac-number-input:focus {
+        outline: none;
+        border-color: var(--primary-color, #03a9f4);
+      }
+
       ha-control-button {
         min-width: 150px;
         margin: 8px 0px 0px 8px;
@@ -918,6 +1075,19 @@ export class AnycubicPrintercardPrintsettingsModal extends LitElement {
       .ac-settings-buttonrow ha-control-button {
         min-width: 100%;
         margin: 8px 0px 0px 8px;
+        font-size: 14px;
+      }
+
+      .ac-settings-buttonrow-split {
+        display: flex;
+        flex-direction: row;
+        gap: 8px;
+      }
+
+      .ac-settings-buttonrow-split ha-control-button {
+        flex: 1 1 0;
+        min-width: 0;
+        margin: 8px 0px 0px 0px;
         font-size: 14px;
       }
 

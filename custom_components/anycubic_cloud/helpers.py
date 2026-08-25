@@ -142,6 +142,19 @@ def check_descriptor_state_ace_not_supported(
     )
 
 
+def check_descriptor_state_light_not_supported(
+    description: AnycubicCloudEntityDescription,
+    supports_light: bool,
+) -> bool:
+    """Gate the (experimental) light entity behind the VIDEO_LIGHT/BOX_LIGHT
+    capability flags the printer reports. See printer.set_light_status()
+    for the caveats around this feature."""
+    return (
+        description.printer_entity_type == PrinterEntityType.LIGHT
+        and not supports_light
+    )
+
+
 def check_descriptor_state_ace_primary_unavailable(
     description: AnycubicCloudEntityDescription,
     supports_ace: bool,

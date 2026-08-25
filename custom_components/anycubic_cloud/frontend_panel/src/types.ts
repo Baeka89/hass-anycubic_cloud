@@ -48,7 +48,20 @@ export interface HassDevice {
   manufacturer: string | null;
   serial_number: string | undefined;
   connections: string[][];
+  via_device_id?: string | null;
 }
+
+// Die drei Gerätearten, die die Integration in HA registriert. Wird anhand
+// von device.model erkannt (siehe getAnycubicDeviceType in helpers.ts) und
+// steuert, welche Karte im Panel bzw. in der Dashboard-Karte gerendert wird.
+export enum AnycubicDeviceType {
+  PRINTER = "printer",
+  ACE = "ace",
+  BRIDGE = "bridge",
+}
+
+export const ANYCUBIC_MODEL_BRIDGE = "Cloud API Bridge";
+export const ANYCUBIC_MODEL_ACE = "ACE Pro Multi-Color Box";
 
 export interface HassDeviceList {
   [id: string]: HassDevice;
@@ -182,6 +195,8 @@ export enum StatTypeFDM {
 export enum StatTypeACE {
   DryingStatus = "Dry Status",
   DryingTime = "Dry Time",
+  AceTempCurrent = "ACE Temp",
+  AceTempTarget = "T ACE Temp",
 }
 
 export enum StatTypeLCD {
@@ -377,6 +392,10 @@ export interface ModalEventBase {
 }
 
 export interface ModalEventDrying extends ModalEventBase {
+  box_id: number | string;
+}
+
+export interface ModalEventAceSettings extends ModalEventBase {
   box_id: number | string;
 }
 

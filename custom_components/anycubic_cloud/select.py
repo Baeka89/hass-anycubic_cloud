@@ -39,7 +39,6 @@ class AnycubicSelectEntityDescription(
 FDM_SELECT_DESCRIPTIONS: list[AnycubicSelectEntityDescription] = list([
     AnycubicSelectEntityDescription(
         key="print_speed_mode",
-        name="Druckgeschwindigkeit",
         translation_key="print_speed_mode",
         options=list(SPEED_MODES.values()),
         printer_entity_type=PrinterEntityType.FDM,

@@ -72,45 +72,49 @@
   },
   "options": {
     "step": {
-      "options_menu": {
-        "title": "Anycubic Cloud Options",
-        "menu_options": {
-          "mqtt": "MQTT Settings",
-          "drying": "Drying Presets",
-          "card_config": "Panel Card Config",
-          "debug": "Debug Settings"
-        }
-      },
-      "mqtt": {
-        "title": "MQTT Settings",
-        "data": {
-          "mqtt_connect_mode": "MQTT Connection Mode"
-        }
-      },
-      "drying": {
-        "title": "Drying Presets",
-        "data": {
-          "drying_preset_duration_1": "Dry Preset 1 Duration",
-          "drying_preset_temperature_1": "Dry Preset 1 Temperature",
-          "drying_preset_duration_2": "Dry Preset 2 Duration",
-          "drying_preset_temperature_2": "Dry Preset 2 Temperature",
-          "drying_preset_duration_3": "Dry Preset 3 Duration",
-          "drying_preset_temperature_3": "Dry Preset 3 Temperature",
-          "drying_preset_duration_4": "Dry Preset 4 Duration",
-          "drying_preset_temperature_4": "Dry Preset 4 Temperature"
-        }
-      },
       "card_config": {
         "title": "Panel Card Config",
         "data": {
-          "card_config": "Panel Card Config (YAML format)"
-        }
+          "card_config": "Panel Card Config (YAML format)",
+          "enable_panel": "Show sidebar panel"
+        },
+        "description": "Optional: customizes how the printer card looks in the sidebar panel. Leaving it empty/\"null\" is completely fine - the defaults apply (see below).\n\nTIP: Instead of typing YAML here by hand, you can also add the card normally via \"Edit Dashboard -> Add Card -> Anycubic Printer Card\" on any dashboard - that gives you a real settings dialog with toggles/dropdowns. This box here is only for the sidebar panel card, which has no visual editor.\n\nPossible keys (all optional):\nvertical (true/false, default: false) - portrait instead of landscape layout\nround (true/false, default: false) - round values to whole numbers\nuse_24hr (true/false, default: true) - 24-hour instead of 12-hour time format\ntemperatureUnit (C or F, default: C)\nscaleFactor (number, default: 1) - size of the animated printer graphic\nalwaysShow (true/false, default: false) - keep showing the card even when the printer is offline/idle\nshowSettingsButton (true/false, default: false) - show a gear icon on the card\nlightEntityId - entity_id of an EXISTING Home Assistant light (e.g. a room light near the printer) that can then be toggled directly from the card - NOT the printer's own light\npowerEntityId - entity_id of an existing outlet/switch, also toggleable directly from the card\ncameraEntityId - entity_id of an existing camera entity for a live preview on the card\nslotColors - list of custom hex colors for the ACE filament slots\nmonitoredStats (list, default: Status, ETA, Elapsed, Remaining) - which values appear on the card. Valid values: Status, Online, Availability, Project, Layer, ETA, Elapsed, Remaining, Hotend, Bed, T Hotend, T Bed, Dry Status, Dry Time, Speed Mode, Fan Speed, On Time, Off Time, Bottom Time, Model Height, Bottom Layers, Z Up Height, Z Up Speed, Z Down Speed\n\nCopy-paste examples (YAML format, no curly braces):\n\n- Just change units (Fahrenheit, 12-hour clock):\ntemperatureUnit: F\nuse_24hr: false\n\n- Also show fan speed and speed mode:\nmonitoredStats:\n  - Status\n  - ETA\n  - Elapsed\n  - Remaining\n  - Fan Speed\n  - Speed Mode\n\n- Make an existing room light + outlet toggleable from the card:\nlightEntityId: light.workshop_ceiling\npowerEntityId: switch.printer_outlet\n\n- Portrait layout, always visible, with gear button and custom slot colors:\nvertical: true\nalwaysShow: true\nshowSettingsButton: true\nslotColors:\n  - \"#ff0000\"\n  - \"#00ff00\"\n  - \"#0000ff\"\n  - \"#ffff00\""
       },
       "debug": {
         "title": "Debug Settings",
         "data": {
           "debug_mqtt_msg": "Debug Log all MQTT messages",
           "debug_api_calls": "Debug Log all API calls"
+        }
+      },
+      "mqtt_presets": {
+        "title": "MQTT Connection & Drying Presets",
+        "description": "MQTT connect mode: controls when the integration keeps a live connection to the printer (instead of only polling the cloud every ~60s).\n\nDrying presets: store up to 5 fixed duration (hours) + temperature (\u00b0C) combinations here. Each preset then shows up as its own 'Drying Preset 1-5' button on the printer/ACE device - pressing it starts drying immediately with exactly these values, no need to set anything first.",
+        "data": {
+          "mqtt_connect_mode": "MQTT connect mode",
+          "drying_preset_duration_1": "Preset 1: duration (hours)",
+          "drying_preset_temperature_1": "Preset 1: temperature (\u00b0C)",
+          "drying_preset_duration_2": "Preset 2: duration (hours)",
+          "drying_preset_temperature_2": "Preset 2: temperature (\u00b0C)",
+          "drying_preset_duration_3": "Preset 3: duration (hours)",
+          "drying_preset_temperature_3": "Preset 3: temperature (\u00b0C)",
+          "drying_preset_duration_4": "Preset 4: duration (hours)",
+          "drying_preset_temperature_4": "Preset 4: temperature (\u00b0C)",
+          "drying_preset_duration_5": "Preset 5: duration (hours)",
+          "drying_preset_temperature_5": "Preset 5: temperature (\u00b0C)"
+        },
+        "data_description": {
+          "mqtt_connect_mode": "How aggressively the integration keeps a live MQTT connection to the printer open.",
+          "drying_preset_duration_1": "How long 'Drying Preset 1' dries for.",
+          "drying_preset_temperature_1": "What temperature 'Drying Preset 1' dries at.",
+          "drying_preset_duration_2": "How long 'Drying Preset 2' dries for.",
+          "drying_preset_temperature_2": "What temperature 'Drying Preset 2' dries at.",
+          "drying_preset_duration_3": "How long 'Drying Preset 3' dries for.",
+          "drying_preset_temperature_3": "What temperature 'Drying Preset 3' dries at.",
+          "drying_preset_duration_4": "How long 'Drying Preset 4' dries for.",
+          "drying_preset_temperature_4": "What temperature 'Drying Preset 4' dries at.",
+          "drying_preset_duration_5": "How long 'Drying Preset 5' dries for.",
+          "drying_preset_temperature_5": "What temperature 'Drying Preset 5' dries at."
         }
       }
     }
@@ -152,53 +156,65 @@
       "drying_start_preset_1": {
         "name": "Drying Preset 1"
       },
-      "drying_start_preset_2": {
-        "name": "Drying Preset 2"
-      },
-      "drying_start_preset_3": {
-        "name": "Drying Preset 3"
-      },
-      "drying_start_preset_4": {
-        "name": "Drying Preset 4"
-      },
-      "drying_stop": {
-        "name": "Drying Stop"
-      },
       "secondary_drying_start_preset_1": {
         "name": "Secondary Drying Preset 1"
+      },
+      "drying_start_preset_2": {
+        "name": "Drying Preset 2"
       },
       "secondary_drying_start_preset_2": {
         "name": "Secondary Drying Preset 2"
       },
+      "drying_start_preset_3": {
+        "name": "Drying Preset 3"
+      },
       "secondary_drying_start_preset_3": {
         "name": "Secondary Drying Preset 3"
+      },
+      "drying_start_preset_4": {
+        "name": "Drying Preset 4"
       },
       "secondary_drying_start_preset_4": {
         "name": "Secondary Drying Preset 4"
       },
-      "secondary_drying_stop": {
-        "name": "Secondary Drying Stop"
+      "drying_start_preset_5": {
+        "name": "Drying Preset 5"
       },
-      "pause_print": {
+      "secondary_drying_start_preset_5": {
+        "name": "Secondary Drying Preset 5"
+      },
+      "dry_start_custom": {
+        "name": "Start Custom Drying"
+      },
+      "secondary_dry_start_custom": {
+        "name": "Start Custom Drying"
+      },
+      "manual_mqtt_connection_refresh": {
+        "name": "Refresh MQTT Connection"
+      },
+      "print_pause": {
         "name": "Pause Print"
       },
-      "resume_print": {
+      "print_resume": {
         "name": "Resume Print"
       },
-      "cancel_print": {
-        "name": "Cancel Print"
+      "print_stop": {
+        "name": "Stop Print"
       },
-      "request_file_list_local": {
-        "name": "Request File List (Local)"
+      "clear_completed_print_job": {
+        "name": "Clear Completed Print Job"
       },
-      "request_file_list_udisk": {
-        "name": "Request File List (USB Disk)"
+      "multi_color_box_filament_extrude": {
+        "name": "Extrude Filament"
       },
-      "request_file_list_cloud": {
-        "name": "Request File List (Cloud)"
+      "multi_color_box_filament_retract": {
+        "name": "Retract Filament"
       },
-      "refresh_mqtt_connection": {
-        "name": "Refresh MQTT Connection"
+      "dry_stop": {
+        "name": "Stop Drying"
+      },
+      "secondary_dry_stop": {
+        "name": "Stop Drying"
       }
     },
     "image": {
@@ -345,6 +361,45 @@
       },
       "secondary_multi_color_box_fw_version": {
         "name": "Secondary ACE Firmware"
+      }
+    },
+    "number": {
+      "dry_status_target_temperature": {
+        "name": "Drying Target Temperature"
+      },
+      "drying_temperature_input": {
+        "name": "Custom Drying Temperature"
+      },
+      "drying_time_input": {
+        "name": "Custom Drying Duration"
+      },
+      "secondary_dry_status_target_temperature": {
+        "name": "Secondary Drying Target Temperature"
+      },
+      "secondary_drying_temperature_input": {
+        "name": "Secondary Custom Drying Temperature"
+      },
+      "secondary_drying_time_input": {
+        "name": "Secondary Custom Drying Duration"
+      },
+      "target_hotbed_temp": {
+        "name": "Target Hotbed Temperature"
+      },
+      "target_nozzle_temp": {
+        "name": "Target Nozzle Temperature"
+      },
+      "fan_speed_pct": {
+        "name": "Fan Speed %"
+      }
+    },
+    "select": {
+      "print_speed_mode": {
+        "name": "Print Speed Mode"
+      }
+    },
+    "light": {
+      "printer_light": {
+        "name": "Printer Light"
       }
     }
   },
@@ -1078,6 +1133,32 @@
         "time": {
           "name": "On Time",
           "description": "On Time"
+        }
+      }
+    },
+    "print_existing_cloud_file": {
+      "name": "Print existing cloud file",
+      "description": "Start printing a file that is already stored in your Anycubic cloud storage, without uploading a new one.",
+      "fields": {
+        "config_entry": {
+          "name": "Config Entry",
+          "description": "The config entry to use for this service."
+        },
+        "device_id": {
+          "name": "Printer Device",
+          "description": "Printer Device (if not using ID)."
+        },
+        "printer_id": {
+          "name": "Printer ID",
+          "description": "Printer ID (if not using device)."
+        },
+        "gcode_id": {
+          "name": "Gcode ID",
+          "description": "The gcode_id of an existing cloud file (see the file_list_cloud sensor's file_info attribute)."
+        },
+        "slot_number": {
+          "name": "Slot Number List",
+          "description": "Slot Number List (1-4) to map to print colours. e.g. [1, 2]"
         }
       }
     }

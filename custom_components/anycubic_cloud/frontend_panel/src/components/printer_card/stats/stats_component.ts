@@ -64,6 +64,15 @@ export class AnycubicPrintercardStatsComponent extends LitElement {
   private _statTranslations: TranslationDict;
 
   @state()
+  private _labelDrying: string;
+
+  @state()
+  private _labelNotDrying: string;
+
+  @state()
+  private _labelUnknownState: string;
+
+  @state()
   private _entETA: HassEntity;
 
   @state()
@@ -83,6 +92,12 @@ export class AnycubicPrintercardStatsComponent extends LitElement {
 
   @state()
   private _entHotendTarget: HassEntity;
+
+  @state()
+  private _entAceTempCurrent: HassEntity;
+
+  @state()
+  private _entAceTempTarget: HassEntity;
 
   @state()
   private _valStatus: string;
@@ -187,6 +202,18 @@ export class AnycubicPrintercardStatsComponent extends LitElement {
         this.printerEntityIdPart,
         "target_nozzle_temperature",
       );
+      this._entAceTempCurrent = getPrinterSensorStateObj(
+        this.hass,
+        this.printerEntities,
+        this.printerEntityIdPart,
+        "ace_current_temperature",
+      );
+      this._entAceTempTarget = getPrinterSensorStateObj(
+        this.hass,
+        this.printerEntities,
+        this.printerEntityIdPart,
+        "dry_status_target_temperature",
+      );
       this._valStatus = toTitleCase(
         getPrinterSensorStateObj(
           this.hass,
@@ -252,17 +279,17 @@ export class AnycubicPrintercardStatsComponent extends LitElement {
         this.hass,
         this.printerEntities,
         this.printerEntityIdPart,
-        "drying_active",
-        "Drying",
-        "Not Drying",
-        "unknown",
+        "dry_status_is_drying",
+        this._labelDrying,
+        this._labelNotDrying,
+        this._labelUnknownState,
       ) as string;
       const dryTotal = Number(
         getPrinterSensorStateObj(
           this.hass,
           this.printerEntities,
           this.printerEntityIdPart,
-          "drying_total_duration",
+          "dry_status_total_duration",
           0,
         ).state,
       );
@@ -271,7 +298,7 @@ export class AnycubicPrintercardStatsComponent extends LitElement {
           this.hass,
           this.printerEntities,
           this.printerEntityIdPart,
-          "drying_remaining_time",
+          "dry_status_remaining_time",
           0,
         ).state,
       );
@@ -347,6 +374,21 @@ export class AnycubicPrintercardStatsComponent extends LitElement {
         );
         return fConf;
       }, {});
+    }
+
+    if (changedProperties.has("language")) {
+      this._labelDrying = localize(
+        "card.drying_settings.state_drying",
+        this.language,
+      );
+      this._labelNotDrying = localize(
+        "card.drying_settings.state_not_drying",
+        this.language,
+      );
+      this._labelUnknownState = localize(
+        "common.states.unknown",
+        this.language,
+      );
     }
   }
 
@@ -452,6 +494,26 @@ export class AnycubicPrintercardStatsComponent extends LitElement {
               <anycubic-printercard-stat-temperature
                 .name=${this._statTranslations[condition]}
                 .temperatureEntity=${this._entHotendTarget}
+                .round=${this.round}
+                .temperatureUnit=${this.temperatureUnit}
+              ></anycubic-printercard-stat-temperature>
+            `;
+
+          case PrinterCardStatType.AceTempCurrent:
+            return html`
+              <anycubic-printercard-stat-temperature
+                .name=${this._statTranslations[condition]}
+                .temperatureEntity=${this._entAceTempCurrent}
+                .round=${this.round}
+                .temperatureUnit=${this.temperatureUnit}
+              ></anycubic-printercard-stat-temperature>
+            `;
+
+          case PrinterCardStatType.AceTempTarget:
+            return html`
+              <anycubic-printercard-stat-temperature
+                .name=${this._statTranslations[condition]}
+                .temperatureEntity=${this._entAceTempTarget}
                 .round=${this.round}
                 .temperatureUnit=${this.temperatureUnit}
               ></anycubic-printercard-stat-temperature>

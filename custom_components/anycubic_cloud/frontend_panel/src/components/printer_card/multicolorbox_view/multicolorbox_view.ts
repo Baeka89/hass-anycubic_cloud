@@ -10,6 +10,8 @@ import { customElementIfUndef } from "../../../internal/register-custom-element"
 
 import { fireEvent } from "../../../fire_event";
 
+import "../../ui/toggle-switch.ts";
+
 import {
   getPrinterEntityId,
   getPrinterSensorStateObj,
@@ -28,7 +30,7 @@ import {
 
 const SECONDARY_PREFIX = "secondary_";
 
-const PRIMARY_ENTITY_ID_RUNOUT_REFILL = "ace_run_out_refill";
+const PRIMARY_ENTITY_ID_RUNOUT_REFILL = "multi_color_box_runout_refill";
 const SECONDARY_ENTITY_ID_RUNOUT_REFILL =
   SECONDARY_PREFIX + PRIMARY_ENTITY_ID_RUNOUT_REFILL;
 const PRIMARY_ENTITY_ID_SPOOLS = "ace_spools";
@@ -130,12 +132,15 @@ export class AnycubicPrintercardMulticolorboxview extends LitElement {
     return html`
       <div class="ac-printercard-mcbview">
         <div class="ac-printercard-mcbmenu ac-printercard-menuleft">
-          <div class="ac-switch" @click=${this._handleRunoutRefillChanged}>
+          <div class="ac-switch">
             <div class="ac-switch-label">${this._buttonRefill}</div>
-            <ha-entity-toggle
-              .hass=${this.hass}
-              .stateObj=${this._runoutRefillState}
-            ></ha-entity-toggle>
+            <anycubic-ui-toggle-switch
+              .checked=${this._runoutRefillState?.state === "on"}
+              .disabled=${this._changingRunout ||
+              !this._runoutRefillState ||
+              this._runoutRefillState.state === "unavailable"}
+              @ac-toggle-change=${this._handleRunoutRefillChanged}
+            ></anycubic-ui-toggle-switch>
           </div>
         </div>
         <div class="ac-printercard-spoolcont">${this._renderSpools()}</div>

@@ -41,6 +41,24 @@ const animOptionsCard: motionOptions = {
   properties: ["height", "opacity", "scale"],
 };
 
+// Sinnvolle Standard-Vorgabefarben, falls in der Panel-Konfiguration keine
+// eigenen slotColors gesetzt wurden - sonst bliebe "Vorgabefarbe wählen"
+// ohne jede Konfiguration einfach komplett leer.
+const DEFAULT_SLOT_COLORS: string[] = [
+  "#ffffff",
+  "#000000",
+  "#c0c0c0",
+  "#ff0000",
+  "#ff8000",
+  "#ffff00",
+  "#00a000",
+  "#00c0c0",
+  "#0000ff",
+  "#8000ff",
+  "#ff00ff",
+  "#8b4513",
+];
+
 @customElementIfUndef("anycubic-printercard-multicolorbox_modal_spool")
 export class AnycubicPrintercardMulticolorboxModalSpool extends LitElement {
   @query("color-picker")
@@ -86,6 +104,9 @@ export class AnycubicPrintercardMulticolorboxModalSpool extends LitElement {
   private _labelSelectColour: string;
 
   @state()
+  private _labelPresetColour: string;
+
+  @state()
   private _buttonSave: string;
 
   @state()
@@ -127,6 +148,10 @@ export class AnycubicPrintercardMulticolorboxModalSpool extends LitElement {
       );
       this._labelSelectColour = localize(
         "card.spool_settings.label_select_colour",
+        this.language,
+      );
+      this._labelPresetColour = localize(
+        "card.spool_settings.label_preset_colour",
         this.language,
       );
       this._buttonSave = localize("common.actions.save", this.language);
@@ -201,25 +226,23 @@ export class AnycubicPrintercardMulticolorboxModalSpool extends LitElement {
   private _renderPresets(): LitTemplateResult {
     return html`
       <div>
-        <p class="ac-modal-label">Choose Preset Colour:</p>
+        <p class="ac-modal-label">${this._labelPresetColour}:</p>
         <div class="ac-mcb-presets">
-          ${this.slotColors
-            ? map(this.slotColors, (preset, _index) => {
-                const presetStyle = {
-                  "background-color": preset,
-                };
-                return html`
-                  <div
-                    class="ac-mcb-preset-color"
-                    style=${styleMap(presetStyle)}
-                    .preset=${preset}
-                    @click=${this._colourPresetChange}
-                  >
-                    &nbsp;
-                  </div>
-                `;
-              })
-            : nothing}
+          ${map(this.slotColors ?? DEFAULT_SLOT_COLORS, (preset, _index) => {
+            const presetStyle = {
+              "background-color": preset,
+            };
+            return html`
+              <div
+                class="ac-mcb-preset-color"
+                style=${styleMap(presetStyle)}
+                .preset=${preset}
+                @click=${this._colourPresetChange}
+              >
+                &nbsp;
+              </div>
+            `;
+          })}
         </div>
       </div>
     `;
@@ -241,7 +264,13 @@ export class AnycubicPrintercardMulticolorboxModalSpool extends LitElement {
       this._isOpen = true;
       this.box_id = Number(e.detail.box_id);
       this.spool_index = Number(e.detail.spool_index);
-      this.material_type = materialTypeFromString(e.detail.material_type);
+      // Fallback auf PLA, falls das Material leer/ungültig ankommt (z.B.
+      // ein Slot ohne geladene Spule) - sonst ist intern kein Material
+      // gesetzt, obwohl das Dropdown optisch einen Default zeigt, und
+      // "Speichern" tut beim ersten Klick nichts.
+      this.material_type =
+        materialTypeFromString(e.detail.material_type) ??
+        AnycubicMaterialType.PLA;
       this.color = e.detail.color;
     }
   };

@@ -338,3 +338,6 @@ class ErrorsMQTTUpdate:
     peripherals = str(
         "Unknown peripherals data."
     )
+    light = str(
+        "Unknown light data."
+    )

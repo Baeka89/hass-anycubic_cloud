@@ -361,8 +361,20 @@ class AnycubicAPIBase:
             await self.get_user_info()
             return True
         except AnycubicAuthTokensExpired:
-            self._log_to_debug("Tokens expired.")
-            return False
+            # Ein einzelner fehlgeschlagener Aufruf muss nicht bedeuten, dass
+            # das Token wirklich abgelaufen ist - das kann auch ein kurzer
+            # Serverhänger oder eine vorübergehende Rate-Limitierung sein.
+            # Kurz warten und einmal erneut versuchen, bevor das (evtl. noch
+            # gültige) Token verworfen und ein kompletter Re-Login ausgelöst
+            # wird - genau das hat sonst wiederholte Logins und damit
+            # serverseitige Rate-Limits provoziert.
+            await asyncio.sleep(3)
+            try:
+                await self.get_user_info()
+                return True
+            except AnycubicAuthTokensExpired:
+                self._log_to_debug("Tokens expired.")
+                return False
 
     async def check_api_tokens(self) -> bool:
         if not await self._check_can_access_api():

@@ -234,6 +234,7 @@ export class AnycubicCard extends LitElement {
         .hass=${this.hass}
         .language=${this.language}
         .monitoredStats=${this.config.monitoredStats}
+        .printers=${this.printers}
         .selectedPrinterID=${this.selectedPrinterID}
         .selectedPrinterDevice=${this.selectedPrinterDevice}
         .vertical=${this.vertical}

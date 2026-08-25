@@ -12,13 +12,22 @@
     },
     "messages": {
       "mqtt_unsupported": "This feature requires MQTT to retrieve data but unfortunately MQTT is not supported with the configured authentication mode."
+    },
+    "states": {
+      "unknown": "Unknown"
     }
   },
   "card": {
     "buttons": {
       "print_settings": "Print Settings",
       "dry": "Dry",
-      "runout_refill": "Refill"
+      "runout_refill": "Refill",
+      "ace_settings": "ACE Settings"
+    },
+    "ace_settings": {
+      "heading": "ACE Settings",
+      "label_spools": "Spools",
+      "hint_spools_unavailable": "Live spool data isn't available right now (MQTT may not be connected) - you can still assign material and colour below, it will apply next time the box reports in."
     },
     "configure": {
       "tabs": {
@@ -51,6 +60,9 @@
       "print_pause": "Pause Print",
       "print_resume": "Resume Print",
       "print_cancel": "Cancel Print",
+      "print_finish_job": "Clear Completed Job",
+      "retract_filament": "Retract Filament",
+      "extrude_filament": "Extrude Filament",
       "save_speed_mode": "Save Speed Mode",
       "save_target_nozzle": "Save Target Nozzle",
       "save_target_hotbed": "Save Target Hotbed",
@@ -62,12 +74,20 @@
       "heading": "Drying Options",
       "button_preset": "Preset",
       "button_stop_drying": "Stop Drying",
-      "button_minutes": "Mins"
+      "button_minutes": "Mins",
+      "custom_heading": "Custom Drying",
+      "custom_label_temp": "Temperature",
+      "custom_label_duration": "Duration (minutes)",
+      "custom_button_start": "Start Custom Drying",
+      "state_drying": "Drying",
+      "state_not_drying": "Not Drying",
+      "hint_nothing_available": "No drying controls are available right now - this usually means the ACE box isn't currently connected via MQTT. Check the MQTT connection mode in the integration options and whether the printer/ACE box is actually online."
     },
     "spool_settings": {
       "heading": "Editing Slot",
       "label_select_material": "Select Material",
-      "label_select_colour": "Manually select colour"
+      "label_select_colour": "Manually select colour",
+      "label_preset_colour": "Choose Preset Colour"
     },
     "monitored_stats": {
       "ETA": "ETA",
@@ -86,8 +106,8 @@
       "Dry Time": "Dry Time",
       "Speed Mode": "Speed Mode",
       "Fan Speed": "Fan Speed",
-      "Dry Status": "Dry Status",
-      "Dry Time": "Dry Time",
+      "ACE Temp": "ACE Temp",
+      "T ACE Temp": "T ACE Temp",
       "On Time": "On Time",
       "Off Time": "Off Time",
       "Bottom Time": "Bottom Time",
@@ -96,11 +116,25 @@
       "Z Up Height": "Z Up Height",
       "Z Up Speed": "Z Up Speed",
       "Z Down Speed": "Z Down Speed"
+    },
+    "bridge": {
+      "mqtt_connection": "MQTT Connection",
+      "refresh_connection": "Refresh Connection"
+    },
+    "linked_devices": {
+      "go_to_printer": "Go to printer",
+      "go_to_ace": "Go to ACE Pro box"
+    },
+    "badges": {
+      "update_available": "Update available"
     }
   },
   "panels": {
     "initial": {
-      "printer_select": "Select a printer."
+      "printer_select": "Select a printer.",
+      "type_printer": "Printer",
+      "type_ace": "ACE Pro Box",
+      "type_bridge": "Cloud Connection"
     },
     "main": {
       "title": "Main",
@@ -116,6 +150,7 @@
             "printer_fw_update_available": "FW Status",
             "printer_online": "Online",
             "printer_available": "Available",
+            "printer_mqtt_active": "MQTT Connection",
             "curr_nozzle_temp": "Current Nozzle Temperature",
             "curr_hotbed_temp": "Current Hotbed Temperature",
             "target_nozzle_temp": "Target Nozzle Temperature",

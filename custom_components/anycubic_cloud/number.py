@@ -32,7 +32,6 @@ class AnycubicNumberEntityDescription(
 PRIMARY_MULTI_COLOR_BOX_NUMBER_TYPES: list[AnycubicNumberEntityDescription] = list([
     AnycubicNumberEntityDescription(
         key="dry_status_target_temperature",
-        name="ACE Trocknung Zieltemperatur",
         translation_key="dry_status_target_temperature",
         native_min_value=0,
         native_max_value=70,
@@ -42,7 +41,6 @@ PRIMARY_MULTI_COLOR_BOX_NUMBER_TYPES: list[AnycubicNumberEntityDescription] = li
     ),
     AnycubicNumberEntityDescription(
         key="drying_temperature_input",
-        name="ACE Manuelle Trocknung Temperatur",
         translation_key="drying_temperature_input",
         native_min_value=40,
         native_max_value=70,
@@ -52,12 +50,11 @@ PRIMARY_MULTI_COLOR_BOX_NUMBER_TYPES: list[AnycubicNumberEntityDescription] = li
     ),
     AnycubicNumberEntityDescription(
         key="drying_time_input",
-        name="ACE Manuelle Trocknung Dauer",
         translation_key="drying_time_input",
-        native_min_value=1,
-        native_max_value=24,
-        native_step=1,
-        native_unit_of_measurement=UnitOfTime.HOURS,
+        native_min_value=30,
+        native_max_value=480,
+        native_step=10,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
         printer_entity_type=PrinterEntityType.ACE_PRIMARY,
     ),
 ])
@@ -65,7 +62,6 @@ PRIMARY_MULTI_COLOR_BOX_NUMBER_TYPES: list[AnycubicNumberEntityDescription] = li
 SECONDARY_MULTI_COLOR_BOX_NUMBER_TYPES: list[AnycubicNumberEntityDescription] = list([
     AnycubicNumberEntityDescription(
         key="secondary_dry_status_target_temperature",
-        name="Sekundäre ACE Trocknung Zieltemperatur",
         translation_key="secondary_dry_status_target_temperature",
         native_min_value=0,
         native_max_value=70,
@@ -75,7 +71,6 @@ SECONDARY_MULTI_COLOR_BOX_NUMBER_TYPES: list[AnycubicNumberEntityDescription] = 
     ),
     AnycubicNumberEntityDescription(
         key="secondary_drying_temperature_input",
-        name="Sekundäre ACE Manuelle Trocknung Temperatur",
         translation_key="secondary_drying_temperature_input",
         native_min_value=40,
         native_max_value=70,
@@ -85,12 +80,11 @@ SECONDARY_MULTI_COLOR_BOX_NUMBER_TYPES: list[AnycubicNumberEntityDescription] = 
     ),
     AnycubicNumberEntityDescription(
         key="secondary_drying_time_input",
-        name="Sekundäre ACE Manuelle Trocknung Dauer",
         translation_key="secondary_drying_time_input",
-        native_min_value=1,
-        native_max_value=24,
-        native_step=1,
-        native_unit_of_measurement=UnitOfTime.HOURS,
+        native_min_value=30,
+        native_max_value=480,
+        native_step=10,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
         printer_entity_type=PrinterEntityType.ACE_SECONDARY,
     ),
 ])
@@ -98,7 +92,6 @@ SECONDARY_MULTI_COLOR_BOX_NUMBER_TYPES: list[AnycubicNumberEntityDescription] = 
 FDM_NUMBER_TYPES: list[AnycubicNumberEntityDescription] = list([
     AnycubicNumberEntityDescription(
         key="target_hotbed_temp",
-        name="Heizbett Zieltemperatur",
         translation_key="target_hotbed_temp",
         native_min_value=0,
         native_max_value=110,
@@ -108,7 +101,6 @@ FDM_NUMBER_TYPES: list[AnycubicNumberEntityDescription] = list([
     ),
     AnycubicNumberEntityDescription(
         key="target_nozzle_temp",
-        name="Hotend Zieltemperatur",
         translation_key="target_nozzle_temp",
         native_min_value=0,
         native_max_value=300,
@@ -118,7 +110,6 @@ FDM_NUMBER_TYPES: list[AnycubicNumberEntityDescription] = list([
     ),
     AnycubicNumberEntityDescription(
         key="fan_speed_pct",
-        name="Lüftergeschwindigkeit",
         translation_key="fan_speed_pct",
         native_min_value=0,
         native_max_value=100,
@@ -172,7 +163,7 @@ class AnycubicNumber(AnycubicCloudEntity, NumberEntity):
         if "drying_temperature_input" in entity_description.key:
             self._attr_native_value = 50.0
         elif "drying_time_input" in entity_description.key:
-            self._attr_native_value = 6.0
+            self._attr_native_value = 240.0
 
     @property
     def available(self) -> bool:
@@ -202,9 +193,15 @@ class AnycubicNumber(AnycubicCloudEntity, NumberEntity):
         target_value = int(value)
         key = self.entity_description.key
 
-        # Wenn es sich um ein reines Eingabefeld handelt, speichern wir den Wert lokal ab
+        # Wenn es sich um ein reines Eingabefeld handelt, speichern wir den Wert
+        # lokal ab (für die sofortige UI-Anzeige) UND zentral im Coordinator
+        # (damit der "Custom Drying starten"-Button ihn unabhängig von dieser
+        # Entity-Instanz auslesen kann).
         if "input" in key:
             self._attr_native_value = float(target_value)
+            self.coordinator.set_manual_drying_input(
+                self._printer_id, key, float(target_value)
+            )
             self.async_write_ha_state()
             return
 

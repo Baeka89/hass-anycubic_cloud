@@ -12,6 +12,7 @@ import "./views/print/view-print-save_in_cloud.ts";
 import { DEBUG } from "./const";
 import { HASSDomEvent } from "./fire_event";
 import {
+  getAnycubicDeviceType,
   getPage,
   getPrinterDevID,
   getPrinterDevices,
@@ -20,6 +21,7 @@ import {
   navigateToPrinter,
 } from "./helpers";
 import {
+  AnycubicDeviceType,
   DomClickEvent,
   EvtTargPrinterDevId,
   HassDevice,
@@ -66,6 +68,9 @@ export class AnycubicCloudPanel extends LitElement {
   private selectedPrinterDevice: HassDevice | undefined;
 
   @state()
+  private deviceType: AnycubicDeviceType = AnycubicDeviceType.PRINTER;
+
+  @state()
   private language: string;
 
   @state()
@@ -94,6 +99,15 @@ export class AnycubicCloudPanel extends LitElement {
 
   @state()
   private _selectPrinter: string;
+
+  @state()
+  private _typeLabelPrinter: string;
+
+  @state()
+  private _typeLabelAce: string;
+
+  @state()
+  private _typeLabelBridge: string;
 
   public connectedCallback(): void {
     super.connectedCallback();
@@ -135,6 +149,15 @@ export class AnycubicCloudPanel extends LitElement {
         "panels.initial.printer_select",
         this.language,
       );
+      this._typeLabelPrinter = localize(
+        "panels.initial.type_printer",
+        this.language,
+      );
+      this._typeLabelAce = localize("panels.initial.type_ace", this.language);
+      this._typeLabelBridge = localize(
+        "panels.initial.type_bridge",
+        this.language,
+      );
     }
 
     if (changedProperties.has("route")) {
@@ -145,6 +168,18 @@ export class AnycubicCloudPanel extends LitElement {
         this.printers,
         this.selectedPrinterID,
       );
+      this.deviceType = getAnycubicDeviceType(this.selectedPrinterDevice);
+      // Datei-/Druck-Tabs sind nur für den Drucker selbst relevant. Landet
+      // man z.B. per Browser-Historie auf so einem Tab, während ACE Pro
+      // oder die Cloud-Bridge ausgewählt ist, zurück zur Hauptansicht.
+      if (
+        this.deviceType !== AnycubicDeviceType.PRINTER &&
+        this.selectedPage !== "main" &&
+        this.selectedPage !== "debug"
+      ) {
+        this.selectedPage = "main";
+        navigateToPage(this, "main");
+      }
     }
   }
 
@@ -163,21 +198,25 @@ export class AnycubicCloudPanel extends LitElement {
           @iron-activate=${this.handlePageSelected}
         >
           <paper-tab page-name="main"> ${this._tabMain} </paper-tab>
-          <paper-tab page-name="local-files">
-            ${this._tabFilesLocal}
-          </paper-tab>
-          <paper-tab page-name="udisk-files">
-            ${this._tabFilesUdisk}
-          </paper-tab>
-          <paper-tab page-name="cloud-files">
-            ${this._tabFilesCloud}
-          </paper-tab>
-          <paper-tab page-name="print-no_cloud_save">
-            ${this._tabPrintNoSave}
-          </paper-tab>
-          <paper-tab page-name="print-save_in_cloud">
-            ${this._tabPrintSave}
-          </paper-tab>
+          ${this.deviceType === AnycubicDeviceType.PRINTER
+            ? html`
+                <paper-tab page-name="local-files">
+                  ${this._tabFilesLocal}
+                </paper-tab>
+                <paper-tab page-name="udisk-files">
+                  ${this._tabFilesUdisk}
+                </paper-tab>
+                <paper-tab page-name="cloud-files">
+                  ${this._tabFilesCloud}
+                </paper-tab>
+                <paper-tab page-name="print-no_cloud_save">
+                  ${this._tabPrintNoSave}
+                </paper-tab>
+                <paper-tab page-name="print-save_in_cloud">
+                  ${this._tabPrintSave}
+                </paper-tab>
+              `
+            : null}
           ${DEBUG // eslint-disable-line @typescript-eslint/no-unnecessary-condition
             ? html`
                 <paper-tab page-name="debug"> ${this._tabDebug} </paper-tab>
@@ -187,6 +226,17 @@ export class AnycubicCloudPanel extends LitElement {
       </div>
       <div class="view">${this.getView(this.route)}</div>
     `;
+  }
+
+  private _deviceTypeLabel(device: HassDevice | undefined): string {
+    const type = getAnycubicDeviceType(device);
+    if (type === AnycubicDeviceType.ACE) {
+      return this._typeLabelAce;
+    }
+    if (type === AnycubicDeviceType.BRIDGE) {
+      return this._typeLabelBridge;
+    }
+    return this._typeLabelPrinter;
   }
 
   renderToolbar(): LitTemplateResult {
@@ -212,16 +262,21 @@ export class AnycubicCloudPanel extends LitElement {
           <p>${this._selectPrinter}</p>
           <ul class="printers-container">
             ${this.printers
-              ? Object.keys(this.printers).map(
-                  (printerID) =>
-                    html`<li
-                      class="printer-select-box"
-                      .printer_id=${printerID}
-                      @click=${this._handlePrinterClick}
-                    >
-                      ${this.printers ? this.printers[printerID].name : ""}
-                    </li>`,
-                )
+              ? Object.keys(this.printers).map((printerID) => {
+                  const printers = this.printers as HassDeviceList;
+                  return html`<li
+                    class="printer-select-box"
+                    .printer_id=${printerID}
+                    @click=${this._handlePrinterClick}
+                  >
+                    <div class="printer-select-name">
+                      ${printers[printerID].name}
+                    </div>
+                    <div class="printer-select-type">
+                      ${this._deviceTypeLabel(printers[printerID])}
+                    </div>
+                  </li>`;
+                })
               : null}
           </ul>
         </printer-select>
@@ -304,6 +359,7 @@ export class AnycubicCloudPanel extends LitElement {
             .narrow=${this.narrow}
             .route=${route}
             .panel=${this.panel}
+            .printers=${this.printers}
             .selectedPrinterID=${this.selectedPrinterID}
             .selectedPrinterDevice=${this.selectedPrinterDevice}
           ></anycubic-view-main>
@@ -425,15 +481,27 @@ export class AnycubicCloudPanel extends LitElement {
 
       .printer-select-box {
         cursor: pointer;
-        display: block;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
         min-height: 60px;
         min-width: 250px;
         border: 2px solid #ccc3;
         border-radius: 16px;
         padding: 16px;
-        line-height: 60px;
         text-align: center;
         font-weight: 900;
+      }
+
+      .printer-select-name {
+        font-weight: 900;
+      }
+
+      .printer-select-type {
+        font-weight: 400;
+        font-size: 0.75em;
+        opacity: 0.7;
+        margin-top: 4px;
       }
 
       .printer-select-box:hover {

@@ -58,6 +58,7 @@ from .helpers import (
     AnycubicMQTTConnectMode,
     build_printer_device_info,
     check_descriptor_state_ace_not_supported,
+    check_descriptor_state_light_not_supported,
     check_descriptor_state_ace_primary_unavailable,
     check_descriptor_state_ace_secondary_unavailable,
     check_descriptor_state_drying_unavailable,
@@ -107,6 +108,11 @@ class AnycubicCloudDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             else mqtt_connect_mode
         )
         self._unregistered_descriptors: dict[int, dict[str, list[AnycubicCloudEntityDescription]]] = dict()
+        # Speichert die Werte der manuellen Trocknungs-Eingabefelder
+        # (drying_temperature_input / drying_time_input) zentral, damit der
+        # "Custom Drying starten"-Button (button.py) sie unabhängig von der
+        # jeweiligen Number-Entity-Instanz auslesen kann.
+        self._manual_drying_inputs: dict[tuple[int, str], float] = {}
         super().__init__(
             hass,
             LOGGER,
@@ -120,6 +126,21 @@ class AnycubicCloudDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if not self._anycubic_api:
             raise ConfigEntryError("Anycubic API instance is missing.")
         return self._anycubic_api
+
+    def get_manual_drying_input(
+        self, printer_id: int, key: str, default: float
+    ) -> float:
+        """Lese den zuletzt vom Nutzer gesetzten Wert eines manuellen
+        Trocknungs-Eingabefelds (Temperatur/Dauer)."""
+        return self._manual_drying_inputs.get((printer_id, key), default)
+
+    def set_manual_drying_input(
+        self, printer_id: int, key: str, value: float
+    ) -> None:
+        """Speichere den vom Nutzer gesetzten Wert eines manuellen
+        Trocknungs-Eingabefelds zentral, damit der Custom-Drying-Button
+        ihn unabhängig von der Number-Entity-Instanz auslesen kann."""
+        self._manual_drying_inputs[(printer_id, key)] = value
 
     def _any_printers_are_printing(self) -> bool:
         return any([
@@ -231,6 +252,7 @@ class AnycubicCloudDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "printer_online": printer.printer_online,
             "is_busy": printer.is_busy,
             "is_available": printer.is_available,
+            "printer_light_is_on": printer.light_is_on(),
             "current_status": printer.current_status,
             "curr_nozzle_temp": printer.curr_nozzle_temp,
             "curr_hotbed_temp": printer.curr_hotbed_temp,
@@ -452,6 +474,15 @@ class AnycubicCloudDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 connected_ace_units = printer_state_connected_ace_units(self, printer_id)
                 supports_ace = printer_state_supports_ace(self, printer_id)
 
+                printer_obj = self.get_printer_for_id(printer_id)
+                supports_light = bool(
+                    printer_obj
+                    and (
+                        printer_obj.supports_function_video_light
+                        or printer_obj.supports_function_box_light
+                    )
+                )
+
                 remaining_unregistered_descriptors = list()
 
                 for description in self._unregistered_descriptors[printer_id][platform]:
@@ -469,6 +500,11 @@ class AnycubicCloudDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                         check_descriptor_state_ace_not_supported(
                             description,
                             supports_ace,
+                        )
+                        or
+                        check_descriptor_state_light_not_supported(
+                            description,
+                            supports_light,
                         )
                     ):
                         continue
@@ -808,7 +844,7 @@ class AnycubicCloudDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             if states.get("supports_function_multi_color_box"):
                 ace_primary_identifiers = {(DOMAIN, f"ace_primary_{int(printer_id)}")}
                 ace_primary_fw = states.get("multi_color_box_fw_version")
-                dev_reg.async_get_or_create(
+                ace_primary_device = dev_reg.async_get_or_create(
                     config_entry_id=self.entry.entry_id,
                     identifiers=ace_primary_identifiers,
                     name=f"{printer_name} ACE Pro 1",
@@ -817,13 +853,17 @@ class AnycubicCloudDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     sw_version=ace_primary_fw,
                     via_device=list(printer_identifiers)[0]
                 )
+                # Auch das ACE-Gerät auf den zugehörigen Drucker abbilden, sonst
+                # scheitert jeder Service-Call (z.B. Spulenfarbe setzen), der mit
+                # der ACE-Geräte-ID statt der Drucker-Geräte-ID aufgerufen wird.
+                self._printer_device_map[ace_primary_device.id] = int(printer_id)
                 
                 # 4. Zweite ACE Pro Box registrieren, falls physisch angeschlossen
                 connected_units = states.get("connected_ace_units", 1)
                 if connected_units is not None and int(connected_units) >= 2:
                     ace_secondary_identifiers = {(DOMAIN, f"ace_secondary_{int(printer_id)}")}
                     ace_secondary_fw = states.get("secondary_multi_color_box_fw_version")
-                    dev_reg.async_get_or_create(
+                    ace_secondary_device = dev_reg.async_get_or_create(
                         config_entry_id=self.entry.entry_id,
                         identifiers=ace_secondary_identifiers,
                         name=f"{printer_name} ACE Pro 2",
@@ -832,6 +872,7 @@ class AnycubicCloudDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                         sw_version=ace_secondary_fw,
                         via_device=list(printer_identifiers)[0]
                     )
+                    self._printer_device_map[ace_secondary_device.id] = int(printer_id)
 
     async def _check_or_save_tokens(self) -> None:
         success = await self.anycubic_api.check_api_tokens()
@@ -1041,11 +1082,11 @@ class AnycubicCloudDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 await self._connect_mqtt_for_action_response()
                 await printer.request_udisk_file_list()
 
-            elif printer and event_key == 'drying_stop':
+            elif printer and event_key == 'dry_stop':
                 await self._connect_mqtt_for_action_response()
-                await printer.multi_color_box_drying_stop()
+                await printer.multi_color_box_drying_stop(box_id=0)
 
-            elif printer and event_key == 'secondary_drying_stop':
+            elif printer and event_key == 'secondary_dry_stop':
                 await self._connect_mqtt_for_action_response()
                 await printer.multi_color_box_drying_stop(box_id=1)
 
@@ -1167,3 +1208,25 @@ class AnycubicCloudDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return
 
         await self.force_state_update()
+
+    async def set_light_status(
+        self,
+        printer_id: int,
+        light_on: bool,
+    ) -> None:
+        """Turn the printer's video/box light on or off.
+
+        EXPERIMENTAL - see AnycubicPrinter.set_light_status() for the
+        caveats (requires an active/latest project, response arrives over
+        MQTT and is not currently parsed by this integration, so the light
+        entity is optimistic/assumed_state rather than confirmed).
+        """
+        printer = self.get_printer_for_id(printer_id)
+        if not printer:
+            return
+
+        try:
+            await self._connect_mqtt_for_action_response()
+            await printer.set_light_status(light_on=light_on)
+        except AnycubicAPIError as ex:
+            raise HomeAssistantError(ex) from ex

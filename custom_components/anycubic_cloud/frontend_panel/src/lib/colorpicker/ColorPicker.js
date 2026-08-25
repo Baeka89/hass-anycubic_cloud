@@ -47,6 +47,15 @@ export class ColorPicker extends LitElement {
     }
   }
 
+  updated(props) {
+    if (props.has("value") && this.value) {
+      const parsed = Color.parse(this.value);
+      if (parsed && (!this._color || parsed.hex !== this._color.hex)) {
+        this.color = parsed;
+      }
+    }
+  }
+
   get color() {
     return this._color;
   }

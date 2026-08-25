@@ -41,11 +41,13 @@ CONF_BOX_ID = "box_id"
 CONF_FINISHED = "finished"
 CONF_MQTT_CONNECT_MODE = "mqtt_connect_mode"
 CONF_CARD_CONFIG = "card_config"
+CONF_ENABLE_PANEL = "enable_panel"
 CONF_DEBUG_DEPRECATED = "debug"
 CONF_DEBUG_MQTT_MSG = "debug_mqtt_msg"
 CONF_DEBUG_API_CALLS = "debug_api_calls"
 CONF_UPLOADED_GCODE_FILE = "uploaded_gcode_file"
 CONF_FILE_ID = "file_id"
+CONF_GCODE_ID = "gcode_id"
 CONF_SPEED_MODE = "speed_mode"
 CONF_SPEED = "speed"
 CONF_TEMPERATURE = "temperature"
@@ -76,6 +78,7 @@ PLATFORMS: list[Platform] = [
     Platform.BINARY_SENSOR,
     Platform.BUTTON,
     Platform.IMAGE,
+    Platform.LIGHT,
     Platform.NUMBER,
     Platform.SELECT,
     Platform.SENSOR,
@@ -95,3 +98,4 @@ class PrinterEntityType(IntEnum):
     DRY_PRESET_PRIMARY = 6
     DRY_PRESET_SECONDARY = 7
     LCD = 8
+    LIGHT = 9

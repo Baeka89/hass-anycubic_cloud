@@ -28,6 +28,7 @@ from .const import (
     CONF_DEBUG_MQTT_MSG,
     CONF_DRYING_PRESET_DURATION_,
     CONF_DRYING_PRESET_TEMPERATURE_,
+    CONF_ENABLE_PANEL,
     CONF_MQTT_CONNECT_MODE,
     CONF_PRINTER_ID_LIST,
     CONF_USER_AUTH_MODE,
@@ -434,14 +435,18 @@ class AnycubicCloudOptionsFlowHandler(OptionsFlow):
             return await self.async_step_debug()
 
         default_card_config = self.config_entry.options.get(CONF_CARD_CONFIG, None)
+        default_enable_panel = self.config_entry.options.get(CONF_ENABLE_PANEL, True)
 
         return self.async_show_form(
             step_id="card_config",
             data_schema=vol.Schema(
                 {
                     vol.Optional(
+                        CONF_ENABLE_PANEL, default=default_enable_panel
+                    ): BooleanSelector(),
+                    vol.Optional(
                         CONF_CARD_CONFIG, default=default_card_config
-                    ): ObjectSelector()
+                    ): ObjectSelector(),
                 }
             ),
             errors={},

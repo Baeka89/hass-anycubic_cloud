@@ -7,7 +7,10 @@ import {
 
 import { fireEvent } from "./fire_event";
 import {
+  ANYCUBIC_MODEL_ACE,
+  ANYCUBIC_MODEL_BRIDGE,
   AnycubicCardConfig,
+  AnycubicDeviceType,
   AnycubicLitNode,
   AnycubicMaterialType,
   AnycubicSpeedMode,
@@ -129,12 +132,49 @@ export function getEntityStateBinary(
   return entityState === "on" ? onValue : offValue;
 }
 
+export function getAnycubicDeviceType(
+  device: HassDevice | undefined,
+): AnycubicDeviceType {
+  if (device && device.model === ANYCUBIC_MODEL_BRIDGE) {
+    return AnycubicDeviceType.BRIDGE;
+  }
+  if (device && device.model === ANYCUBIC_MODEL_ACE) {
+    return AnycubicDeviceType.ACE;
+  }
+  return AnycubicDeviceType.PRINTER;
+}
+
+// Gibt, ausgehend vom aktuell gewählten Gerät, die damit verknüpften Geräte
+// zurück: für den Drucker seine ACE-Box(en), für eine ACE-Box den zugehörigen
+// Drucker, für die Cloud-Bridge alle daran hängenden Drucker.
+export function getLinkedDevices(
+  devices: HassDeviceList | undefined,
+  device: HassDevice | undefined,
+): HassDevice[] {
+  if (!devices || !device) {
+    return [];
+  }
+  const deviceType = getAnycubicDeviceType(device);
+  if (deviceType === AnycubicDeviceType.ACE) {
+    const parent = device.via_device_id
+      ? devices[device.via_device_id]
+      : undefined;
+    return parent ? [parent] : [];
+  }
+  return Object.values(devices).filter(
+    (dev) => dev.via_device_id === device.id,
+  );
+}
+
 export function getPrinterDevices(hass: HomeAssistant): HassDeviceList {
   const printers: HassDeviceList = {};
   for (const key in hass.devices) {
     const dev = hass.devices[key];
 
-    if (dev.manufacturer === "Anycubic") {
+    if (
+      dev.manufacturer === "Anycubic" &&
+      getAnycubicDeviceType(dev) !== AnycubicDeviceType.BRIDGE
+    ) {
       printers[dev.id] = dev;
     }
   }
@@ -186,21 +226,63 @@ export function getPrinterEntityId(
 
 export function getStrictMatchingEntity(
   entities: HassEntityInfos,
-  printerEntityIdPart: string | undefined,
+  _printerEntityIdPart: string | undefined,
   match_domain: string,
   match_suffix: string,
 ): HassEntityInfo | undefined {
-  if (!printerEntityIdPart) {
-    return undefined;
+  // "entities" ist bereits auf genau ein Gerät gefiltert (siehe
+  // getPrinterEntities). Zwei Vergleichswege, in dieser Reihenfolge:
+  //
+  // 1. translation_key === match_suffix: das ist der zuverlässigste Weg,
+  //    da translation_key exakt dem entspricht, was im Backend-Code
+  //    (button.py/number.py/sensor.py usw.) als translation_key=... steht -
+  //    unabhängig von der HA-Sprache und unabhängig davon, wann/wie die
+  //    Entity ursprünglich angelegt wurde (Entity-IDs bleiben in der
+  //    Registry auch nach Umbenennungen des Geräts stabil, translation_key
+  //    dagegen nicht).
+  // 2. entity_id endsWith match_suffix: Fallback für ältere, vor der
+  //    Umstrukturierung angelegte Entities, deren ID zufällig noch dem
+  //    erratenen Muster entspricht.
+  for (const key in entities) {
+    const ent = entities[key];
+    const splitID = key.split(".");
+    const domain: string = splitID[0];
+
+    if (domain !== match_domain) {
+      continue;
+    }
+    if (ent.translation_key === match_suffix) {
+      return ent;
+    }
   }
   for (const key in entities) {
     const ent = entities[key];
     const splitID = key.split(".");
     const domain: string = splitID[0];
-    const entityIdPart: string = splitID[1].split(printerEntityIdPart)[1];
+    const entity_id: string = splitID[1];
 
-    if (domain === match_domain && entityIdPart === match_suffix) {
+    if (domain === match_domain && entity_id.endsWith(match_suffix)) {
       return ent;
+    }
+  }
+  return undefined;
+}
+
+// Leitet aus einer Menge von Entities das gemeinsame Geräte-ID-Präfix ab,
+// indem nach einer bekannten "Anker"-Entity (domain + suffix) gesucht wird,
+// die auf dem jeweiligen Gerätetyp garantiert vorhanden ist.
+export function getEntityIdPartBySuffix(
+  entities: HassEntityInfos,
+  domain: string,
+  suffix: string,
+): string | undefined {
+  for (const key in entities) {
+    const splitID = key.split(".");
+    const entityDomain: string = splitID[0];
+    const entity_id: string = splitID[1];
+
+    if (entityDomain === domain && entity_id.endsWith(suffix)) {
+      return entity_id.split(suffix)[0];
     }
   }
   return undefined;
@@ -209,16 +291,74 @@ export function getStrictMatchingEntity(
 export function getPrinterEntityIdPart(
   entities: HassEntityInfos,
 ): string | undefined {
+  return getEntityIdPartBySuffix(entities, "binary_sensor", "printer_online");
+}
+
+// ACE-Boxen haben keinen printer_online-Sensor mehr (der lebt jetzt auf dem
+// Drucker-Gerät), daher über eine ACE-eigene Entity verankern.
+// Robuster als das Raten einzelner Suffixe: alle Entities eines Geräts
+// teilen sich denselben Geräte-Slug als Präfix (z.B.
+// "anycubic_kobra_3_combo_ace_pro_1_"). Der längste gemeinsame Präfix über
+// die lokalen Teile aller Entity-IDs hinweg liefert dieses Präfix, ganz
+// unabhängig davon, wie die einzelnen Entity-Namen übersetzt/slugifiziert
+// wurden.
+export function getCommonEntityIdPart(
+  entities: HassEntityInfos,
+): string | undefined {
+  const localParts: string[] = [];
   for (const key in entities) {
     const splitID = key.split(".");
-    const domain: string = splitID[0];
-    const entity_id: string = splitID[1];
-
-    if (domain === "binary_sensor" && entity_id.endsWith("printer_online")) {
-      return entity_id.split("printer_online")[0];
+    if (splitID.length === 2 && splitID[1]) {
+      localParts.push(splitID[1]);
     }
   }
-  return undefined;
+  if (localParts.length === 0) {
+    return undefined;
+  }
+  let prefix = localParts[0];
+  for (let i = 1; i < localParts.length; i++) {
+    const part = localParts[i];
+    while (prefix.length > 0 && !part.startsWith(prefix)) {
+      prefix = prefix.slice(0, -1);
+    }
+    if (prefix.length === 0) {
+      return undefined;
+    }
+  }
+  // Nur ein sinnvolles Präfix zurückgeben, wenn es tatsächlich an einer
+  // Wortgrenze (Unterstrich) endet - sonst könnte es zufällig mitten in
+  // einem Wort abgeschnitten sein.
+  const lastUnderscore = prefix.lastIndexOf("_");
+  if (lastUnderscore === -1) {
+    return undefined;
+  }
+  return prefix.slice(0, lastUnderscore + 1);
+}
+
+export function getAceEntityIdPart(
+  entities: HassEntityInfos,
+): string | undefined {
+  return (
+    getCommonEntityIdPart(entities) ??
+    getEntityIdPartBySuffix(entities, "sensor", "ace_current_temperature") ??
+    getEntityIdPartBySuffix(entities, "update", "ace_firmware") ??
+    getEntityIdPartBySuffix(entities, "switch", "ace_run_out_refill")
+  );
+}
+
+// Die Cloud-Bridge hat insgesamt nur 2 Entities in der ganzen Integration.
+export function getBridgeEntityIdPart(
+  entities: HassEntityInfos,
+): string | undefined {
+  return (
+    getCommonEntityIdPart(entities) ??
+    getEntityIdPartBySuffix(
+      entities,
+      "switch",
+      "manual_mqtt_connection_enabled",
+    ) ??
+    getEntityIdPartBySuffix(entities, "button", "refresh_mqtt_connection")
+  );
 }
 
 export function getPrinterSwitchStateObj(
@@ -398,6 +538,30 @@ export function getPrinterBinarySensorState(
   return entInfo
     ? getEntityStateBinary(hass, entInfo, onValue, offValue)
     : undefValue;
+}
+
+export function getPrinterNumberStateObj(
+  hass: HomeAssistant,
+  entities: HassEntityInfos,
+  printerEntityIdPart: string | undefined,
+  suffix: string,
+  defaultState: string | number = 0,
+  defaultAttributes: object = {},
+): HassEntity {
+  const entInfo = getStrictMatchingEntity(
+    entities,
+    printerEntityIdPart,
+    "number",
+    suffix,
+  );
+  const stateObj = getEntityState(hass, entInfo);
+  return (
+    stateObj ||
+    createEmptyEntity({
+      state: String(defaultState),
+      attributes: defaultAttributes,
+    })
+  );
 }
 
 export function getPrinterUpdateEntityState(
@@ -745,6 +909,9 @@ export const getEntityTemperature = (
   round: boolean = false,
 ): string => {
   const t: number = parseFloat(temperatureEntity.state);
+  if (Number.isNaN(t)) {
+    return "—";
+  }
   const u: TemperatureUnit = temperatureUnitFromEntity(temperatureEntity);
   const tc: number = convertTemperature(t, u, temperatureUnit || u);
 
@@ -767,6 +934,8 @@ export function getDefaultFDMMonitoredStats(): PrinterCardStatType[] {
     PrinterCardStatType.BedCurrent,
     PrinterCardStatType.HotendTarget,
     PrinterCardStatType.BedTarget,
+    PrinterCardStatType.SpeedMode,
+    PrinterCardStatType.FanSpeed,
   ];
 }
 

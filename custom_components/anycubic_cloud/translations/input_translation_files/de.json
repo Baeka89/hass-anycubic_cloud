@@ -1,126 +1,126 @@
 {
   "common": {
-    "user_token": "User Token",
-    "user_auth_mode": "Auth Mode",
-    "user_device_id": "Device ID (Required for Android)",
-    "ace_set_slot_name": "ACE Set Slot - {0}",
-    "ace_set_slot_descr": "Sets {0} slot properties in ACE unit.",
-    "secondary": "Secondary",
-    "job": "Job",
-    "target": "Target",
-    "request": "Request",
-    "file_list": "File List",
-    "drying": "Drying",
-    "drying_preset": "[%key:common::drying%] Preset",
-    "dry_preset": "Dry Preset",
-    "temperature": "Temperature",
-    "duration": "Duration",
+    "user_token": "Benutzer-Token",
+    "user_auth_mode": "Authentifizierungsmodus",
+    "user_device_id": "Geräte-ID (erforderlich für Android)",
+    "ace_set_slot_name": "ACE-Slot setzen - {0}",
+    "ace_set_slot_descr": "Setzt die Eigenschaften von Slot {0} in der ACE-Einheit.",
+    "secondary": "Sekundär",
+    "job": "Auftrag",
+    "target": "Soll",
+    "request": "Anfordern",
+    "file_list": "Dateiliste",
+    "drying": "Trocknung",
+    "drying_preset": "Trocknungs-Preset",
+    "dry_preset": "Trocknungs-Preset",
+    "temperature": "Temperatur",
+    "duration": "Dauer",
     "firmware": "Firmware",
-    "total_duration": "Total Duration",
-    "remaining_time": "Remaining Time",
-    "nozzle_temperature": "Nozzle [%key:common::temperature%]",
-    "hotbed_temperature": "Hotbed [%key:common::temperature%]",
-    "fan_speed": "Fan Speed",
-    "speed_mode": "Speed Mode",
-    "bottom_layers": "Bottom Layers",
-    "bottom_time": "Bottom Time",
-    "off_time": "Off Time",
-    "on_time": "On Time",
+    "total_duration": "Gesamtdauer",
+    "remaining_time": "Verbleibende Zeit",
+    "nozzle_temperature": "Düsentemperatur",
+    "hotbed_temperature": "Betttemperatur",
+    "fan_speed": "Lüftergeschwindigkeit",
+    "speed_mode": "Geschwindigkeitsmodus",
+    "bottom_layers": "Bodenschichten",
+    "bottom_time": "Bodenschicht-Zeit",
+    "off_time": "Aus-Zeit",
+    "on_time": "Ein-Zeit",
     "print_settings": {
-      "change_print": "Change Print",
-      "aux_fan_speed": "Aux [%key:common::fan_speed%]",
-      "box_fan_speed": "Box [%key:common::fan_speed%]"
+      "change_print": "Druckeinstellung ändern",
+      "aux_fan_speed": "Zusatzlüfter-Geschwindigkeit",
+      "box_fan_speed": "Gehäuselüfter-Geschwindigkeit"
     },
     "service_meta": {
       "ace_filament_extrude": {
-        "name": "ACE Filament Extrude",
-        "description": "Activate filament extrude on ACE."
+        "name": "ACE Filament ausgeben",
+        "description": "Aktiviert die Filamentausgabe an der ACE-Einheit."
       },
       "ace_filament_retract": {
-        "name": "ACE Filament Retract",
-        "description": "Activate filament retract on ACE."
+        "name": "ACE Filament einziehen",
+        "description": "Aktiviert das Einziehen des Filaments an der ACE-Einheit."
       },
       "print_save_in_cloud": {
-        "name": "Print and upload (save in user cloud).",
-        "description": "Print and upload, save in user cloud store."
+        "name": "Drucken und hochladen (in Cloud speichern).",
+        "description": "Drucken und hochladen, Speicherung im Benutzer-Cloud-Speicher."
       },
       "print_no_cloud_save": {
-        "name": "Print and upload (no cloud save).",
-        "description": "Print and upload, but don't save in user cloud store."
+        "name": "Drucken und hochladen (nicht in Cloud speichern).",
+        "description": "Drucken und hochladen, ohne Speicherung im Benutzer-Cloud-Speicher."
       },
       "delete_file_local": {
-        "name": "Delete file (Local)",
-        "description": "Delete a file from printer local storage."
+        "name": "Datei löschen (Lokal)",
+        "description": "Löscht eine Datei vom lokalen Speicher des Druckers."
       },
       "delete_file_udisk": {
-        "name": "Delete file (USB Disk)",
-        "description": "Delete a file from printer USB disk."
+        "name": "Datei löschen (USB-Stick)",
+        "description": "Löscht eine Datei vom USB-Stick des Druckers."
       },
       "delete_file_cloud": {
-        "name": "Delete file (Cloud)",
-        "description": "Delete a file from user cloud store."
+        "name": "Datei löschen (Cloud)",
+        "description": "Löscht eine Datei aus dem Benutzer-Cloud-Speicher."
       },
       "print_existing_cloud_file": {
-        "name": "Print existing cloud file",
-        "description": "Start printing a file that is already stored in your Anycubic cloud storage, without uploading a new one."
+        "name": "Vorhandene Cloud-Datei drucken",
+        "description": "Startet den Druck einer bereits im Anycubic-Cloud-Speicher vorhandenen Datei, ohne eine neue hochzuladen."
       }
     },
     "service_fields": {
       "config_entry": {
-        "name": "Config Entry",
-        "description": "The config entry to use for this service."
+        "name": "Konfigurationseintrag",
+        "description": "Der zu verwendende Konfigurationseintrag für diesen Service."
       },
       "device_id": {
-        "name": "Printer Device",
-        "description": "Printer Device (if not using ID)."
+        "name": "Drucker-Gerät",
+        "description": "Drucker-Gerät (falls keine ID verwendet wird)."
       },
       "printer_id": {
-        "name": "Printer ID",
-        "description": "Printer ID (if not using device)."
+        "name": "Drucker-ID",
+        "description": "Drucker-ID (falls kein Gerät verwendet wird)."
       },
       "box_id": {
-        "name": "Box ID",
-        "description": "Box ID (0-1)."
+        "name": "Box-ID",
+        "description": "Box-ID (0-1)."
       },
       "slot_number#single": {
-        "name": "Slot Number",
-        "description": "Slot Number (1-4)."
+        "name": "Slot-Nummer",
+        "description": "Slot-Nummer (1-4)."
       },
       "slot_number#list": {
-        "name": "Slot Number List",
-        "description": "Slot Number List (1-4) to map to print colours. e.g. [1, 2]"
+        "name": "Slot-Nummern-Liste",
+        "description": "Slot-Nummern-Liste (1-4), die den Druckfarben zugeordnet wird. z. B. [1, 2]"
       },
       "slot_color_red": {
-        "name": "Slot Color Red",
-        "description": "Slot Color Red (0-255)."
+        "name": "Slot-Farbe Rot",
+        "description": "Slot-Farbe Rot (0-255)."
       },
       "slot_color_green": {
-        "name": "Slot Color Green",
-        "description": "Slot Color Green (0-255)."
+        "name": "Slot-Farbe Grün",
+        "description": "Slot-Farbe Grün (0-255)."
       },
       "slot_color_blue": {
-        "name": "Slot Color Blue",
-        "description": "Slot Color Blue (0-255)."
+        "name": "Slot-Farbe Blau",
+        "description": "Slot-Farbe Blau (0-255)."
       },
       "uploaded_gcode_file": {
-        "name": "Gcode File",
-        "description": "The sliced .gcode file."
+        "name": "Gcode-Datei",
+        "description": "Die geslicte .gcode-Datei."
       },
       "filename": {
-        "name": "File Name",
-        "description": "Full file name (with extension)"
+        "name": "Dateiname",
+        "description": "Vollständiger Dateiname (mit Endung)"
       },
       "file_id": {
-        "name": "File ID",
-        "description": "Cloud file ID"
+        "name": "Datei-ID",
+        "description": "Cloud-Datei-ID"
       },
       "finished#extrude": {
-        "name": "Extrude Finished",
-        "description": "End filament extrusion command."
+        "name": "Ausgabe beendet",
+        "description": "Befehl zum Beenden der Filamentausgabe."
       },
       "gcode_id": {
-        "name": "Gcode ID",
-        "description": "The gcode_id of an existing cloud file (see the file_list_cloud sensor's file_info attribute)."
+        "name": "Gcode-ID",
+        "description": "Die gcode_id einer bereits vorhandenen Cloud-Datei (siehe Attribut 'file_info' des file_list_cloud-Sensors)."
       }
     },
     "service_fieldsets": {
@@ -158,71 +158,71 @@
   },
   "config": {
     "abort": {
-      "already_configured": "Already configured.",
-      "reauth_successful": "Re-authentication successful."
+      "already_configured": "Bereits konfiguriert.",
+      "reauth_successful": "Erneute Authentifizierung erfolgreich."
     },
     "error": {
-      "invalid_auth": "Invalid authentication.",
-      "invalid_token": "Invalid user token.",
-      "cannot_connect": "Cannot connect.",
-      "no_printers": "No printers found.",
-      "invalid_printer": "Invalid printer."
+      "invalid_auth": "Ungültige Authentifizierung.",
+      "invalid_token": "Ungültiger Benutzer-Token.",
+      "cannot_connect": "Verbindung nicht möglich.",
+      "no_printers": "Keine Drucker gefunden.",
+      "invalid_printer": "Ungültiger Drucker."
     },
     "step": {
       "user": {
         "title": "Anycubic Cloud v2",
-        "description": "Choose how Home Assistant should authenticate with your Anycubic account.",
+        "description": "Wähle, wie sich Home Assistant bei deinem Anycubic-Konto authentifizieren soll.",
         "data": {
           "user_auth_mode": "[%key:common::user_auth_mode%]"
         }
       },
       "reauth_confirm": {
-        "title": "Re-authenticate Anycubic Cloud",
-        "description": "Your stored Anycubic Cloud token stopped working (it may have expired or been replaced). Click Submit to enter a new one - your printers and settings will be kept."
+        "title": "Anycubic Cloud erneut authentifizieren",
+        "description": "Dein gespeicherter Anycubic-Cloud-Token funktioniert nicht mehr (evtl. abgelaufen oder ersetzt). Klicke auf Absenden, um einen neuen einzugeben - deine Drucker und Einstellungen bleiben erhalten."
       },
       "auth_mode_web": {
-        "title": "Authentication Mode - Web",
-        "description": "Retrieve your token from https://cloud-universe.anycubic.com/file following the steps in the readme.",
+        "title": "Authentifizierungsmodus - Web",
+        "description": "Rufe deinen Token von https://cloud-universe.anycubic.com/file ab (Anleitung siehe readme).",
         "data": {
           "user_token": "[%key:common::user_token%]"
         }
       },
       "auth_mode_slicer": {
-        "title": "Authentication Mode - Slicer Next",
-        "description": "Slicer Next 1.4.1.2 and newer no longer store the token as plain text in AnycubicSlicerNext.conf. Instead, open the newest debug_*.log file in %AppData%\\AnycubicSlicerNext\\log\\ and copy the value after the last 'accessToken = ' entry (see the readme for a ready-to-use PowerShell command). On older Slicer Next versions the token can still be read directly from AnycubicSlicerNext.conf.",
+        "title": "Authentifizierungsmodus - Slicer Next",
+        "description": "Seit Slicer Next 1.4.1.2 wird der Token nicht mehr als Klartext in AnycubicSlicerNext.conf gespeichert. Öffne stattdessen die neueste debug_*.log Datei unter %AppData%\\AnycubicSlicerNext\\log\\ und kopiere den Wert nach dem letzten 'accessToken = ' Eintrag (Anleitung mit fertigem PowerShell-Befehl siehe readme). Bei älteren Slicer-Next-Versionen kann der Token weiterhin direkt aus AnycubicSlicerNext.conf gelesen werden.",
         "data": {
-          "user_token": "Slicer Access Token"
+          "user_token": "Slicer-Zugriffstoken"
         }
       },
       "auth_mode_android": {
-        "title": "Authentication Mode - Android App",
-        "description": "Requires both token and device_id.",
+        "title": "Authentifizierungsmodus - Android-App",
+        "description": "Benötigt sowohl Token als auch Geräte-ID.",
         "data": {
           "user_token": "[%key:common::user_token%]",
           "user_device_id": "[%key:common::user_device_id%]"
         }
       },
       "printer": {
-        "title": "Choose your printers.",
+        "title": "Wähle deine Drucker aus.",
         "data": {
-          "printer_ids": "Monitored Printers"
+          "printer_ids": "Überwachte Drucker"
         }
       },
       "auth_mode_pick": {
-        "title": "Authentication Mode",
-        "description": "Which authentication mode would you like to use?",
+        "title": "Authentifizierungsmodus",
+        "description": "Welchen Authentifizierungsmodus möchtest du verwenden?",
         "menu_options": {
-          "auth_mode_web": "Web (No MQTT)",
+          "auth_mode_web": "Web (kein MQTT)",
           "auth_mode_slicer": "Slicer Next (Win)",
           "auth_mode_android": "Android"
         }
       },
       "reauth_or_choose_printer": {
-        "title": "Re-Auth or Printer Select",
-        "description": "Are you re-authenticating or changing your monitored printer(s)?",
+        "title": "Re-Auth oder Drucker wählen",
+        "description": "Möchtest du dich erneut authentifizieren oder die überwachten Drucker ändern?",
         "menu_options": {
-          "reauth": "Re-Authenticate",
-          "printer": "Change Printer(s)"
+          "reauth": "Erneut authentifizieren",
+          "printer": "Drucker ändern"
         }
       }
     }
@@ -230,48 +230,48 @@
   "options": {
     "step": {
       "card_config": {
-        "title": "Panel Card Config",
+        "title": "Panel-Karten-Konfiguration",
         "data": {
-          "card_config": "Panel Card Config (YAML format)",
-          "enable_panel": "Show sidebar panel"
+          "card_config": "Panel-Karten-Konfiguration (YAML-Format)",
+          "enable_panel": "Seitenleisten-Panel anzeigen"
         },
-        "description": "Optional: customizes how the printer card looks in the sidebar panel. Leaving it empty/\"null\" is completely fine - the defaults apply (see below).\n\nTIP: Instead of typing YAML here by hand, you can also add the card normally via \"Edit Dashboard -> Add Card -> Anycubic Printer Card\" on any dashboard - that gives you a real settings dialog with toggles/dropdowns. This box here is only for the sidebar panel card, which has no visual editor.\n\nPossible keys (all optional):\nvertical (true/false, default: false) - portrait instead of landscape layout\nround (true/false, default: false) - round values to whole numbers\nuse_24hr (true/false, default: true) - 24-hour instead of 12-hour time format\ntemperatureUnit (C or F, default: C)\nscaleFactor (number, default: 1) - size of the animated printer graphic\nalwaysShow (true/false, default: false) - keep showing the card even when the printer is offline/idle\nshowSettingsButton (true/false, default: false) - show a gear icon on the card\nlightEntityId - entity_id of an EXISTING Home Assistant light (e.g. a room light near the printer) that can then be toggled directly from the card - NOT the printer's own light\npowerEntityId - entity_id of an existing outlet/switch, also toggleable directly from the card\ncameraEntityId - entity_id of an existing camera entity for a live preview on the card\nslotColors - list of custom hex colors for the ACE filament slots\nmonitoredStats (list, default: Status, ETA, Elapsed, Remaining) - which values appear on the card. Valid values: Status, Online, Availability, Project, Layer, ETA, Elapsed, Remaining, Hotend, Bed, T Hotend, T Bed, Dry Status, Dry Time, Speed Mode, Fan Speed, On Time, Off Time, Bottom Time, Model Height, Bottom Layers, Z Up Height, Z Up Speed, Z Down Speed\n\nCopy-paste examples (YAML format, no curly braces):\n\n- Just change units (Fahrenheit, 12-hour clock):\ntemperatureUnit: F\nuse_24hr: false\n\n- Also show fan speed and speed mode:\nmonitoredStats:\n  - Status\n  - ETA\n  - Elapsed\n  - Remaining\n  - Fan Speed\n  - Speed Mode\n\n- Make an existing room light + outlet toggleable from the card:\nlightEntityId: light.workshop_ceiling\npowerEntityId: switch.printer_outlet\n\n- Portrait layout, always visible, with gear button and custom slot colors:\nvertical: true\nalwaysShow: true\nshowSettingsButton: true\nslotColors:\n  - \"#ff0000\"\n  - \"#00ff00\"\n  - \"#0000ff\"\n  - \"#ffff00\""
+        "description": "Optional: passt das Aussehen der Drucker-Karte im Seitenleisten-Panel an. Leer bzw. \"null\" lassen ist völlig in Ordnung - dann gelten die Standardwerte (siehe unten).\n\nTIPP: Statt hier von Hand YAML zu tippen, kannst du die Karte auch ganz normal über \"Dashboard bearbeiten -> Karte hinzufügen -> Anycubic Printer Card\" auf einem Dashboard platzieren - dort gibt es einen echten Einstellungs-Dialog mit Schaltern/Auswahlfeldern. Diese Box hier ist nur für die Karte im Seitenleisten-Panel gedacht, für die es keinen grafischen Editor gibt.\n\nMögliche Schlüssel (alle optional):\nvertical (true/false, Standard: false) - Hochformat statt Querformat\nround (true/false, Standard: false) - Werte auf ganze Zahlen gerundet anzeigen\nuse_24hr (true/false, Standard: true) - 24-Stunden- statt 12-Stunden-Zeitformat\ntemperatureUnit (C oder F, Standard: C)\nscaleFactor (Zahl, Standard: 1) - Größe der animierten Drucker-Grafik\nalwaysShow (true/false, Standard: false) - Karte auch anzeigen, wenn der Drucker offline/inaktiv ist\nshowSettingsButton (true/false, Standard: false) - Zahnrad-Symbol auf der Karte anzeigen\nlightEntityId - entity_id einer VORHANDENEN Home-Assistant-Lampe (z. B. Raumlicht neben dem Drucker), die dann direkt auf der Karte an-/ausgeschaltet werden kann - NICHT das Drucker-eigene Licht\npowerEntityId - entity_id einer vorhandenen Steckdose/eines Schalters, ebenfalls direkt auf der Karte schaltbar\ncameraEntityId - entity_id einer vorhandenen Kamera-Entity für eine Live-Vorschau auf der Karte\nslotColors - Liste eigener Hex-Farben für die ACE-Filament-Slots\nmonitoredStats (Liste, Standard: Status, ETA, Elapsed, Remaining) - welche Werte auf der Karte erscheinen. Gültige Werte: Status, Online, Availability, Project, Layer, ETA, Elapsed, Remaining, Hotend, Bed, T Hotend, T Bed, Dry Status, Dry Time, Speed Mode, Fan Speed, On Time, Off Time, Bottom Time, Model Height, Bottom Layers, Z Up Height, Z Up Speed, Z Down Speed\n\nBeispiele zum Kopieren (im YAML-Format, ohne geschweifte Klammern eingeben):\n\n- Nur Einheiten anpassen (Fahrenheit, 12-Stunden-Uhr):\ntemperatureUnit: F\nuse_24hr: false\n\n- Zusätzlich Lüfter und Geschwindigkeitsmodus mit anzeigen:\nmonitoredStats:\n  - Status\n  - ETA\n  - Elapsed\n  - Remaining\n  - Fan Speed\n  - Speed Mode\n\n- Vorhandenes Raumlicht + Steckdose direkt auf der Karte schaltbar machen:\nlightEntityId: light.werkstatt_deckenlampe\npowerEntityId: switch.drucker_steckdose\n\n- Hochformat, immer sichtbar, mit Zahnrad-Button und eigenen Slot-Farben:\nvertical: true\nalwaysShow: true\nshowSettingsButton: true\nslotColors:\n  - \"#ff0000\"\n  - \"#00ff00\"\n  - \"#0000ff\"\n  - \"#ffff00\""
       },
       "debug": {
-        "title": "Debug Settings",
+        "title": "Debug-Einstellungen",
         "data": {
-          "debug_mqtt_msg": "Debug Log all MQTT messages",
-          "debug_api_calls": "Debug Log all API calls"
+          "debug_mqtt_msg": "Alle MQTT-Nachrichten protokollieren (Debug)",
+          "debug_api_calls": "Alle API-Aufrufe protokollieren (Debug)"
         }
       },
       "mqtt_presets": {
-        "title": "MQTT Connection & Drying Presets",
-        "description": "MQTT connect mode: controls when the integration keeps a live connection to the printer (instead of only polling the cloud every ~60s).\n\nDrying presets: store up to 5 fixed duration (hours) + temperature (°C) combinations here. Each preset then shows up as its own 'Drying Preset 1-5' button on the printer/ACE device - pressing it starts drying immediately with exactly these values, no need to set anything first.",
+        "title": "MQTT-Verbindung & Trocknungs-Presets",
+        "description": "MQTT-Verbindungsmodus: legt fest, wann sich die Integration live mit dem Drucker verbindet (statt nur alle ~60s über die Cloud abzufragen).\n\nTrocknungs-Presets: hier hinterlegst du bis zu 5 feste Kombinationen aus Dauer (Stunden) und Temperatur (°C). Jedes Preset erscheint danach als eigener Knopf 'Trocknungs-Preset 1-5' am Drucker/ACE-Gerät - ein Tastendruck startet die Trocknung sofort mit genau diesen Werten, ohne vorher etwas einstellen zu müssen.",
         "data": {
-          "mqtt_connect_mode": "MQTT connect mode",
-          "drying_preset_duration_1": "Preset 1: duration (hours)",
-          "drying_preset_temperature_1": "Preset 1: temperature (°C)",
-          "drying_preset_duration_2": "Preset 2: duration (hours)",
-          "drying_preset_temperature_2": "Preset 2: temperature (°C)",
-          "drying_preset_duration_3": "Preset 3: duration (hours)",
-          "drying_preset_temperature_3": "Preset 3: temperature (°C)",
-          "drying_preset_duration_4": "Preset 4: duration (hours)",
-          "drying_preset_temperature_4": "Preset 4: temperature (°C)",
-          "drying_preset_duration_5": "Preset 5: duration (hours)",
-          "drying_preset_temperature_5": "Preset 5: temperature (°C)"
+          "mqtt_connect_mode": "MQTT-Verbindungsmodus",
+          "drying_preset_duration_1": "Preset 1: Dauer (Stunden)",
+          "drying_preset_temperature_1": "Preset 1: Temperatur (°C)",
+          "drying_preset_duration_2": "Preset 2: Dauer (Stunden)",
+          "drying_preset_temperature_2": "Preset 2: Temperatur (°C)",
+          "drying_preset_duration_3": "Preset 3: Dauer (Stunden)",
+          "drying_preset_temperature_3": "Preset 3: Temperatur (°C)",
+          "drying_preset_duration_4": "Preset 4: Dauer (Stunden)",
+          "drying_preset_temperature_4": "Preset 4: Temperatur (°C)",
+          "drying_preset_duration_5": "Preset 5: Dauer (Stunden)",
+          "drying_preset_temperature_5": "Preset 5: Temperatur (°C)"
         },
         "data_description": {
-          "mqtt_connect_mode": "How aggressively the integration keeps a live MQTT connection to the printer open.",
-          "drying_preset_duration_1": "How long 'Drying Preset 1' dries for.",
-          "drying_preset_temperature_1": "What temperature 'Drying Preset 1' dries at.",
-          "drying_preset_duration_2": "How long 'Drying Preset 2' dries for.",
-          "drying_preset_temperature_2": "What temperature 'Drying Preset 2' dries at.",
-          "drying_preset_duration_3": "How long 'Drying Preset 3' dries for.",
-          "drying_preset_temperature_3": "What temperature 'Drying Preset 3' dries at.",
-          "drying_preset_duration_4": "How long 'Drying Preset 4' dries for.",
-          "drying_preset_temperature_4": "What temperature 'Drying Preset 4' dries at.",
-          "drying_preset_duration_5": "How long 'Drying Preset 5' dries for.",
-          "drying_preset_temperature_5": "What temperature 'Drying Preset 5' dries at."
+          "mqtt_connect_mode": "Wie aggressiv die Integration eine Live-MQTT-Verbindung zum Drucker offen hält.",
+          "drying_preset_duration_1": "Wie lange 'Trocknungs-Preset 1' trocknet.",
+          "drying_preset_temperature_1": "Bei welcher Temperatur 'Trocknungs-Preset 1' trocknet.",
+          "drying_preset_duration_2": "Wie lange 'Trocknungs-Preset 2' trocknet.",
+          "drying_preset_temperature_2": "Bei welcher Temperatur 'Trocknungs-Preset 2' trocknet.",
+          "drying_preset_duration_3": "Wie lange 'Trocknungs-Preset 3' trocknet.",
+          "drying_preset_temperature_3": "Bei welcher Temperatur 'Trocknungs-Preset 3' trocknet.",
+          "drying_preset_duration_4": "Wie lange 'Trocknungs-Preset 4' trocknet.",
+          "drying_preset_temperature_4": "Bei welcher Temperatur 'Trocknungs-Preset 4' trocknet.",
+          "drying_preset_duration_5": "Wie lange 'Trocknungs-Preset 5' trocknet.",
+          "drying_preset_temperature_5": "Bei welcher Temperatur 'Trocknungs-Preset 5' trocknet."
         }
       }
     }
@@ -279,284 +279,284 @@
   "entity": {
     "binary_sensor": {
       "job_in_progress": {
-        "name": "[%key:common::job%] In Progress"
+        "name": "Auftrag in Bearbeitung"
       },
       "job_complete": {
-        "name": "[%key:common::job%] Complete"
+        "name": "Auftrag abgeschlossen"
       },
       "job_failed": {
-        "name": "[%key:common::job%] Failed"
+        "name": "Auftrag fehlgeschlagen"
       },
       "job_is_paused": {
-        "name": "[%key:common::job%] Paused"
+        "name": "Auftrag pausiert"
       },
       "printer_online": {
-        "name": "Printer Online"
+        "name": "Drucker online"
       },
       "mqtt_connection_active": {
-        "name": "MQTT Connection Active"
+        "name": "MQTT-Verbindung aktiv"
       },
       "is_busy": {
-        "name": "Is Busy"
+        "name": "Beschäftigt"
       },
       "is_available": {
-        "name": "Is Available"
+        "name": "Verfügbar"
       },
       "dry_status_is_drying": {
-        "name": "[%key:common::drying%] Active"
+        "name": "Trocknung aktiv"
       },
       "secondary_dry_status_is_drying": {
-        "name": "[%key:common::secondary%] [%key:common::drying%] Active"
+        "name": "Sekundäre Trocknung aktiv"
       }
     },
     "button": {
       "drying_start_preset_1": {
-        "name": "Drying Preset 1"
+        "name": "Trocknungs-Preset 1"
       },
       "secondary_drying_start_preset_1": {
-        "name": "Secondary Drying Preset 1"
+        "name": "Sekundäres Trocknungs-Preset 1"
       },
       "drying_start_preset_2": {
-        "name": "Drying Preset 2"
+        "name": "Trocknungs-Preset 2"
       },
       "secondary_drying_start_preset_2": {
-        "name": "Secondary Drying Preset 2"
+        "name": "Sekundäres Trocknungs-Preset 2"
       },
       "drying_start_preset_3": {
-        "name": "Drying Preset 3"
+        "name": "Trocknungs-Preset 3"
       },
       "secondary_drying_start_preset_3": {
-        "name": "Secondary Drying Preset 3"
+        "name": "Sekundäres Trocknungs-Preset 3"
       },
       "drying_start_preset_4": {
-        "name": "Drying Preset 4"
+        "name": "Trocknungs-Preset 4"
       },
       "secondary_drying_start_preset_4": {
-        "name": "Secondary Drying Preset 4"
+        "name": "Sekundäres Trocknungs-Preset 4"
       },
       "drying_start_preset_5": {
-        "name": "Drying Preset 5"
+        "name": "Trocknungs-Preset 5"
       },
       "secondary_drying_start_preset_5": {
-        "name": "Secondary Drying Preset 5"
+        "name": "Sekundäres Trocknungs-Preset 5"
       },
       "dry_start_custom": {
-        "name": "Start Custom Drying"
+        "name": "Benutzerdefinierte Trocknung starten"
       },
       "secondary_dry_start_custom": {
-        "name": "Start Custom Drying"
+        "name": "Benutzerdefinierte Trocknung starten"
       },
       "manual_mqtt_connection_refresh": {
-        "name": "Refresh MQTT Connection"
+        "name": "MQTT-Verbindung aktualisieren"
       },
       "print_pause": {
-        "name": "Pause Print"
+        "name": "Druck pausieren"
       },
       "print_resume": {
-        "name": "Resume Print"
+        "name": "Druck fortsetzen"
       },
       "print_stop": {
-        "name": "Stop Print"
+        "name": "Druck stoppen"
       },
       "clear_completed_print_job": {
-        "name": "Clear Completed Print Job"
+        "name": "Druckauftrag abschließen"
       },
       "multi_color_box_filament_extrude": {
-        "name": "Extrude Filament"
+        "name": "Filament Vorschub (Extrude)"
       },
       "multi_color_box_filament_retract": {
-        "name": "Retract Filament"
+        "name": "Filament Rückzug (Retract)"
       },
       "dry_stop": {
-        "name": "Stop Drying"
+        "name": "Trocknung stoppen"
       },
       "secondary_dry_stop": {
-        "name": "Stop Drying"
+        "name": "Trocknung stoppen"
       }
     },
     "image": {
       "job_image_url": {
-        "name": "[%key:common::job%] Preview"
+        "name": "Auftragsvorschau"
       }
     },
     "sensor": {
       "current_status": {
-        "name": "Current Status"
+        "name": "Aktueller Status"
       },
       "curr_nozzle_temp": {
-        "name": "[%key:common::nozzle_temperature%]"
+        "name": "Düsentemperatur"
       },
       "curr_hotbed_temp": {
-        "name": "[%key:common::hotbed_temperature%]"
+        "name": "Betttemperatur"
       },
       "job_name": {
-        "name": "[%key:common::job%] Name"
+        "name": "Auftragsname"
       },
       "job_progress": {
-        "name": "[%key:common::job%] Progress %"
+        "name": "Auftragsfortschritt %"
       },
       "job_time_elapsed": {
-        "name": "[%key:common::job%] Time Elapsed"
+        "name": "Verstrichene Zeit"
       },
       "job_time_remaining": {
-        "name": "[%key:common::job%] Time Remaining"
+        "name": "Verbleibende Zeit"
       },
       "job_eta": {
-        "name": "[%key:common::job%] ETA"
+        "name": "Voraussichtliches Ende"
       },
       "job_state": {
-        "name": "[%key:common::job%] State"
+        "name": "Auftragsstatus"
       },
       "job_current_layer": {
-        "name": "[%key:common::job%] Current Layer"
+        "name": "Aktuelle Schicht"
       },
       "job_total_layers": {
-        "name": "[%key:common::job%] Total Layers"
+        "name": "Schichten gesamt"
       },
       "job_speed_mode": {
-        "name": "[%key:common::job%] [%key:common::speed_mode%]"
+        "name": "Geschwindigkeitsmodus"
       },
       "job_z_thick": {
-        "name": "[%key:common::job%] Z Thickness"
+        "name": "Schichtdicke (Z)"
       },
       "job_model_height": {
-        "name": "[%key:common::job%] Model Height"
+        "name": "Modellhöhe"
       },
       "job_anti_alias_count": {
-        "name": "[%key:common::job%] Anti Alias"
+        "name": "Anti-Aliasing"
       },
       "job_on_time": {
-        "name": "[%key:common::job%] [%key:common::on_time%]"
+        "name": "Belichtungszeit (An)"
       },
       "job_off_time": {
-        "name": "[%key:common::job%] [%key:common::off_time%]"
+        "name": "Belichtungspause (Aus)"
       },
       "job_bottom_time": {
-        "name": "[%key:common::job%] [%key:common::bottom_time%]"
+        "name": "Bodenschicht-Zeit"
       },
       "job_bottom_layers": {
-        "name": "[%key:common::job%] [%key:common::bottom_layers%]"
+        "name": "Bodenschichten"
       },
       "job_z_up_height": {
-        "name": "[%key:common::job%] Z Up Height"
+        "name": "Z-Hub Höhe"
       },
       "job_z_up_speed": {
-        "name": "[%key:common::job%] Z Up Speed"
+        "name": "Z-Hub Geschwindigkeit (Auf)"
       },
       "job_z_down_speed": {
-        "name": "[%key:common::job%] Z Down Speed"
+        "name": "Z-Hub Geschwindigkeit (Ab)"
       },
       "target_nozzle_temp": {
-        "name": "[%key:common::target%] [%key:common::nozzle_temperature%]"
+        "name": "Solltemperatur Düse"
       },
       "target_hotbed_temp": {
-        "name": "[%key:common::target%] [%key:common::hotbed_temperature%]"
+        "name": "Solltemperatur Bett"
       },
       "print_speed_pct": {
-        "name": "Print Speed %"
+        "name": "Druckgeschwindigkeit %"
       },
       "fan_speed_pct": {
-        "name": "[%key:common::fan_speed%] %"
+        "name": "Lüftergeschwindigkeit %"
       },
       "file_list_local": {
-        "name": "[%key:common::file_list%] (Local)"
+        "name": "Dateiliste (Lokal)"
       },
       "file_list_udisk": {
-        "name": "[%key:common::file_list%] (USB Disk)"
+        "name": "Dateiliste (USB-Stick)"
       },
       "file_list_cloud": {
-        "name": "[%key:common::file_list%] (Cloud)"
+        "name": "Dateiliste (Cloud)"
       },
       "ace_spools": {
-        "name": "ACE Spools"
+        "name": "ACE-Spulen"
       },
       "ace_current_temperature": {
-        "name": "ACE Current [%key:common::temperature%]"
+        "name": "ACE aktuelle Temperatur"
       },
       "dry_status_target_temperature": {
-        "name": "[%key:common::drying%] [%key:common::target%] [%key:common::temperature%]"
+        "name": "Solltemperatur Trocknung"
       },
       "dry_status_total_duration": {
-        "name": "[%key:common::drying%] [%key:common::total_duration%]"
+        "name": "Trocknungsdauer gesamt"
       },
       "dry_status_remaining_time": {
-        "name": "[%key:common::drying%] [%key:common::remaining_time%]"
+        "name": "Trocknung verbleibende Zeit"
       },
       "secondary_ace_spools": {
-        "name": "[%key:common::secondary%] ACE Spools"
+        "name": "Sekundäre ACE-Spulen"
       },
       "secondary_ace_current_temperature": {
-        "name": "[%key:common::secondary%] ACE Current [%key:common::temperature%]"
+        "name": "Sekundäre ACE aktuelle Temperatur"
       },
       "secondary_dry_status_target_temperature": {
-        "name": "[%key:common::secondary%] [%key:common::drying%] [%key:common::target%] [%key:common::temperature%]"
+        "name": "Sekundäre Solltemperatur Trocknung"
       },
       "secondary_dry_status_total_duration": {
-        "name": "[%key:common::secondary%] [%key:common::drying%] [%key:common::total_duration%]"
+        "name": "Sekundäre Trocknungsdauer gesamt"
       },
       "secondary_dry_status_remaining_time": {
-        "name": "[%key:common::secondary%] [%key:common::drying%] [%key:common::remaining_time%]"
-      }
-    },
-    "switch": {
-      "multi_color_box_runout_refill": {
-        "name": "ACE Run-out Refill"
-      },
-      "secondary_multi_color_box_runout_refill": {
-        "name": "[%key:common::secondary%] ACE Run-out Refill"
-      },
-      "manual_mqtt_connection_enabled": {
-        "name": "Manual MQTT Connection Enabled"
-      }
-    },
-    "update": {
-      "fw_version": {
-        "name": "Printer [%key:common::firmware%]"
-      },
-      "multi_color_box_fw_version": {
-        "name": "ACE [%key:common::firmware%]"
-      },
-      "secondary_multi_color_box_fw_version": {
-        "name": "[%key:common::secondary%] ACE [%key:common::firmware%]"
+        "name": "Sekundäre Trocknung verbleibende Zeit"
       }
     },
     "number": {
       "dry_status_target_temperature": {
-        "name": "Drying Target Temperature"
+        "name": "Solltemperatur Trocknung"
       },
       "drying_temperature_input": {
-        "name": "Custom Drying Temperature"
+        "name": "Benutzerdefinierte Trocknungstemperatur"
       },
       "drying_time_input": {
-        "name": "Custom Drying Duration"
+        "name": "Benutzerdefinierte Trocknungsdauer"
       },
       "secondary_dry_status_target_temperature": {
-        "name": "Secondary Drying Target Temperature"
+        "name": "Sekundäre Solltemperatur Trocknung"
       },
       "secondary_drying_temperature_input": {
-        "name": "Secondary Custom Drying Temperature"
+        "name": "Sekundäre benutzerdefinierte Trocknungstemperatur"
       },
       "secondary_drying_time_input": {
-        "name": "Secondary Custom Drying Duration"
+        "name": "Sekundäre benutzerdefinierte Trocknungsdauer"
       },
       "target_hotbed_temp": {
-        "name": "[%key:common::target%] [%key:common::hotbed_temperature%]"
+        "name": "Solltemperatur Bett"
       },
       "target_nozzle_temp": {
-        "name": "[%key:common::target%] [%key:common::nozzle_temperature%]"
+        "name": "Solltemperatur Düse"
       },
       "fan_speed_pct": {
-        "name": "[%key:common::fan_speed%] %"
+        "name": "Lüftergeschwindigkeit %"
       }
     },
     "select": {
       "print_speed_mode": {
-        "name": "Print [%key:common::speed_mode%]"
+        "name": "Druckgeschwindigkeitsmodus"
+      }
+    },
+    "switch": {
+      "multi_color_box_runout_refill": {
+        "name": "ACE Restfüllstand-Nachfüllung"
+      },
+      "secondary_multi_color_box_runout_refill": {
+        "name": "Sekundäre ACE Restfüllstand-Nachfüllung"
+      },
+      "manual_mqtt_connection_enabled": {
+        "name": "Manuelle MQTT-Verbindung aktiviert"
+      }
+    },
+    "update": {
+      "fw_version": {
+        "name": "Drucker-Firmware"
+      },
+      "multi_color_box_fw_version": {
+        "name": "ACE-Firmware"
+      },
+      "secondary_multi_color_box_fw_version": {
+        "name": "Sekundäre ACE-Firmware"
       }
     },
     "light": {
       "printer_light": {
-        "name": "Printer Light"
+        "name": "Drucker-Licht"
       }
     }
   },

@@ -106,6 +106,7 @@ class AnycubicPrinter:
         "_has_peripheral_udisk",
         "_is_bound_to_user",
         "_job_download_progress",
+        "_light_status",
     )
 
     def __init__(
@@ -210,6 +211,7 @@ class AnycubicPrinter:
         self._has_peripheral_udisk: bool = False
         self._is_bound_to_user: bool = True
         self._job_download_progress: int = 0
+        self._light_status: dict[int, dict[str, int]] = dict()
 
         self._ignore_init_errors = False
 
@@ -224,6 +226,24 @@ class AnycubicPrinter:
 
     def set_has_peripheral_camera(self, has_peripheral: bool) -> None:
         self._has_peripheral_camera = bool(has_peripheral)
+
+    def _set_light_status(self, light_type: int, status: int, brightness: int) -> None:
+        self._light_status[int(light_type)] = {
+            "status": int(status),
+            "brightness": int(brightness),
+        }
+
+    def light_is_on(self, light_type: int = 1) -> bool | None:
+        """Return the last MQTT-confirmed on/off state for a light type.
+
+        Returns None if no confirmed report has been seen yet for this
+        light_type (e.g. right after startup, before any query/control
+        response has come in over MQTT).
+        """
+        entry = self._light_status.get(int(light_type))
+        if entry is None:
+            return None
+        return bool(entry["status"])
 
     def set_has_peripheral_multi_color_box(self, has_peripheral: bool) -> None:
         self._has_peripheral_multi_color_box = bool(has_peripheral)
@@ -1055,6 +1075,36 @@ class AnycubicPrinter:
         else:
             raise AnycubicMQTTUnknownUpdate(ErrorsMQTTUpdate.peripherals)
 
+    def _process_mqtt_update_light(
+        self,
+        action: str,
+        state: str,
+        payload: AnycubicConsumableData,
+    ) -> None:
+        # Beispiel-Payload 'control' (Antwort auf einen Ein-/Ausschalt-Befehl):
+        #   {'data': {'type': 1, 'status': 1, 'brightness': 100}}
+        # Beispiel-Payload 'query' (Antwort auf eine Statusabfrage):
+        #   {'data': {'lights': [{'type': 1, 'status': 1, 'brightness': 100}]}}
+        if action == 'control' and state == 'done':
+            data = payload['data']
+            self._set_light_status(
+                light_type=data['type'],
+                status=data['status'],
+                brightness=data['brightness'],
+            )
+            return
+        elif action == 'query' and state == 'done':
+            data = payload['data']
+            for light in data.get('lights', []):
+                self._set_light_status(
+                    light_type=light['type'],
+                    status=light['status'],
+                    brightness=light['brightness'],
+                )
+            return
+        else:
+            raise AnycubicMQTTUnknownUpdate(ErrorsMQTTUpdate.light)
+
     def process_mqtt_update(
         self,
         topic: str,
@@ -1102,6 +1152,9 @@ class AnycubicPrinter:
 
         elif msg_type == 'peripherie':
             self._process_mqtt_update_peripherals(action, state, payload)
+
+        elif msg_type == 'light':
+            self._process_mqtt_update_light(action, state, payload)
 
         else:
             raise AnycubicMQTTUnknownUpdate(ErrorsMQTTUpdate.unknown.format(msg_type))
@@ -2570,6 +2623,38 @@ class AnycubicPrinter:
         return await self._api_parent.query_printer_options(
             printer=self,
             project=project,
+        )
+
+    async def set_light_status(
+        self,
+        light_on: bool,
+        light_type: int = 1,
+        project: AnycubicProject | None = None,
+    ) -> str | None:
+        """Turn the printer's video/box light on or off.
+
+        EXPERIMENTAL: wraps a previously unused, unverified API call. The
+        cloud command requires an active project context - if none is given,
+        this falls back to the printer's latest known project (mirroring
+        query_printer_options). If the printer has no project at all (never
+        printed), this raises AnycubicAPIError since there's nothing to
+        attach the light command to.
+
+        Anycubic sends the confirmation/response over MQTT rather than in
+        the immediate HTTP reply, and this integration does not currently
+        parse that response - the resulting light entity is optimistic
+        (assumed_state) rather than reflecting a confirmed device state.
+        """
+        target_project = project or self.latest_project
+
+        if not target_project:
+            raise AnycubicAPIError(ErrorsGeneral.no_printer_to_print)
+
+        return await self._api_parent._send_order_set_light_status(
+            printer=self,
+            project=target_project,
+            light_on=light_on,
+            light_type=light_type,
         )
 
     def __repr__(self) -> str:

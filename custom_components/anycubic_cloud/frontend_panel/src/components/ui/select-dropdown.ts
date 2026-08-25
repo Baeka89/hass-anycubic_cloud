@@ -1,6 +1,6 @@
 import { mdiChevronDown } from "@mdi/js";
 
-import { CSSResult, LitElement, css, html, nothing } from "lit";
+import { CSSResult, LitElement, PropertyValues, css, html, nothing } from "lit";
 import { property, state } from "lit/decorators.js";
 import { map } from "lit/directives/map.js";
 import { styleMap } from "lit/directives/style-map.js";
@@ -92,9 +92,15 @@ export class AnycubicUISelectDropdown extends LitElement {
   @state()
   private _hidden: boolean = false;
 
+  protected willUpdate(changedProperties: PropertyValues): void {
+    super.willUpdate(changedProperties);
+    if (changedProperties.has("initialItem")) {
+      this._selectedItem = this.initialItem;
+    }
+  }
+
   // eslint-disable-next-line @typescript-eslint/require-await
   async firstUpdated(): Promise<void> {
-    this._selectedItem = this.initialItem;
     this._hidden = true;
     this._active = false;
     this.requestUpdate();

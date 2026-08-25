@@ -1,0 +1,193 @@
+{
+  "title": "Anycubic Cloud",
+  "common": {
+    "actions": {
+      "cancel": "Abbrechen",
+      "pause": "Pausieren",
+      "print": "Drucken",
+      "resume": "Fortsetzen",
+      "yes": "Ja",
+      "no": "Nein",
+      "save": "Speichern"
+    },
+    "messages": {
+      "mqtt_unsupported": "Diese Funktion benötigt MQTT, um Daten abzurufen. MQTT wird mit dem konfigurierten Authentifizierungsmodus leider nicht unterstützt."
+    },
+    "states": {
+      "unknown": "Unbekannt"
+    }
+  },
+  "card": {
+    "buttons": {
+      "print_settings": "Druckeinstellungen",
+      "dry": "Trocknen",
+      "runout_refill": "Nachfüllen",
+      "ace_settings": "ACE-Einstellungen"
+    },
+    "ace_settings": {
+      "heading": "ACE-Einstellungen",
+      "label_spools": "Spulen",
+      "hint_spools_unavailable": "Live-Spulendaten sind aktuell nicht verfügbar (MQTT evtl. nicht verbunden) - Material und Farbe können trotzdem gesetzt werden, sie greifen dann, sobald die Box sich wieder meldet."
+    },
+    "configure": {
+      "tabs": {
+        "main": "Allgemein",
+        "stats": "Statistiken",
+        "colours": "ACE-Farbvorgaben"
+      },
+      "labels": {
+        "printer_id": "Drucker auswählen",
+        "vertical": "Vertikales Layout?",
+        "round": "Werte runden?",
+        "use_24hr": "24-Stunden-Format?",
+        "show_settings_button": "Druckeinstellungen-Button immer anzeigen?",
+        "always_show": "Karte immer anzeigen?",
+        "temperature_unit": "Temperatureinheit",
+        "light_entity_id": "Licht-Entität",
+        "power_entity_id": "Strom-Entität",
+        "camera_entity_id": "Kamera-Entität",
+        "scale_factor": "Skalierungsfaktor",
+        "slot_colors": "Slot-Farbvorgaben"
+      }
+    },
+    "print_settings": {
+      "confirm_message": "Möchtest du den Druck wirklich {action}?",
+      "label_nozzle_temp": "Solltemperatur Düse",
+      "label_hotbed_temp": "Solltemperatur Bett",
+      "label_fan_speed": "Lüftergeschwindigkeit",
+      "label_aux_fan_speed": "AUX-Lüftergeschwindigkeit",
+      "label_box_fan_speed": "Box-Lüftergeschwindigkeit",
+      "print_pause": "Druck pausieren",
+      "print_resume": "Druck fortsetzen",
+      "print_cancel": "Druck stoppen",
+      "print_finish_job": "Druckauftrag abschließen",
+      "retract_filament": "Filament Rückzug (Retract)",
+      "extrude_filament": "Filament Vorschub (Extrude)",
+      "save_speed_mode": "Geschwindigkeitsmodus speichern",
+      "save_target_nozzle": "Solltemp. Düse speichern",
+      "save_target_hotbed": "Solltemp. Bett speichern",
+      "save_fan_speed": "Lüftergeschwindigkeit speichern",
+      "save_aux_fan_speed": "AUX-Lüftergeschw. speichern",
+      "save_box_fan_speed": "Box-Lüftergeschw. speichern"
+    },
+    "drying_settings": {
+      "heading": "Trocknungsoptionen",
+      "button_preset": "Preset",
+      "button_stop_drying": "Trocknung stoppen",
+      "button_minutes": "Min",
+      "custom_heading": "Benutzerdefinierte Trocknung",
+      "custom_label_temp": "Temperatur",
+      "custom_label_duration": "Dauer (Minuten)",
+      "custom_button_start": "Benutzerdefinierte Trocknung starten",
+      "state_drying": "Trocknet",
+      "state_not_drying": "Trocknet nicht",
+      "hint_nothing_available": "Aktuell stehen keine Trocknungs-Steuerelemente zur Verfügung - meist bedeutet das, dass die ACE-Box gerade nicht über MQTT verbunden ist. Prüfe den MQTT-Verbindungsmodus in den Integrationsoptionen und ob Drucker/ACE-Box wirklich online sind."
+    },
+    "spool_settings": {
+      "heading": "Slot bearbeiten",
+      "label_select_material": "Material auswählen",
+      "label_select_colour": "Farbe manuell auswählen",
+      "label_preset_colour": "Vorgabefarbe wählen"
+    },
+    "monitored_stats": {
+      "ETA": "Vorauss. Ende",
+      "Elapsed": "Verstrichen",
+      "Remaining": "Verbleibend",
+      "Status": "Status",
+      "Online": "Online",
+      "Availability": "Verfügbarkeit",
+      "Project": "Projekt",
+      "Layer": "Schicht",
+      "Hotend": "Düse",
+      "Bed": "Bett",
+      "T Hotend": "Soll Düse",
+      "T Bed": "Soll Bett",
+      "Dry Status": "Trocknungsstatus",
+      "Dry Time": "Trocknungszeit",
+      "Speed Mode": "Geschw.-Modus",
+      "Fan Speed": "Lüftergeschw.",
+      "ACE Temp": "ACE Temp.",
+      "T ACE Temp": "Soll ACE Temp.",
+      "On Time": "Belichtung An",
+      "Off Time": "Belichtung Aus",
+      "Bottom Time": "Bodenschicht-Zeit",
+      "Model Height": "Modellhöhe",
+      "Bottom Layers": "Bodenschichten",
+      "Z Up Height": "Z-Hub Höhe",
+      "Z Up Speed": "Z-Hub Geschw. (Auf)",
+      "Z Down Speed": "Z-Hub Geschw. (Ab)"
+    },
+    "bridge": {
+      "mqtt_connection": "MQTT-Verbindung",
+      "refresh_connection": "Verbindung aktualisieren"
+    },
+    "linked_devices": {
+      "go_to_printer": "Zum Drucker",
+      "go_to_ace": "Zur ACE Pro Box"
+    },
+    "badges": {
+      "update_available": "Update verfügbar"
+    }
+  },
+  "panels": {
+    "initial": {
+      "printer_select": "Wähle einen Drucker aus.",
+      "type_printer": "Drucker",
+      "type_ace": "ACE Pro Box",
+      "type_bridge": "Cloud-Verbindung"
+    },
+    "main": {
+      "title": "Übersicht",
+      "cards": {
+        "main": {
+          "description": "Allgemeine Informationen über den Drucker.",
+          "fields": {
+            "printer_name": "Name",
+            "printer_id": "ID",
+            "printer_mac": "MAC",
+            "printer_model": "Modell",
+            "printer_fw_version": "FW-Version",
+            "printer_fw_update_available": "FW-Status",
+            "printer_online": "Online",
+            "printer_available": "Verfügbar",
+            "printer_mqtt_active": "MQTT-Verbindung",
+            "curr_nozzle_temp": "Aktuelle Düsentemperatur",
+            "curr_hotbed_temp": "Aktuelle Betttemperatur",
+            "target_nozzle_temp": "Solltemperatur Düse",
+            "target_hotbed_temp": "Solltemperatur Bett",
+            "job_state": "Auftragsstatus",
+            "job_progress": "Auftragsfortschritt",
+            "ace_fw_version": "ACE FW-Version",
+            "ace_fw_update_available": "ACE FW-Status",
+            "drying_active": "ACE Trocknungsstatus",
+            "drying_progress": "ACE Trocknungsfortschritt"
+          }
+        }
+      }
+    },
+    "files_cloud": {
+      "title": "Cloud-Dateien",
+      "cards": {}
+    },
+    "files_local": {
+      "title": "Lokale Dateien",
+      "cards": {}
+    },
+    "files_udisk": {
+      "title": "USB-Dateien",
+      "cards": {}
+    },
+    "print_save_in_cloud": {
+      "title": "Drucken (in Cloud speichern)",
+      "cards": {}
+    },
+    "print_no_cloud_save": {
+      "title": "Drucken (ohne Cloud-Speicherung)",
+      "cards": {}
+    },
+    "debug": {
+      "title": "Debug",
+      "cards": {}
+    }
+  }
+}
