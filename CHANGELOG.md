@@ -2,6 +2,22 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.9.1]
+
+### English 🇺🇸
+
+#### Fixed
+
+- **Backend:** fixed a crash where the ACE Pro Box's `feed_status` field being absent from the cloud API response (observed after a printer firmware update) caused a `KeyError`, which the coordinator then misreported as an authentication failure ("Coordinator authentication failed with unknown Error. Check credentials 'feed_status'") even though the login itself was working fine. `feed_status` is now read defensively and simply treated as "unknown" if the API omits it, instead of crashing.
+- **Backend:** fixed the coordinator's initial-connection setup incorrectly classifying *any* unexpected error as an authentication failure, which could send users into a pointless reauthentication flow even when their credentials were completely valid. Unexpected setup errors now raise a generic setup error instead, matching how unexpected errors are already handled elsewhere in the integration (e.g. during regular data updates).
+
+### Deutsch 🇩🇪
+
+#### Behoben
+
+- **Backend:** Absturz behoben, bei dem ein nach einem Drucker-Firmware-Update fehlendes `feed_status`-Feld der ACE-Pro-Box in der Cloud-API-Antwort einen `KeyError` auslöste, den der Coordinator fälschlich als Authentifizierungsfehler gemeldet hat ("Coordinator authentication failed with unknown Error. Check credentials 'feed_status'") – obwohl der Login selbst einwandfrei funktionierte. `feed_status` wird jetzt defensiv gelesen und bei Fehlen einfach als "unbekannt" behandelt, statt abzustürzen.
+- **Backend:** behoben, dass der Coordinator beim initialen Verbindungsaufbau *jeden* unerwarteten Fehler als Authentifizierungsfehler eingestuft hat, was Nutzer unnötig in einen Reauth-Dialog schicken konnte, obwohl die Zugangsdaten völlig in Ordnung waren. Unerwartete Setup-Fehler lösen jetzt stattdessen einen generischen Setup-Fehler aus, passend zu der Art, wie unerwartete Fehler an anderer Stelle in der Integration (z. B. bei regulären Datenaktualisierungen) bereits behandelt werden.
+
 ## [0.9.0]
 
 ### English 🇺🇸

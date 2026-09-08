@@ -779,9 +779,9 @@ class AnycubicCloudDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise
 
         except Exception as error:
-            raise ConfigEntryAuthFailed(
-                f"Coordinator authentication failed with unknown Error. Check credentials {error}"
-            )
+            raise ConfigEntryError(
+                f"Coordinator setup failed with an unexpected error (not an authentication problem): {error}"
+            ) from error
 
     async def _setup_anycubic_printer_objects(self) -> None:
         for printer_id in self.entry.data[CONF_PRINTER_ID_LIST]:
