@@ -13,6 +13,7 @@ from homeassistant.components.sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     PERCENTAGE,
+    EntityCategory,
     Platform,
     UnitOfLength,
     UnitOfTemperature,
@@ -144,6 +145,18 @@ FDM_SENSOR_TYPES: list[AnycubicSensorEntityDescription] = list([
     AnycubicSensorEntityDescription(
         key="target_hotbed_temp",
         translation_key="target_hotbed_temp",
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        printer_entity_type=PrinterEntityType.FDM,
+    ),
+    AnycubicSensorEntityDescription(
+        key="curr_chamber_temp",
+        translation_key="curr_chamber_temp",
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        printer_entity_type=PrinterEntityType.FDM,
+    ),
+    AnycubicSensorEntityDescription(
+        key="target_chamber_temp",
+        translation_key="target_chamber_temp",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         printer_entity_type=PrinterEntityType.FDM,
     ),
@@ -281,6 +294,20 @@ SENSOR_TYPES: list[AnycubicSensorEntityDescription] = list([
         key="job_z_thick",
         translation_key="job_z_thick",
         printer_entity_type=PrinterEntityType.PRINTER,
+    ),
+    AnycubicSensorEntityDescription(
+        key="features",
+        translation_key="features",
+        printer_entity_type=PrinterEntityType.PRINTER,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        not_measured=True,
+    ),
+    AnycubicSensorEntityDescription(
+        key="unknown_type_function_ids",
+        translation_key="unknown_type_function_ids",
+        printer_entity_type=PrinterEntityType.PRINTER,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        not_measured=True,
     ),
 ])
 

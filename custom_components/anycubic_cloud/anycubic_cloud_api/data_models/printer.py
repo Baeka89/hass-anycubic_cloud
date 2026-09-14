@@ -15,6 +15,7 @@ from ..exceptions.error_strings import (
 from ..exceptions.exceptions import (
     AnycubicAPIError,
     AnycubicDataParsingError,
+    AnycubicMQTTCommandFailed,
     AnycubicMQTTUnhandledData,
     AnycubicMQTTUnknownUpdate,
 )
@@ -107,6 +108,8 @@ class AnycubicPrinter:
         "_is_bound_to_user",
         "_job_download_progress",
         "_light_status",
+        "_features",
+        "_hardware_profile",
     )
 
     def __init__(
@@ -212,6 +215,8 @@ class AnycubicPrinter:
         self._is_bound_to_user: bool = True
         self._job_download_progress: int = 0
         self._light_status: dict[int, dict[str, int]] = dict()
+        self._features: dict[str, bool] = dict()
+        self._hardware_profile: dict[str, Any] = dict()
 
         self._ignore_init_errors = False
 
@@ -250,6 +255,19 @@ class AnycubicPrinter:
 
     def set_has_peripheral_udisk(self, has_peripheral: bool) -> None:
         self._has_peripheral_udisk = bool(has_peripheral)
+
+    def _set_features(self, features: dict[str, Any] | None) -> None:
+        """Store the (currently informational-only) capability flags Anycubic
+        sends in the MQTT 'info' report, e.g. auto_leveling_support,
+        drying_first_support, etc. Keys we don't recognise yet simply pass
+        through as-is - we don't validate individual keys here."""
+        if isinstance(features, dict):
+            self._features = {
+                str(key): bool(value)
+                for key, value in features.items()
+            }
+        else:
+            self._features = dict()
 
     def _set_type_function_ids(self, type_function_ids: list[int] | None) -> None:
         if isinstance(type_function_ids, list):
@@ -832,6 +850,65 @@ class AnycubicPrinter:
         else:
             raise AnycubicMQTTUnknownUpdate(ErrorsMQTTUpdate.fan)
 
+    def _process_mqtt_update_info(
+        self,
+        action: str,
+        state: str,
+        payload: AnycubicConsumableData,
+    ) -> None:
+        # Periodischer Statusschnappschuss (Name, IP, Firmware, aktuelle
+        # Temperaturen, Lüfter, Capability-Flags). Wurde bisher komplett als
+        # "Unknown mqtt update, type: info" verworfen. Wir übernehmen hier
+        # bewusst nur die Felder, die wir auch anderswo schon auswerten -
+        # der Rest wird verbraucht, ohne einen Fehler auszulösen.
+        if action == 'report' and state == 'done':
+            data = payload['data']
+
+            temp = data.get('temp')
+            if (
+                isinstance(temp, AnycubicConsumableData)
+                and temp.get('curr_hotbed_temp') is not None
+                and temp.get('curr_nozzle_temp') is not None
+                and self.parameter is not None
+            ):
+                self.parameter.update_current_temps(
+                    temp['curr_hotbed_temp'],
+                    temp['curr_nozzle_temp'],
+                )
+            if isinstance(temp, AnycubicConsumableData):
+                temp.force_empty()
+
+            fan_speed_pct = data.get('fan_speed_pct')
+            if fan_speed_pct is not None:
+                self._fan_speed = int(fan_speed_pct)
+
+            self._set_features(data.get('features'))
+            features = data.get('features')
+            if isinstance(features, AnycubicConsumableData):
+                features.force_empty()
+
+            data.force_empty()
+            return
+        else:
+            raise AnycubicMQTTUnknownUpdate(ErrorsMQTTUpdate.info)
+
+    def _process_mqtt_update_hardware_profile(
+        self,
+        action: str,
+        state: str,
+        payload: AnycubicConsumableData,
+    ) -> None:
+        # z.B. {'material': '', 'nozzle_diameter': 0.4} - aktuell rein
+        # informativ gespeichert, keine Entity dafür.
+        if state == 'done':
+            data = payload.get('data')
+            if isinstance(data, AnycubicConsumableData):
+                self._hardware_profile = dict(data.data)
+                data.force_empty()
+            return
+        else:
+            raise AnycubicMQTTUnknownUpdate(ErrorsMQTTUpdate.hardware_profile)
+
     def _process_mqtt_update_print(
         self,
         action: str,
@@ -1093,6 +1170,18 @@ class AnycubicPrinter:
                 brightness=data['brightness'],
             )
             return
+        elif action == 'control' and state == 'failed':
+            # Beispiel-Payload: {'code': 10349, 'msg': 'extruder light open
+            # fail', 'data': None} - der Drucker/die Cloud hat den Befehl
+            # verstanden, ihn aber abgelehnt. Kein Parsing-Fehler unsererseits,
+            # aber auch kein Erfolg - wir lassen den Lichtstatus unverändert
+            # und geben den Grund klar aus, statt "Unknown light data" zu werfen.
+            raise AnycubicMQTTCommandFailed(
+                ErrorsMQTTUpdate.light_command_failed.format(
+                    payload.get('msg'),
+                    payload.get('code'),
+                )
+            )
         elif action == 'query' and state == 'done':
             data = payload['data']
             for light in data.get('lights', []):
@@ -1155,6 +1244,12 @@ class AnycubicPrinter:
 
         elif msg_type == 'light':
             self._process_mqtt_update_light(action, state, payload)
+
+        elif msg_type == 'info':
+            self._process_mqtt_update_info(action, state, payload)
+
+        elif msg_type == 'hardwareProfile':
+            self._process_mqtt_update_hardware_profile(action, state, payload)
 
         else:
             raise AnycubicMQTTUnknownUpdate(ErrorsMQTTUpdate.unknown.format(msg_type))
@@ -1342,6 +1437,34 @@ class AnycubicPrinter:
     @property
     def type_function_ids(self) -> list[int]:
         return self._type_function_ids
+
+    @property
+    def unknown_type_function_ids(self) -> list[int]:
+        """type_function_ids the printer reports that AnycubicFunctionID
+        doesn't have a name for yet. Useful for diagnostics when a newer
+        printer model (e.g. one with capabilities added after this
+        integration was written) reports flags we don't recognise."""
+        known_ids = {int(function_id) for function_id in AnycubicFunctionID}
+        return [
+            function_id
+            for function_id in self._type_function_ids
+            if function_id not in known_ids
+        ]
+
+    @property
+    def features(self) -> dict[str, bool]:
+        """Capability flags reported via the MQTT 'info' report (e.g.
+        auto_leveling_support, drying_first_support). Empty until the first
+        such report has been received - not all printer models/firmware
+        versions send this."""
+        return self._features
+
+    @property
+    def hardware_profile(self) -> dict[str, Any]:
+        """Raw hardwareProfile data (e.g. material, nozzle_diameter) from
+        the MQTT report. Empty until the first such report has been
+        received."""
+        return self._hardware_profile
 
     @property
     def supports_function_axle_movement(self) -> bool:
@@ -1930,6 +2053,20 @@ class AnycubicPrinter:
     def latest_project_temp_max_hotbed(self) -> int | None:
         if self.latest_project:
             return self.latest_project.temp_max_hotbed
+
+        return None
+
+    @property
+    def latest_project_curr_chamber_temp(self) -> int | None:
+        if self.latest_project:
+            return self.latest_project.curr_chamber_temp
+
+        return None
+
+    @property
+    def latest_project_target_chamber_temp(self) -> int | None:
+        if self.latest_project:
+            return self.latest_project.target_chamber_temp
 
         return None
 
@@ -2631,7 +2768,7 @@ class AnycubicPrinter:
         light_type: int = 1,
         project: AnycubicProject | None = None,
     ) -> str | None:
-        """Turn the printer's video/box light on or off.
+        """Turn one of the printer's lights on or off.
 
         EXPERIMENTAL: wraps a previously unused, unverified API call. The
         cloud command requires an active project context - if none is given,
@@ -2641,9 +2778,11 @@ class AnycubicPrinter:
         attach the light command to.
 
         Anycubic sends the confirmation/response over MQTT rather than in
-        the immediate HTTP reply, and this integration does not currently
-        parse that response - the resulting light entity is optimistic
-        (assumed_state) rather than reflecting a confirmed device state.
+        the immediate HTTP reply. This is parsed by
+        _process_mqtt_update_light() and stored per light_type, so the
+        resulting light entity reflects a real, confirmed on/off state
+        rather than an assumed/optimistic one - once a confirmation has
+        been seen for that specific light_type.
         """
         target_project = project or self.latest_project
 

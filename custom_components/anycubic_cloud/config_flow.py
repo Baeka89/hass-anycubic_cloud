@@ -31,12 +31,16 @@ from .const import (
     CONF_ENABLE_PANEL,
     CONF_MQTT_CONNECT_MODE,
     CONF_PRINTER_ID_LIST,
+    CONF_UPDATE_RETRY_COUNT,
     CONF_USER_AUTH_MODE,
     CONF_USER_DEVICE_ID,
     CONF_USER_TOKEN,
+    DEFAULT_UPDATE_RETRY_COUNT,
     DOMAIN,
     LOGGER,
     MAX_DRYING_PRESETS,
+    MAX_UPDATE_RETRY_COUNT,
+    MIN_UPDATE_RETRY_COUNT,
 )
 
 
@@ -399,7 +403,16 @@ class AnycubicCloudOptionsFlowHandler(OptionsFlow):
                     str(LocalAnycubicMQTTConnectMode.Always.value): "Immer verbunden bleiben",
                     str(LocalAnycubicMQTTConnectMode.Never_Connect.value): "Niemals über MQTT verbinden",
                 }
-            )
+            ),
+            vol.Optional(
+                CONF_UPDATE_RETRY_COUNT,
+                default=self.config_entry.options.get(
+                    CONF_UPDATE_RETRY_COUNT, DEFAULT_UPDATE_RETRY_COUNT
+                ),
+            ): vol.All(
+                vol.Coerce(int),
+                vol.Range(min=MIN_UPDATE_RETRY_COUNT, max=MAX_UPDATE_RETRY_COUNT),
+            ),
         }
 
         for x in range(MAX_DRYING_PRESETS):

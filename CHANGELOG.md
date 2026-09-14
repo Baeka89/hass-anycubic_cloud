@@ -2,6 +2,40 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.9.2]
+
+### English 🇺🇸
+
+#### Added
+
+- **Kobra S1 support: chamber temperature sensors.** The printer's current and target chamber temperature (when reported by the cloud API) are now exposed as their own sensor entities, following the same pattern as the existing nozzle/hotbed temperature sensors. On printers that don't report chamber data (e.g. the Kobra 3), the entities exist but simply show "unavailable" - no behavior change for existing setups.
+- **Diagnostic sensors for `features` and `unknown_type_function_ids`.** Two new diagnostic-category sensors summarize which cloud-reported feature flags are currently enabled and list any printer capability IDs the integration doesn't recognize yet, to make future troubleshooting/support easier without needing debug logs.
+- **Second light entity for the room/box light.** Printers that report a `BOX_LIGHT` capability (like the Kobra S1) now get their own "Room Light" entity, separate from the head/extruder light. **Note:** the light command value used for this entity is a best-guess based on the Cloud API's parameter pattern and has not yet been confirmed against real hardware behavior; please report back if it doesn't control the light you expect.
+- **Configurable retry/backoff for cloud update cycles.** A single slow or transiently failing update cycle no longer immediately counts as a failure. The integration now retries the full update cycle with exponential backoff (1s, 2s, 4s, ...) before giving up. The number of retries (0-5, default 2) can be adjusted in the integration's options.
+- **Home Assistant repair notice for a persistently degraded cloud connection.** If update cycles keep failing across two or more consecutive cooldown periods (even after the retries above), a low-severity Repair notice now appears under Settings → Repairs, explaining that this usually points to a temporary Anycubic Cloud outage rather than a printer problem. It clears itself automatically once updates succeed again - no action required.
+
+#### Fixed
+
+- **Backend:** the printer's head/extruder light command was previously sent with a hardcoded light type regardless of which light capability the entity actually represented, which the Kobra S1 rejected with cloud error code `10349` because it has no extruder light. The head-light entity is now correctly gated to printers reporting a video/head light capability, and light commands use the light type appropriate for the entity being controlled (see the new Room Light entity above).
+- **Backend:** the cloud API's `info`/`hardwareProfile` MQTT message types were previously entirely unhandled, logging as a generic "Unknown mqtt update" on every occurrence (frequent on the Kobra S1). Both message types are now parsed properly.
+- **Backend:** internal API errors were previously swallowed in some cases without logging the underlying cause, making certain connection issues hard to diagnose; the real exception is now logged and chained through.
+
+### Deutsch 🇩🇪
+
+#### Hinzugefügt
+
+- **Kobra-S1-Unterstützung: Kammertemperatur-Sensoren.** Die aktuelle und die Ziel-Kammertemperatur des Druckers (sofern von der Cloud-API gemeldet) werden jetzt als eigene Sensor-Entities bereitgestellt, nach demselben Muster wie die bestehenden Düsen-/Heizbett-Temperatursensoren. Auf Druckern ohne Kammerdaten (z. B. Kobra 3) existieren die Entities zwar, zeigen aber schlicht "nicht verfügbar" - keine Verhaltensänderung für bestehende Setups.
+- **Diagnose-Sensoren für `features` und `unknown_type_function_ids`.** Zwei neue Sensoren der Kategorie "Diagnose" fassen zusammen, welche von der Cloud gemeldeten Feature-Flags aktuell aktiviert sind, und listen etwaige Drucker-Funktions-IDs auf, die die Integration noch nicht kennt - erleichtert künftige Fehlersuche/Support ohne Debug-Logs.
+- **Zweite Licht-Entity fürs Raum-/Boxlicht.** Drucker, die eine `BOX_LIGHT`-Fähigkeit melden (wie der Kobra S1), bekommen jetzt eine eigene "Raumlicht"-Entity, getrennt vom Kopf-/Extruderlicht. **Hinweis:** Der für diese Entity verwendete Lichtbefehls-Wert ist eine fundierte Vermutung basierend auf dem Parameter-Muster der Cloud-API und wurde noch nicht an echter Hardware bestätigt - bitte Rückmeldung geben, falls damit nicht das erwartete Licht gesteuert wird.
+- **Konfigurierbares Retry/Backoff für Cloud-Update-Zyklen.** Ein einzelner langsamer oder vorübergehend fehlschlagender Update-Zyklus zählt nicht mehr sofort als Fehlschlag. Die Integration wiederholt den kompletten Update-Zyklus jetzt mit exponentiellem Backoff (1s, 2s, 4s, ...), bevor sie aufgibt. Die Anzahl der Wiederholungen (0-5, Standard 2) lässt sich in den Optionen der Integration einstellen.
+- **Home-Assistant-Reparaturhinweis bei anhaltend gestörter Cloud-Verbindung.** Schlagen Update-Zyklen über zwei oder mehr aufeinanderfolgende Cooldown-Perioden hinweg wiederholt fehl (selbst nach den oben genannten Wiederholungsversuchen), erscheint jetzt unter Einstellungen → Reparaturen ein Hinweis niedriger Dringlichkeit, der erklärt, dass dies meist auf eine vorübergehende Störung der Anycubic Cloud hindeutet und nicht auf ein Druckerproblem. Er verschwindet automatisch, sobald Updates wieder erfolgreich sind - keine Aktion nötig.
+
+#### Behoben
+
+- **Backend:** Der Lichtbefehl fürs Kopf-/Extruderlicht wurde bisher unabhängig von der tatsächlich angesprochenen Lichtfähigkeit mit einem festen Lichttyp gesendet, was der Kobra S1 mit Cloud-Fehlercode `10349` ablehnte, da er kein Extruderlicht besitzt. Die Kopflicht-Entity ist jetzt korrekt auf Drucker mit Video-/Kopflicht-Fähigkeit beschränkt, und Lichtbefehle verwenden den zur jeweiligen Entity passenden Lichttyp (siehe neue Raumlicht-Entity oben).
+- **Backend:** Die MQTT-Nachrichtentypen `info`/`hardwareProfile` der Cloud-API wurden bisher überhaupt nicht behandelt und erschienen bei jedem Auftreten (häufig beim Kobra S1) nur als generisches "Unknown mqtt update" im Log. Beide Nachrichtentypen werden jetzt korrekt verarbeitet.
+- **Backend:** Interne API-Fehler wurden in manchen Fällen bisher verschluckt, ohne die eigentliche Ursache zu loggen, was bestimmte Verbindungsprobleme schwer diagnostizierbar machte; die echte Exception wird jetzt geloggt und durchgereicht.
+
 ## [0.9.1]
 
 ### English 🇺🇸

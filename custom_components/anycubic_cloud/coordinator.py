@@ -23,6 +23,7 @@ from homeassistant.exceptions import (
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.device_registry import DeviceInfo, async_get as async_get_device_registry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
@@ -40,6 +41,7 @@ from .const import (
     CONF_USER_DEVICE_ID,
     CONF_USER_TOKEN,
     DEFAULT_SCAN_INTERVAL,
+    DEGRADED_CONNECTION_ISSUE_THRESHOLD,
     DOMAIN,
     ENTITY_ID_DRYING_START_PRESET_,
     FAILED_UPDATE_DELAY,
@@ -53,23 +55,28 @@ from .const import (
     PRINT_JOB_STARTED_UPDATE_DELAY,
     STORAGE_KEY,
     STORAGE_VERSION,
+    UPDATE_RETRY_BACKOFF_BASE_SECONDS,
 )
 from .helpers import (
     AnycubicMQTTConnectMode,
     build_printer_device_info,
     check_descriptor_state_ace_not_supported,
     check_descriptor_state_light_not_supported,
+    check_descriptor_state_box_light_not_supported,
     check_descriptor_state_ace_primary_unavailable,
     check_descriptor_state_ace_secondary_unavailable,
     check_descriptor_state_drying_unavailable,
     check_descriptor_status_not_fdm,
     check_descriptor_status_not_lcd,
     get_drying_preset_from_entry_options,
+    get_update_retry_count_from_entry_options,
     printer_attributes_for_key,
     printer_state_connected_ace_units,
     printer_state_supports_ace,
     state_string_active,
     state_string_loaded,
+    features_enabled_summary,
+    unknown_type_function_ids_summary,
 )
 
 if TYPE_CHECKING:
@@ -92,6 +99,7 @@ class AnycubicCloudDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._cloud_file_list: list[dict[str, Any]] | None = None
         self._last_state_update: int | None = None
         self._failed_updates: int = 0
+        self._consecutive_cooldown_periods: int = 0
         self._mqtt_task: asyncio.Future[None] | None = None
         self._mqtt_manually_connected = False
         self._mqtt_idle_since: int | None = None
@@ -253,6 +261,7 @@ class AnycubicCloudDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "is_busy": printer.is_busy,
             "is_available": printer.is_available,
             "printer_light_is_on": printer.light_is_on(),
+            "printer_box_light_is_on": printer.light_is_on(light_type=2),
             "current_status": printer.current_status,
             "curr_nozzle_temp": printer.curr_nozzle_temp,
             "curr_hotbed_temp": printer.curr_hotbed_temp,
@@ -296,6 +305,8 @@ class AnycubicCloudDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "job_total_layers": printer.latest_project_print_total_layers,
             "target_nozzle_temp": printer.latest_project_target_nozzle_temp,
             "target_hotbed_temp": printer.latest_project_target_hotbed_temp,
+            "curr_chamber_temp": printer.latest_project_curr_chamber_temp,
+            "target_chamber_temp": printer.latest_project_target_chamber_temp,
             "job_speed_mode": printer.latest_project_print_speed_mode_string,
             "print_speed_pct": printer.latest_project_print_speed_pct,
             "job_z_thick": printer.latest_project_z_thick,
@@ -311,6 +322,10 @@ class AnycubicCloudDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "job_z_down_speed": printer.latest_project_print_z_down_speed,
             "manual_mqtt_connection_enabled": self._mqtt_manually_connected,
             "mqtt_connection_active": self.anycubic_api.mqtt_is_started,
+            "features": features_enabled_summary(printer.features),
+            "unknown_type_function_ids": unknown_type_function_ids_summary(
+                printer.unknown_type_function_ids
+            ),
         }
 
         attributes = {
@@ -384,6 +399,12 @@ class AnycubicCloudDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             },
             "mqtt_connection_active": {
                 "supports_mqtt_login": self.anycubic_api.anycubic_auth.supports_mqtt_login,
+            },
+            "features": {
+                "features": printer.features,
+            },
+            "unknown_type_function_ids": {
+                "unknown_type_function_ids": printer.unknown_type_function_ids,
             },
         }
 
@@ -475,12 +496,11 @@ class AnycubicCloudDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 supports_ace = printer_state_supports_ace(self, printer_id)
 
                 printer_obj = self.get_printer_for_id(printer_id)
-                supports_light = bool(
-                    printer_obj
-                    and (
-                        printer_obj.supports_function_video_light
-                        or printer_obj.supports_function_box_light
-                    )
+                supports_video_light = bool(
+                    printer_obj and printer_obj.supports_function_video_light
+                )
+                supports_box_light = bool(
+                    printer_obj and printer_obj.supports_function_box_light
                 )
 
                 remaining_unregistered_descriptors = list()
@@ -504,7 +524,12 @@ class AnycubicCloudDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                         or
                         check_descriptor_state_light_not_supported(
                             description,
-                            supports_light,
+                            supports_video_light,
+                        )
+                        or
+                        check_descriptor_state_box_light_not_supported(
+                            description,
+                            supports_box_light,
                         )
                     ):
                         continue
@@ -908,42 +933,136 @@ class AnycubicCloudDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 )
                 await asyncio.sleep(API_SETUP_RETRY_INTERVAL_SECONDS)
 
+    async def _sleep_before_update_retry(
+        self,
+        attempt: int,
+        max_attempts: int,
+    ) -> None:
+        """Wartet vor dem nächsten Retry-Versuch innerhalb eines
+        Update-Zyklus, mit exponentiell steigendem Backoff
+        (UPDATE_RETRY_BACKOFF_BASE_SECONDS, dann verdoppelt je Versuch:
+        z.B. 1s, 2s, 4s, ...). `attempt` ist der Versuch, der gerade
+        fehlgeschlagen ist (1-basiert)."""
+        backoff_seconds = UPDATE_RETRY_BACKOFF_BASE_SECONDS * (2 ** (attempt - 1))
+        LOGGER.warning(
+            f"Anycubic update attempt {attempt} of {max_attempts} failed, "
+            f"retrying in {backoff_seconds} seconds."
+        )
+        await asyncio.sleep(backoff_seconds)
+
+    def _degraded_connection_issue_id(self) -> str:
+        """Eindeutige Issue-ID für den HA-Repair-Hinweis dieser Config
+        Entry (mehrere Anycubic-Cloud-Accounts sollen unabhängige Hinweise
+        bekommen)."""
+        return f"degraded_cloud_connection_{self.entry.entry_id}"
+
+    def _create_degraded_connection_issue(self) -> None:
+        """Erzeugt (oder aktualisiert, falls bereits vorhanden) den
+        HA-Repair-Hinweis. Wird aufgerufen, sobald DEGRADED_CONNECTION_ISSUE_THRESHOLD
+        aufeinanderfolgende Cooldown-Perioden erreicht wurden. `is_fixable=False`,
+        da es sich um einen reinen Informationshinweis handelt (kein automatischer
+        Fix-Flow) - der Nutzer kann ihn in HA als "erledigt"/ignoriert markieren."""
+        ir.async_create_issue(
+            self.hass,
+            DOMAIN,
+            self._degraded_connection_issue_id(),
+            is_fixable=False,
+            severity=ir.IssueSeverity.WARNING,
+            translation_key="degraded_cloud_connection",
+            translation_placeholders={"name": self.entry.title},
+        )
+
+    def _delete_degraded_connection_issue(self) -> None:
+        """Entfernt den HA-Repair-Hinweis wieder, sobald ein Update-Zyklus
+        erfolgreich war. `async_delete_issue` ist ein No-Op, falls der
+        Hinweis (noch) gar nicht existiert - kein zusätzlicher Existenz-Check
+        nötig."""
+        ir.async_delete_issue(
+            self.hass,
+            DOMAIN,
+            self._degraded_connection_issue_id(),
+        )
+
     async def get_anycubic_updates(self) -> bool:
-        """Fetch data from AnycubicCloud."""
+        """Fetch data from AnycubicCloud.
+
+        Ein einzelner Update-Zyklus wird bei transienten Fehlern
+        (Parsing-/API-Fehler oder unerwartete Exceptions) intern mit
+        exponentiellem Backoff wiederholt, bevor er endgültig als
+        fehlgeschlagen gilt und `_failed_updates` (siehe MAX_FAILED_UPDATES
+        oben) hochgezählt wird. Die Anzahl der Retries ist über den
+        Options-Flow konfigurierbar (CONF_UPDATE_RETRY_COUNT); 0 Retries
+        entspricht dem bisherigen Verhalten (ein Versuch, sofort UpdateFailed
+        bei Fehler). ConfigEntryAuthFailed wird NIE retried, da Auth-Fehler
+        nicht transient sind.
+
+        Erreicht `_failed_updates` MAX_FAILED_UPDATES, wird eine
+        "Cooldown-Periode" gestartet (Updates pausieren für
+        FAILED_UPDATE_DELAY Sekunden). Wiederholt sich das über
+        DEGRADED_CONNECTION_ISSUE_THRESHOLD aufeinanderfolgende
+        Cooldown-Perioden hinweg (d.h. auch nach der Pause klappt es
+        weiterhin nicht), wird ein HA-Repair-Hinweis erzeugt. Der Hinweis
+        verschwindet automatisch, sobald ein Zyklus wieder erfolgreich
+        durchläuft."""
 
         if self._failed_updates >= MAX_FAILED_UPDATES:
             self._last_state_update = int(time.time()) + FAILED_UPDATE_DELAY
             self._failed_updates = 0
+            self._consecutive_cooldown_periods += 1
+            if self._consecutive_cooldown_periods >= DEGRADED_CONNECTION_ISSUE_THRESHOLD:
+                self._create_degraded_connection_issue()
             return False
 
         self._last_state_update = int(time.time())
 
-        try:
-            await self._check_or_save_tokens()
+        max_attempts = get_update_retry_count_from_entry_options(self.entry.options) + 1
+        attempt = 1
 
-            for printer_id, printer in self._anycubic_printers.items():
-                await printer.update_info_from_api(True)
+        while True:
+            try:
+                await self._check_or_save_tokens()
 
-            self._failed_updates = 0
+                for printer_id, printer in self._anycubic_printers.items():
+                    await printer.update_info_from_api(True)
 
-            await self._check_anycubic_mqtt_connection()
+                self._failed_updates = 0
 
-        except ConfigEntryAuthFailed:
-            raise
+                await self._check_anycubic_mqtt_connection()
 
-        except AnycubicAPIParsingError as error:
-            self._failed_updates += 1
-            raise UpdateFailed(error) from error
+            except ConfigEntryAuthFailed:
+                raise
 
-        except AnycubicAPIError as error:
-            self._failed_updates += 1
-            raise UpdateFailed(error) from error
+            except AnycubicAPIParsingError as error:
+                if attempt < max_attempts:
+                    await self._sleep_before_update_retry(attempt, max_attempts)
+                    attempt += 1
+                    continue
+                self._failed_updates += 1
+                raise UpdateFailed(error) from error
 
-        except Exception as error:
-            tb = traceback.format_exc()
-            LOGGER.debug(f"Anycubic update error: {error}\n{tb}")
-            self._failed_updates += 1
-            raise UpdateFailed(error) from error
+            except AnycubicAPIError as error:
+                if attempt < max_attempts:
+                    await self._sleep_before_update_retry(attempt, max_attempts)
+                    attempt += 1
+                    continue
+                self._failed_updates += 1
+                raise UpdateFailed(error) from error
+
+            except Exception as error:
+                tb = traceback.format_exc()
+                LOGGER.warning(f"Anycubic update error: {error}\n{tb}")
+                if attempt < max_attempts:
+                    await self._sleep_before_update_retry(attempt, max_attempts)
+                    attempt += 1
+                    continue
+                self._failed_updates += 1
+                raise UpdateFailed(error) from error
+
+            break
+
+        if self._consecutive_cooldown_periods:
+            self._consecutive_cooldown_periods = 0
+            self._delete_degraded_connection_issue()
 
         self._last_state_update = int(time.time())
 
@@ -1213,13 +1332,20 @@ class AnycubicCloudDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self,
         printer_id: int,
         light_on: bool,
+        light_type: int = 1,
     ) -> None:
-        """Turn the printer's video/box light on or off.
+        """Turn one of the printer's lights on or off.
 
         EXPERIMENTAL - see AnycubicPrinter.set_light_status() for the
-        caveats (requires an active/latest project, response arrives over
-        MQTT and is not currently parsed by this integration, so the light
-        entity is optimistic/assumed_state rather than confirmed).
+        caveats (requires an active/latest project). The confirmation is
+        parsed from the printer's MQTT light/report message (see
+        AnycubicPrinter._process_mqtt_update_light), so the light entity
+        reflects a real, confirmed on/off state per light_type rather than
+        an assumed/optimistic one.
+
+        light_type=1 is the confirmed head/extruder ("video") light.
+        light_type=2 is an unconfirmed, best-guess value for the room/box
+        light - see light.py's box light entity docstring.
         """
         printer = self.get_printer_for_id(printer_id)
         if not printer:
@@ -1227,6 +1353,6 @@ class AnycubicCloudDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         try:
             await self._connect_mqtt_for_action_response()
-            await printer.set_light_status(light_on=light_on)
+            await printer.set_light_status(light_on=light_on, light_type=light_type)
         except AnycubicAPIError as ex:
             raise HomeAssistantError(ex) from ex

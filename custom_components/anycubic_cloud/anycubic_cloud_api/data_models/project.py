@@ -102,6 +102,8 @@ class AnycubicProject:
         "_temp_max_hotbed",
         "_temp_min_nozzle",
         "_temp_max_nozzle",
+        "_curr_chamber_temp",
+        "_target_chamber_temp",
         "_download_progress",
     )
 
@@ -236,6 +238,8 @@ class AnycubicProject:
         self._temp_max_hotbed: int | None = None
         self._temp_min_nozzle: int | None = None
         self._temp_max_nozzle: int | None = None
+        self._curr_chamber_temp: int | None = None
+        self._target_chamber_temp: int | None = None
         self._download_progress: int = 0
 
     @classmethod
@@ -504,6 +508,13 @@ class AnycubicProject:
         target_nozzle_temp = temperature_data.get('target_nozzle_temp')
         target_hotbed_temp = temperature_data.get('target_hotbed_temp')
 
+        # Kammertemperatur: bislang nur im Projekt-Objekt beobachtet (Kobra S1),
+        # nicht im `parameter`-Objekt des Druckers. Kein bekanntes Limit-Feld
+        # (kein "chamber_temp_limit"), daher nur curr/target per .get(), sicher
+        # gegen Drucker/Firmwares, die diese Felder gar nicht senden.
+        curr_chamber_temp = temperature_data.get('curr_chamber_temp')
+        target_chamber_temp = temperature_data.get('target_chamber_temp')
+
         temp_min_hotbed = hotbed_temp_limit[0] if len(hotbed_temp_limit) == 2 else None
         temp_max_hotbed = hotbed_temp_limit[1] if len(hotbed_temp_limit) == 2 else None
         temp_min_nozzle = nozzle_temp_limit[0] if len(nozzle_temp_limit) == 2 else None
@@ -516,6 +527,9 @@ class AnycubicProject:
         self._temp_max_hotbed = int(temp_max_hotbed) if temp_max_hotbed is not None else None
         self._temp_min_nozzle = int(temp_min_nozzle) if temp_min_nozzle is not None else None
         self._temp_max_nozzle = int(temp_max_nozzle) if temp_max_nozzle is not None else None
+
+        self._curr_chamber_temp = int(curr_chamber_temp) if curr_chamber_temp is not None else None
+        self._target_chamber_temp = int(target_chamber_temp) if target_chamber_temp is not None else None
 
     def update_extra_data(self, data: dict[str, Any] | None) -> None:
         if data is None:
@@ -971,6 +985,14 @@ class AnycubicProject:
     @property
     def temp_max_nozzle(self) -> int | None:
         return self._temp_max_nozzle
+
+    @property
+    def curr_chamber_temp(self) -> int | None:
+        return self._curr_chamber_temp
+
+    @property
+    def target_chamber_temp(self) -> int | None:
+        return self._target_chamber_temp
 
     @property
     def print_speed_mode(self) -> int | None:

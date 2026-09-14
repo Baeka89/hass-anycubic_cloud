@@ -11,8 +11,12 @@ from .anycubic_cloud_api.const.enums import AnycubicPrinterMaterialType
 from .const import (
     CONF_DRYING_PRESET_DURATION_,
     CONF_DRYING_PRESET_TEMPERATURE_,
+    CONF_UPDATE_RETRY_COUNT,
+    DEFAULT_UPDATE_RETRY_COUNT,
     DOMAIN,
     MANUFACTURER,
+    MAX_UPDATE_RETRY_COUNT,
+    MIN_UPDATE_RETRY_COUNT,
     PrinterEntityType,
 )
 
@@ -65,6 +69,24 @@ def get_drying_preset_from_entry_options(
         preset_duration,
         preset_temperature,
     )
+
+
+def get_update_retry_count_from_entry_options(
+    entry_options: MappingProxyType[str, Any],
+) -> int:
+    """Anzahl der Retry-Versuche pro Coordinator-Update-Zyklus (zusätzlich
+    zum ersten Versuch), bevor der Zyklus als fehlgeschlagen gilt.
+    Nutzer-konfigurierbar über den Options-Flow; wird hier robust auf den
+    gültigen Bereich begrenzt (falls z.B. ein alter/ungültiger Options-Wert
+    aus einer früheren Version vorliegt)."""
+    raw_value = entry_options.get(CONF_UPDATE_RETRY_COUNT, DEFAULT_UPDATE_RETRY_COUNT)
+
+    try:
+        retry_count = int(raw_value)
+    except (TypeError, ValueError):
+        return DEFAULT_UPDATE_RETRY_COUNT
+
+    return max(MIN_UPDATE_RETRY_COUNT, min(MAX_UPDATE_RETRY_COUNT, retry_count))
 
 
 def printer_state_for_key(
@@ -144,14 +166,30 @@ def check_descriptor_state_ace_not_supported(
 
 def check_descriptor_state_light_not_supported(
     description: AnycubicCloudEntityDescription,
-    supports_light: bool,
+    supports_video_light: bool,
 ) -> bool:
-    """Gate the (experimental) light entity behind the VIDEO_LIGHT/BOX_LIGHT
-    capability flags the printer reports. See printer.set_light_status()
-    for the caveats around this feature."""
+    """Gate the existing (experimental) head/extruder light entity behind the
+    VIDEO_LIGHT capability flag specifically - NOT OR'd with BOX_LIGHT anymore.
+    See printer.set_light_status() for the caveats around this feature, and
+    check_descriptor_state_box_light_not_supported() for the separate,
+    additional room/box light entity."""
     return (
         description.printer_entity_type == PrinterEntityType.LIGHT
-        and not supports_light
+        and not supports_video_light
+    )
+
+
+def check_descriptor_state_box_light_not_supported(
+    description: AnycubicCloudEntityDescription,
+    supports_box_light: bool,
+) -> bool:
+    """Gate the additional (experimental, unconfirmed light_type) room/box
+    light entity behind the BOX_LIGHT capability flag specifically. Purely
+    additive: printers that only report VIDEO_LIGHT (e.g. presumably the
+    Kobra 3) never get this entity."""
+    return (
+        description.printer_entity_type == PrinterEntityType.LIGHT_BOX
+        and not supports_box_light
     )
 
 
@@ -248,6 +286,27 @@ def state_string_active(state: Any) -> str:
 
 def state_string_loaded(state: Any) -> str:
     return "loaded" if state is not None else "not loaded"
+
+
+def features_enabled_summary(features: dict[str, bool] | None) -> str:
+    """Knappe native_value-Darstellung der 'features'-Capability-Flags aus der
+    MQTT 'info'-Nachricht. Zeigt nur die aktuell aktivierten Features; das volle
+    Dict (inkl. deaktivierter Flags) liegt in extra_state_attributes."""
+    if not features:
+        return "none"
+
+    enabled = sorted(key for key, value in features.items() if value)
+    return ", ".join(enabled) if enabled else "none"
+
+
+def unknown_type_function_ids_summary(unknown_ids: list[int] | None) -> str:
+    """Knappe native_value-Darstellung unbekannter type_function_ids (Capability-
+    IDs, die das AnycubicFunctionID-Enum noch nicht kennt, z.B. bei neueren
+    Druckermodellen wie dem Kobra S1)."""
+    if not unknown_ids:
+        return "none"
+
+    return ", ".join(str(x) for x in unknown_ids)
 
 
 REGEX_NOQUOTE_STRING = re.compile(r"^['\"]?([^'\"]+)['\"]?$")

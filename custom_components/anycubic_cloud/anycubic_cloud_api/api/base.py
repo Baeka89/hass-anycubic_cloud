@@ -192,8 +192,14 @@ class AnycubicAPIBase:
                     resp_data = await resp.text()
 
                 response_url = resp.url
-        except Exception:
-            raise AnycubicAPIParsingError(ErrorsAPIParsing.api_error_server_maintenance)
+        except Exception as error:
+            self._log_to_error(
+                f"Anycubic API fetch error ({type(error).__name__}): {error} "
+                f"[url: {url}]"
+            )
+            raise AnycubicAPIParsingError(
+                ErrorsAPIParsing.api_error_server_maintenance
+            ) from error
 
         time_end: float = time.time()
         time_diff: float = time_end - time_start

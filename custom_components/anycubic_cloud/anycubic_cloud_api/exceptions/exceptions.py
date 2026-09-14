@@ -51,6 +51,15 @@ class AnycubicMQTTUnknownUpdate(AnycubicDataParsingError):
     pass
 
 
+class AnycubicMQTTCommandFailed(AnycubicDataParsingError):
+    """Raised when the Anycubic cloud/printer explicitly reports that a
+    command we sent (e.g. a light toggle) failed, as opposed to us failing
+    to understand its response. Carries the reason/code Anycubic gave us,
+    if any, so it can be surfaced in the logs instead of being hidden
+    behind a generic 'unknown update' message."""
+    pass
+
+
 class AnycubicMQTTUnhandledData(AnycubicDataParsingError):
     __slots__ = (
         "_unhandled_mqtt_data",

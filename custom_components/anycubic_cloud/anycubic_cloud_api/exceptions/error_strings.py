@@ -338,6 +338,15 @@ class ErrorsMQTTUpdate:
     peripherals = str(
         "Unknown peripherals data."
     )
+    info = str(
+        "Unknown info data."
+    )
+    hardware_profile = str(
+        "Unknown hardwareProfile data."
+    )
     light = str(
         "Unknown light data."
+    )
+    light_command_failed = str(
+        "Anycubic reported that the light command failed: {0} (code: {1})."
     )

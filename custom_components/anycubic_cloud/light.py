@@ -1,15 +1,24 @@
 """Light entity for Anycubic Cloud (EXPERIMENTAL).
 
-Controls a printer's video/box light via a previously unused cloud API call.
-One caveat remains from the API layer: the underlying command requires an
+Controls a printer's lights via a previously unused cloud API call. One
+caveat remains from the API layer: the underlying command requires an
 active (or the printer's latest) print project - it cannot necessarily be
 toggled at any arbitrary time. Confirmation now arrives and is parsed from
 the printer's MQTT light/report message (see
 AnycubicPrinter._process_mqtt_update_light), so this reflects a real,
-confirmed on/off state rather than an assumed/optimistic one.
+confirmed on/off state rather than an assumed/optimistic one, per light_type.
 
-Only created for printers that report VIDEO_LIGHT and/or BOX_LIGHT support
-in their capability flags (see helpers.check_descriptor_state_light_not_supported).
+Two, separately gated entities can be created:
+- The head/extruder ("video") light, light_type=1, confirmed via a real
+  Anycubic error response ("extruder light open fail") to be the correct
+  value. Gated on the VIDEO_LIGHT capability flag.
+- An additional room/box light, light_type=2. UNCONFIRMED - this value is
+  a best guess, not a value verified against the real Anycubic app or API,
+  since a dedicated test service was declined. It needs real-world feedback
+  to confirm or correct. Gated separately on the BOX_LIGHT capability flag,
+  so it is only created for printers that report that specific capability
+  (purely additive - printers reporting only VIDEO_LIGHT, e.g. presumably
+  the Kobra 3, never get this second entity).
 """
 from __future__ import annotations
 
@@ -39,6 +48,7 @@ class AnycubicLightEntityDescription(
     LightEntityDescription, AnycubicCloudEntityDescription
 ):
     """Describes Anycubic Cloud light entity."""
+    light_type: int = 1
 
 
 LIGHT_TYPES: list[AnycubicLightEntityDescription] = list([
@@ -46,6 +56,13 @@ LIGHT_TYPES: list[AnycubicLightEntityDescription] = list([
         key="printer_light_is_on",
         translation_key="printer_light",
         printer_entity_type=PrinterEntityType.LIGHT,
+        light_type=1,
+    ),
+    AnycubicLightEntityDescription(
+        key="printer_box_light_is_on",
+        translation_key="printer_box_light",
+        printer_entity_type=PrinterEntityType.LIGHT_BOX,
+        light_type=2,
     ),
 ])
 
@@ -67,9 +84,10 @@ async def async_setup_entry(
 
 
 class AnycubicLight(AnycubicCloudEntity, LightEntity):
-    """Representation of an Anycubic printer's video/box light.
+    """Representation of an Anycubic printer's light.
 
-    EXPERIMENTAL - see the module docstring for caveats.
+    EXPERIMENTAL - see the module docstring for caveats, especially around
+    the room/box light's unconfirmed light_type.
     """
 
     entity_description: AnycubicLightEntityDescription
@@ -92,8 +110,8 @@ class AnycubicLight(AnycubicCloudEntity, LightEntity):
         """Return true if the light is on.
 
         None until the first light/report MQTT message has been seen for
-        this printer (e.g. right after startup, before anyone has queried
-        or toggled the light since HA last connected).
+        this printer's light_type (e.g. right after startup, before anyone
+        has queried or toggled this specific light since HA last connected).
         """
         return printer_state_for_key(
             self.coordinator, self._printer_id, self.entity_description.key
@@ -101,8 +119,16 @@ class AnycubicLight(AnycubicCloudEntity, LightEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the light on."""
-        await self.coordinator.set_light_status(self._printer_id, light_on=True)
+        await self.coordinator.set_light_status(
+            self._printer_id,
+            light_on=True,
+            light_type=self.entity_description.light_type,
+        )
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the light off."""
-        await self.coordinator.set_light_status(self._printer_id, light_on=False)
+        await self.coordinator.set_light_status(
+            self._printer_id,
+            light_on=False,
+            light_type=self.entity_description.light_type,
+        )

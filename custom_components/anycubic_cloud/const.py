@@ -45,6 +45,7 @@ CONF_ENABLE_PANEL = "enable_panel"
 CONF_DEBUG_DEPRECATED = "debug"
 CONF_DEBUG_MQTT_MSG = "debug_mqtt_msg"
 CONF_DEBUG_API_CALLS = "debug_api_calls"
+CONF_UPDATE_RETRY_COUNT = "update_retry_count"
 CONF_UPLOADED_GCODE_FILE = "uploaded_gcode_file"
 CONF_FILE_ID = "file_id"
 CONF_GCODE_ID = "gcode_id"
@@ -68,6 +69,26 @@ MQTT_SCAN_INTERVAL = 15
 PRINT_JOB_STARTED_UPDATE_DELAY = 10
 FAILED_UPDATE_DELAY = DEFAULT_SCAN_INTERVAL * 4
 MAX_FAILED_UPDATES = 3
+
+# Retry/Backoff innerhalb EINES Update-Zyklus (get_anycubic_updates), bevor
+# der Zyklus als endgültig fehlgeschlagen zählt und MAX_FAILED_UPDATES
+# (siehe oben) hochgezählt wird. Nutzer-konfigurierbar über den Options-Flow,
+# siehe CONF_UPDATE_RETRY_COUNT. Backoff ist exponentiell und NICHT
+# konfigurierbar: Versuch 2 wartet UPDATE_RETRY_BACKOFF_BASE_SECONDS,
+# Versuch 3 das Doppelte, usw. (1s, 2s, 4s, ... bei Basiswert 1).
+DEFAULT_UPDATE_RETRY_COUNT = 2
+MIN_UPDATE_RETRY_COUNT = 0
+MAX_UPDATE_RETRY_COUNT = 5
+UPDATE_RETRY_BACKOFF_BASE_SECONDS = 1
+
+# Ab wie vielen AUFEINANDERFOLGENDEN Cooldown-Perioden (siehe
+# FAILED_UPDATE_DELAY/MAX_FAILED_UPDATES oben - "Cooldown-Periode" bedeutet
+# hier: ein kompletter Update-Zyklus samt aller internen Retries ist
+# fehlgeschlagen und die Integration pausiert für FAILED_UPDATE_DELAY
+# Sekunden) ein HA-Repair-Hinweis ("anhaltend degradierte Verbindung")
+# erzeugt wird. Wird automatisch wieder entfernt, sobald ein Update-Zyklus
+# erfolgreich durchläuft.
+DEGRADED_CONNECTION_ISSUE_THRESHOLD = 2
 MQTT_IDLE_DISCONNECT_SECONDS = 60 * 15
 MQTT_ACTION_RESPONSE_ALIVE_SECONDS = 60 * 5
 MQTT_REFRESH_INTERVAL = 60 * 60 * 20
@@ -99,3 +120,4 @@ class PrinterEntityType(IntEnum):
     DRY_PRESET_SECONDARY = 7
     LCD = 8
     LIGHT = 9
+    LIGHT_BOX = 10
