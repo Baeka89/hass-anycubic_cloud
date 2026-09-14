@@ -2,6 +2,20 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.9.3]
+
+### English 🇺🇸
+
+#### Fixed
+
+- **Backend:** fixed a crash during initial setup (`TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'`) on printers without an attached external-shelf accessory. Those printers report `external_shelves` as a dict with `"id": null` instead of omitting the field entirely, and the integration was calling `int(id)` on that unconditionally. `id: null` is now treated the same as "no external shelves present" instead of crashing - same class of defensive-parsing fix as the ACE `feed_status` issue in 0.9.1.
+
+### Deutsch 🇩🇪
+
+#### Behoben
+
+- **Backend:** Absturz beim initialen Setup behoben (`TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'`), der bei Druckern ohne angeschlossenes externes Regal-Zubehör auftrat. Diese Drucker melden `external_shelves` als Dict mit `"id": null`, statt das Feld ganz wegzulassen, und die Integration hat darauf bedingungslos `int(id)` aufgerufen. `id: null` wird jetzt genauso behandelt wie "kein externes Regal vorhanden", statt abzustürzen - dieselbe Art von defensivem Parsing-Fix wie beim ACE-`feed_status`-Problem in 0.9.1.
+
 ## [0.9.2]
 
 ### English 🇺🇸

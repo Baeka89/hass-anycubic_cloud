@@ -285,6 +285,14 @@ class AnycubicMachineExternalShelves:
         if data is None:
             return None
 
+        if data.get('id') is None:
+            # Printer without an attached external shelf accessory reports
+            # this as a dict with id=null instead of omitting the key
+            # entirely (observed on printers with no external shelf
+            # hardware). Treat that the same as "no external shelves"
+            # instead of crashing on int(None).
+            return None
+
         return cls(
             id=data['id'],
             type=data['type'],
