@@ -8,6 +8,7 @@ import uuid
 from datetime import timedelta
 from os import path
 from typing import Any
+from urllib.parse import urlsplit, urlunsplit
 
 ALPHANUMERIC_CHARS: str = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 GCODE_STRING_FIRST_ATTR_LINE: str = '; filament used'
@@ -15,6 +16,32 @@ GCODE_STRING_FIRST_ATTR_LINE: str = '; filament used'
 REX_GCODE_DATA_KEY_VALUE: re.Pattern[Any] = re.compile(r'; ([a-zA-Z0-9_\[\] ]+) = (.*)$')
 
 REX_PRINT_TOTAL_TIME: re.Pattern[Any] = re.compile(r'^([\d]+)hour([\d]+)min$')
+
+
+def parse_integer_id(value: Any) -> int:
+    """Accept integer IDs and integer strings, never bool or fractional aliases."""
+    if type(value) is int:
+        return value
+    if isinstance(value, str) and value.strip().lstrip('+-').isdecimal():
+        return int(value)
+    raise ValueError("ID must be an integer or an integer string")
+
+
+def redact_urls_in_text(text: str) -> str:
+    """Remove URL queries, fragments and user credentials from diagnostic text."""
+    def redact(match: re.Match[str]) -> str:
+        try:
+            parts = urlsplit(match.group(0))
+            return urlunsplit((
+                parts.scheme,
+                parts.netloc.rsplit('@', 1)[-1],
+                parts.path,
+                'REDACTED' if parts.query else '',
+                'REDACTED' if parts.fragment else '',
+            ))
+        except ValueError:
+            return '[REDACTED_URL]'
+    return re.sub(r"https?://[^\s\"<>]+", redact, text, flags=re.IGNORECASE)
 
 
 def timedelta_to_total_minutes(

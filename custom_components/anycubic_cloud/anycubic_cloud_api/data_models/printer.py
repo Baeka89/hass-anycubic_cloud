@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import logging
+from collections.abc import Mapping
+from copy import copy
+from threading import RLock
 from typing import TYPE_CHECKING, Any
 
 from ..const.enums import (
@@ -21,6 +25,7 @@ from ..exceptions.exceptions import (
 )
 from ..helpers.helpers import (
     get_part_from_mqtt_topic,
+    parse_integer_id,
     time_duration_string_to_delta,
     timedelta_to_dhm_string,
     timedelta_to_total_hours,
@@ -40,6 +45,8 @@ from .printer_properties import (
 from .printing_settings import AnycubicPrintingSettings
 from .project import AnycubicProject
 
+_LOGGER = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from datetime import timedelta
 
@@ -50,6 +57,7 @@ if TYPE_CHECKING:
 
 class AnycubicPrinter:
     __slots__ = (
+        "_firmware_lock",
         "_ignore_init_errors",
         "_initialisation_error",
         "_api_parent",
@@ -158,6 +166,7 @@ class AnycubicPrinter:
         ignore_init_errors: bool = False,
         # base_info=None,
     ) -> None:
+        self._firmware_lock = RLock()
         self._ignore_init_errors: bool = ignore_init_errors
         self._initialisation_error: bool = False
 
@@ -201,6 +210,7 @@ class AnycubicPrinter:
         self._set_tools(tools)
         self._set_multi_color_box_fw_version(multi_color_box_fw_version)
         self._set_external_shelves(external_shelves)
+        self._multi_color_box: list[AnycubicMultiColorBox] | None = None
         self._set_multi_color_box(multi_color_box)
 
         self._latest_project: AnycubicProject | None = None
@@ -261,10 +271,10 @@ class AnycubicPrinter:
         sends in the MQTT 'info' report, e.g. auto_leveling_support,
         drying_first_support, etc. Keys we don't recognise yet simply pass
         through as-is - we don't validate individual keys here."""
-        if isinstance(features, dict):
+        if isinstance(features, Mapping):
             self._features = {
-                str(key): bool(value)
-                for key, value in features.items()
+                str(key): bool(features[key])
+                for key in list(features.keys())
             }
         else:
             self._features = dict()
@@ -289,41 +299,46 @@ class AnycubicPrinter:
         if file_list is None:
             return
 
-        self._local_file_list = list()
+        files = list()
         for x in file_list:
             file = AnycubicFile.from_json(x)
             if file:
-                self._local_file_list.append(file)
+                files.append(file)
             else:
                 raise AnycubicDataParsingError(ErrorsDataParsing.local_file_list.format(file_list))
+        self._local_file_list = files
 
     def _set_udisk_file_list(self, file_list: list[dict[str, Any]] | None) -> None:
         if file_list is None:
             return
 
-        self._udisk_file_list = list()
+        files = list()
         for x in file_list:
             file = AnycubicFile.from_json(x)
             if file:
-                self._udisk_file_list.append(file)
+                files.append(file)
             else:
                 raise AnycubicDataParsingError(ErrorsDataParsing.udisk_file_list.format(file_list))
+        self._udisk_file_list = files
 
     def _set_multi_color_box(self, multi_color_box: list[dict[str, Any]] | dict[str, Any] | None) -> None:
-        self._multi_color_box: list[AnycubicMultiColorBox] | None = None
+        boxes: list[AnycubicMultiColorBox] | None = None
         try:
             if multi_color_box is None or isinstance(multi_color_box, list):
                 multi_color_box_list = multi_color_box
             else:
                 multi_color_box_list = list([multi_color_box])
             if multi_color_box_list is not None:
-                self._multi_color_box = list()
+                boxes = list()
                 for x in multi_color_box_list:
                     ace = AnycubicMultiColorBox.from_json(x)
                     if ace:
-                        self._multi_color_box.append(ace)
+                        if any(box.box_id == ace.box_id for box in boxes):
+                            raise AnycubicDataParsingError(ErrorsDataParsing.ace.format(multi_color_box))
+                        boxes.append(ace)
                     else:
                         raise AnycubicDataParsingError(ErrorsDataParsing.ace.format(multi_color_box))
+            self._multi_color_box = boxes
 
         except Exception as e:
             self._initialisation_error = True
@@ -399,16 +414,7 @@ class AnycubicPrinter:
     ) -> None:
         self._multi_color_box_fw_version: list[AnycubicMachineFirmwareInfo] | None = None
         try:
-            if multi_color_box_fw_version is not None:
-                self._multi_color_box_fw_version = list()
-                for x in multi_color_box_fw_version:
-                    ace = AnycubicMachineFirmwareInfo.from_json(x)
-                    if ace:
-                        self._multi_color_box_fw_version.append(ace)
-                    else:
-                        raise AnycubicDataParsingError(
-                            ErrorsDataParsing.ace_fw_version.format(multi_color_box_fw_version)
-                        )
+            self._update_multi_color_box_fw_version_from_json(multi_color_box_fw_version)
         except Exception as e:
             self._initialisation_error = True
             if not self._ignore_init_errors:
@@ -441,19 +447,57 @@ class AnycubicPrinter:
         self,
         multi_color_box_fw_version: list[dict[str, Any]] | None,
     ) -> None:
-        if (
-            multi_color_box_fw_version is None or
-            not isinstance(multi_color_box_fw_version, list) or
-            len(multi_color_box_fw_version) < 1
-        ):
-            return
+        with self._firmware_lock:
+            if multi_color_box_fw_version is None:
+                return
+            if not isinstance(multi_color_box_fw_version, list):
+                raise AnycubicDataParsingError(ErrorsDataParsing.ace_fw_version.format(multi_color_box_fw_version))
+            previous = {
+                fw.box_id if fw.box_id is not None else index: fw
+                for index, fw in enumerate(self._multi_color_box_fw_version or [])
+            }
+            updated: dict[int, AnycubicMachineFirmwareInfo] = {}
+            for index, data in enumerate(multi_color_box_fw_version):
+                if not isinstance(data, dict):
+                    raise AnycubicDataParsingError(ErrorsDataParsing.ace_fw_version.format(data))
+                raw_id = data.get('box_id')
+                try:
+                    box_id = index if raw_id is None else parse_integer_id(raw_id)
+                except ValueError as error:
+                    raise AnycubicDataParsingError(ErrorsDataParsing.ace_fw_version.format(data)) from error
+                if box_id not in (0, 1):
+                    _LOGGER.warning("Ignoring firmware metadata for unsupported ACE box ID %s", box_id)
+                    continue
+                if box_id in updated:
+                    raise AnycubicDataParsingError(ErrorsDataParsing.ace_fw_version.format(data))
+                data = {**data, 'box_id': box_id}
+                existing = previous.get(box_id)
+                try:
+                    if existing is None:
+                        fw = AnycubicMachineFirmwareInfo.from_json(data)
+                    else:
+                        fw = copy(existing)
+                        fw.update_from_json(data)
+                except (KeyError, TypeError, ValueError, OverflowError) as error:
+                    raise AnycubicDataParsingError(ErrorsDataParsing.ace_fw_version.format(data)) from error
+                if fw is None:
+                    raise AnycubicDataParsingError(ErrorsDataParsing.ace_fw_version.format(data))
+                updated[box_id] = fw
+            # Commit only after every entry has been validated. Preserve existing
+            # object identity and OTA state for consumers holding firmware references.
+            for box_id, fw in updated.items():
+                existing = previous.get(box_id)
+                if existing is not None:
+                    for slot in AnycubicMachineFirmwareInfo.__slots__:
+                        setattr(existing, slot, getattr(fw, slot))
+                    updated[box_id] = existing
+            self._multi_color_box_fw_version = [updated[key] for key in sorted(updated)]
 
-        if self._multi_color_box_fw_version and len(self._multi_color_box_fw_version) > 0:
-            for x, fwver in enumerate(self._multi_color_box_fw_version):
-                if fwver and len(multi_color_box_fw_version) >= x + 1:
-                    fwver.update_from_json(multi_color_box_fw_version[x])
-        else:
-            self._set_multi_color_box_fw_version(multi_color_box_fw_version)
+    def _firmware_for_ace(self, box_id: int) -> AnycubicMachineFirmwareInfo | None:
+        for index, fw in enumerate(self._multi_color_box_fw_version or []):
+            if (fw.box_id if fw.box_id is not None else index) == box_id:
+                return fw
+        return None
 
     @classmethod
     def from_basic_json(
@@ -743,38 +787,37 @@ class AnycubicPrinter:
         payload: AnycubicConsumableData,
         box_id: int,
     ) -> None:
-        data = payload.get('data', {})
-        if (
-            self.multi_color_box_fw_version is None or
-            len(self.multi_color_box_fw_version) < (box_id + 1)
-        ):
-            return
+        with self._firmware_lock:
+            data = payload.get('data', {})
+            firmware = self._firmware_for_ace(box_id)
+            if firmware is None:
+                return
 
-        if action == 'update' and state == 'start':
-            self.multi_color_box_fw_version[box_id].set_is_updating(True)
-            return
-        elif action == 'update' and state in ['update-success', 'updateSuccessProcessed']:
-            # Not needed
-            return
-        elif action == 'reportVersion' and state == 'done':
-            data.get('device_unionid')
-            data.get('machine_version')
-            data.get('peripheral_version')
-            data.get('model_id')
-            self.multi_color_box_fw_version[box_id].update_version(data['firmware_version'])
-            return
-        elif action == 'update' and state == 'downloading':
-            self.multi_color_box_fw_version[box_id].set_is_updating(True)
-            self.multi_color_box_fw_version[box_id].set_is_downloading(True)
-            self.multi_color_box_fw_version[box_id].set_download_progress(data['progress'])
-            return
-        elif action == 'update' and state == 'updating':
-            self.multi_color_box_fw_version[box_id].set_is_updating(True)
-            self.multi_color_box_fw_version[box_id].set_is_downloading(False)
-            self.multi_color_box_fw_version[box_id].set_update_progress(data['current_progress'])
-            return
-        else:
-            raise AnycubicMQTTUnknownUpdate(ErrorsMQTTUpdate.ota_ace)
+            if action == 'update' and state == 'start':
+                firmware.set_is_updating(True)
+                return
+            elif action == 'update' and state in ['update-success', 'updateSuccessProcessed']:
+                # Not needed
+                return
+            elif action == 'reportVersion' and state == 'done':
+                data.get('device_unionid')
+                data.get('machine_version')
+                data.get('peripheral_version')
+                data.get('model_id')
+                firmware.update_version(data['firmware_version'])
+                return
+            elif action == 'update' and state == 'downloading':
+                firmware.set_is_updating(True)
+                firmware.set_is_downloading(True)
+                firmware.set_download_progress(data['progress'])
+                return
+            elif action == 'update' and state == 'updating':
+                firmware.set_is_updating(True)
+                firmware.set_is_downloading(False)
+                firmware.set_update_progress(data['current_progress'])
+                return
+            else:
+                raise AnycubicMQTTUnknownUpdate(ErrorsMQTTUpdate.ota_ace)
 
     def _process_mqtt_update_ota_printer(
         self,
@@ -845,6 +888,8 @@ class AnycubicPrinter:
             data = payload['data']
 
             self._fan_speed = int(data['fan_speed_pct'])
+            if self.latest_project:
+                self.latest_project._set_fan_speed_pct(self._fan_speed)
 
             return
         else:
@@ -881,6 +926,8 @@ class AnycubicPrinter:
             fan_speed_pct = data.get('fan_speed_pct')
             if fan_speed_pct is not None:
                 self._fan_speed = int(fan_speed_pct)
+                if self.latest_project:
+                    self.latest_project._set_fan_speed_pct(self._fan_speed)
 
             self._set_features(data.get('features'))
             features = data.get('features')
@@ -1003,6 +1050,10 @@ class AnycubicPrinter:
             self._fan_speed = int(data['settings']['fan_speed_pct'])
             self._print_speed_pct = int(data['settings']['print_speed_pct'])
             self._print_speed_mode = int(data['settings']['print_speed_mode'])
+            if self.latest_project:
+                self.latest_project._set_fan_speed_pct(self._fan_speed)
+                self.latest_project._set_print_speed_pct(self._print_speed_pct)
+                self.latest_project._set_print_speed_mode(self._print_speed_mode)
             self._update_latest_project_target_temps(
                 project_id,
                 data['settings']['target_hotbed_temp'],
@@ -1022,6 +1073,13 @@ class AnycubicPrinter:
         else:
             raise AnycubicMQTTUnknownUpdate(ErrorsMQTTUpdate.job_status)
 
+    @staticmethod
+    def _parse_ace_box_id(value: Any) -> int:
+        try:
+            return parse_integer_id(value)
+        except ValueError as error:
+            raise AnycubicDataParsingError(ErrorsDataParsing.ace.format(value)) from error
+
     def _process_mqtt_update_multicolorbox(
         self,
         action: str,
@@ -1034,57 +1092,57 @@ class AnycubicPrinter:
             return
         elif action in ['setInfo', 'refresh'] and state == 'success':
             data = payload['data']['multi_color_box']
-            for box in data:
-                box_id = int(box['id'])
-                if self.connected_ace_units < box_id + 1:
+            identified_boxes = [(self._parse_ace_box_id(box['id']), box) for box in data]
+            for box_id, box in identified_boxes:
+                target_box = self.multi_color_box_for_id(box_id)
+                if target_box is None:
                     continue
-                assert self._multi_color_box
-                self._multi_color_box[box_id].update_slots_with_mqtt_data(box['slots'])
+                target_box.update_slots_with_mqtt_data(box['slots'])
             return
 
         elif action == 'autoUpdateInfo' and state == 'done':
             data = payload['data']
-            box_id = int(data['id'])
+            box_id = self._parse_ace_box_id(data['id'])
             loaded_slot = int(data['loaded_slot'])
-            if self.connected_ace_units < box_id + 1:
+            target_box = self.multi_color_box_for_id(box_id)
+            if target_box is None:
                 return
 
-            assert self._multi_color_box
-            self._multi_color_box[box_id].set_slot_loaded(loaded_slot)
+            target_box.set_slot_loaded(loaded_slot)
             return
         elif action in ['autoUpdateDryStatus', 'setDry'] and state == 'success':
             data = payload['data']['multi_color_box']
-            for box in data:
-                box_id = int(box['id'])
-                if self.connected_ace_units < box_id + 1:
+            identified_boxes = [(self._parse_ace_box_id(box['id']), box) for box in data]
+            for box_id, box in identified_boxes:
+                target_box = self.multi_color_box_for_id(box_id)
+                if target_box is None:
                     continue
 
-                assert self._multi_color_box
-                self._multi_color_box[box_id].set_current_temperature(box['temp'])
-                self._multi_color_box[box_id].set_drying_status(box['drying_status'])
+                target_box.set_current_temperature(box['temp'])
+                target_box.set_drying_status(box['drying_status'])
             return
         elif action == 'feedFilament' and state == 'done':
             data = payload['data']['multi_color_box']
-            for box in data:
-                box_id = int(box['id'])
-                if self.connected_ace_units < box_id + 1:
+            identified_boxes = [(self._parse_ace_box_id(box['id']), box) for box in data]
+            for box_id, box in identified_boxes:
+                target_box = self.multi_color_box_for_id(box_id)
+                if target_box is None:
                     continue
 
                 loaded_slot = int(box['loaded_slot'])
 
-                assert self._multi_color_box
-                self._multi_color_box[box_id].set_slot_loaded(loaded_slot)
-                self._multi_color_box[box_id].set_feed_status(box['feed_status'])
+                target_box.set_slot_loaded(loaded_slot)
+                target_box.set_feed_status(box['feed_status'])
             return
         elif action == 'setAutoFeed' and state == 'done':
             data = payload['data']['multi_color_box']
-            for box in data:
-                box_id = int(box['id'])
-                if self.connected_ace_units < box_id + 1:
+            identified_boxes = [(self._parse_ace_box_id(box['id']), box) for box in data]
+            for box_id, box in identified_boxes:
+                target_box = self.multi_color_box_for_id(box_id)
+                if target_box is None:
                     continue
 
-                assert self._multi_color_box
-                self._multi_color_box[box_id].set_auto_feed(box['auto_feed'])
+                target_box.set_auto_feed(box['auto_feed'])
             return
         else:
             raise AnycubicMQTTUnknownUpdate(ErrorsMQTTUpdate.ace)
@@ -1641,21 +1699,17 @@ class AnycubicPrinter:
 
         return len(self._multi_color_box)
 
+    def multi_color_box_for_id(self, box_id: int) -> AnycubicMultiColorBox | None:
+        """Find an ACE by its explicit ID, independently of list order."""
+        return next((box for box in self._multi_color_box or [] if box.box_id == box_id), None)
+
     @property
     def primary_multi_color_box(self) -> AnycubicMultiColorBox | None:
-        if self.connected_ace_units > 0:
-            assert self._multi_color_box
-            return self._multi_color_box[0]
-
-        return None
+        return self.multi_color_box_for_id(0)
 
     @property
     def secondary_multi_color_box(self) -> AnycubicMultiColorBox | None:
-        if self.connected_ace_units > 1:
-            assert self._multi_color_box
-            return self._multi_color_box[1]
-
-        return None
+        return self.multi_color_box_for_id(1)
 
     @property
     def primary_drying_status(self) -> AnycubicDryingStatus | None:
@@ -1677,7 +1731,7 @@ class AnycubicPrinter:
 
     @property
     def local_file_list_object(self) -> list[dict[str, str | float]] | None:
-        if not self._local_file_list or len(self._local_file_list) < 1:
+        if self._local_file_list is None:
             return None
 
         file_list = list([
@@ -1687,7 +1741,7 @@ class AnycubicPrinter:
 
     @property
     def udisk_file_list_object(self) -> list[dict[str, str | float]] | None:
-        if not self._udisk_file_list or len(self._udisk_file_list) < 1:
+        if self._udisk_file_list is None:
             return None
 
         file_list = list([
@@ -1697,33 +1751,18 @@ class AnycubicPrinter:
 
     @property
     def primary_multi_color_box_fw_firmware_version(self) -> str | None:
-        if (
-            self.multi_color_box_fw_version and
-            len(self.multi_color_box_fw_version) > 0
-        ):
-            return self.multi_color_box_fw_version[0].firmware_version
-
-        return None
+        firmware = self._firmware_for_ace(0)
+        return firmware.firmware_version if firmware else None
 
     @property
     def primary_multi_color_box_fw_available_version(self) -> str | None:
-        if (
-            self.multi_color_box_fw_version and
-            len(self.multi_color_box_fw_version) > 0
-        ):
-            return self.multi_color_box_fw_version[0].available_version
-
-        return None
+        firmware = self._firmware_for_ace(0)
+        return firmware.available_version if firmware else None
 
     @property
     def primary_multi_color_box_fw_total_progress(self) -> int | float | bool | None:
-        if (
-            self.multi_color_box_fw_version and
-            len(self.multi_color_box_fw_version) > 0
-        ):
-            return self.multi_color_box_fw_version[0].total_progress
-
-        return None
+        firmware = self._firmware_for_ace(0)
+        return firmware.total_progress if firmware else None
 
     @property
     def primary_multi_color_box_auto_feed(self) -> int | None:
@@ -1783,33 +1822,18 @@ class AnycubicPrinter:
 
     @property
     def secondary_multi_color_box_fw_firmware_version(self) -> str | None:
-        if (
-            self.multi_color_box_fw_version and
-            len(self.multi_color_box_fw_version) > 1
-        ):
-            return self.multi_color_box_fw_version[1].firmware_version
-
-        return None
+        firmware = self._firmware_for_ace(1)
+        return firmware.firmware_version if firmware else None
 
     @property
     def secondary_multi_color_box_fw_available_version(self) -> str | None:
-        if (
-            self.multi_color_box_fw_version and
-            len(self.multi_color_box_fw_version) > 1
-        ):
-            return self.multi_color_box_fw_version[1].available_version
-
-        return None
+        firmware = self._firmware_for_ace(1)
+        return firmware.available_version if firmware else None
 
     @property
     def secondary_multi_color_box_fw_total_progress(self) -> int | float | bool | None:
-        if (
-            self.multi_color_box_fw_version and
-            len(self.multi_color_box_fw_version) > 1
-        ):
-            return self.multi_color_box_fw_version[1].total_progress
-
-        return None
+        firmware = self._firmware_for_ace(1)
+        return firmware.total_progress if firmware else None
 
     @property
     def secondary_multi_color_box_auto_feed(self) -> int | None:
@@ -2213,12 +2237,8 @@ class AnycubicPrinter:
         if not self._multi_color_box:
             return list()
 
-        highest_box = max(slot_index_list) // 4
-
-        if self.connected_ace_units < highest_box + 1:
-            raise AnycubicAPIError(ErrorsGeneral.insufficent_ace_units.format(
-                highest_box + 1
-            ))
+        if not slot_index_list or any(index < 0 or self.multi_color_box_for_id(index // 4) is None for index in slot_index_list):
+            raise AnycubicAPIError("A selected filament slot belongs to a disconnected ACE box")
 
         ams_box_mapping = list()
 
@@ -2290,9 +2310,6 @@ class AnycubicPrinter:
         target_temp: int,
         box_id: int = 0,
     ) -> str | None:
-        if self.primary_multi_color_box is None:
-            return None
-
         return await self._api_parent.multi_color_box_drying_start(
             self,
             duration=duration,
@@ -2304,7 +2321,7 @@ class AnycubicPrinter:
         self,
         box_id: int = -1,
     ) -> str | None:
-        if self.primary_multi_color_box is None:
+        if not self.multi_color_box:
             return None
 
         return await self._api_parent.multi_color_box_drying_stop(
@@ -2317,7 +2334,7 @@ class AnycubicPrinter:
         enabled: bool,
         box_id: int = -1,
     ) -> str | None:
-        if self.primary_multi_color_box is None:
+        if not self.multi_color_box:
             return None
 
         return await self._api_parent.multi_color_box_set_auto_feed(
@@ -2330,7 +2347,7 @@ class AnycubicPrinter:
         self,
         box_id: int = -1,
     ) -> str | None:
-        if self.primary_multi_color_box is None:
+        if not self.multi_color_box:
             return None
 
         return await self._api_parent.multi_color_box_toggle_auto_feed(
@@ -2342,7 +2359,7 @@ class AnycubicPrinter:
         self,
         box_id: int = -1,
     ) -> str | None:
-        if self.primary_multi_color_box is None:
+        if not self.multi_color_box:
             return None
 
         return await self._api_parent.multi_color_box_switch_on_auto_feed(
@@ -2354,7 +2371,7 @@ class AnycubicPrinter:
         self,
         box_id: int = -1,
     ) -> str | None:
-        if self.primary_multi_color_box is None:
+        if not self.multi_color_box:
             return None
 
         return await self._api_parent.multi_color_box_switch_off_auto_feed(

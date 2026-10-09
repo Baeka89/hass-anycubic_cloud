@@ -99,8 +99,7 @@ export class AnycubicUISelectDropdown extends LitElement {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/require-await
-  async firstUpdated(): Promise<void> {
+  firstUpdated(): void {
     this._hidden = true;
     this._active = false;
     this.requestUpdate();

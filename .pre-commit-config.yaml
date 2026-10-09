@@ -15,7 +15,7 @@ repos:
         types: ['file']
         files: \.(py|pyx|pxd)$
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: 'v1.11.2'
+    rev: 'v2.4.0'
     hooks:
       - id: mypy
         exclude: ^custom_components/anycubic_cloud/test_api/
@@ -24,10 +24,10 @@ repos:
           - "--strict"
           - "--config-file=mypy.ini"
         additional_dependencies:
-          - "homeassistant==2024.9.3"
-          - "pydantic==2.9.2"
-          - "aiofiles==24.1.0"
-          - "types-aiofiles==24.1.0.20240626"
+          - "homeassistant==2026.9.3"
+          - "pydantic==2.13.0"
+          - "aiofiles==25.1.0"
+          - "types-aiofiles==25.1.0.20240626"
           - "types-paho-mqtt==1.6.0.20240321"
   - repo: https://github.com/pycqa/isort
     rev: 5.13.2

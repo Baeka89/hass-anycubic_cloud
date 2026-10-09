@@ -70,9 +70,11 @@ export class AnycubicUIMultiSelectReorderItem extends LitElement {
     };
     return html`
       <button class="ac-ui-msr-select" @click=${this._toggle_item}>
-        ${this._isActive
-          ? html`<ha-svg-icon .path=${mdiCheck}></ha-svg-icon>`
-          : nothing}
+        ${
+          this._isActive
+            ? html`<ha-svg-icon .path=${mdiCheck}></ha-svg-icon>`
+            : nothing
+        }
       </button>
       <p class="ac-ui-msr-itemtext ${classMap(classesItemText)}">
         ${this.item}
@@ -179,11 +181,9 @@ export class AnycubicUIMultiSelectReorder extends LitElement {
   @state()
   private _unusedItems: (string | number)[];
 
-  // eslint-disable-next-line @typescript-eslint/require-await
-  async firstUpdated(): Promise<void> {
+  firstUpdated(): void {
     this._allOptions = Object.values(this.availableOptions) as (
-      | string
-      | number
+      string | number
     )[];
     this._setSelectedItems(
       [...this.initialItems].filter((item: string | number) =>

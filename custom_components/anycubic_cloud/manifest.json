@@ -13,11 +13,12 @@
   ],
   "documentation": "https://github.com/Baeka89/hass-anycubic_cloud",
   "integration_type": "hub",
+  "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/Baeka89/hass-anycubic_cloud/issues",
   "loggers": [],
-  "min_ha_version": "2026.5.0",
   "requirements": [
-    "paho-mqtt"
+    "aiofiles>=25.1.0",
+    "paho-mqtt>=2.1.0"
   ],
-  "version": "0.9.3"
+  "version": "0.9.31"
 }

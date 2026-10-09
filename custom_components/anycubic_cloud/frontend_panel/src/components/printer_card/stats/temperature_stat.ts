@@ -6,7 +6,7 @@ import { customElementIfUndef } from "../../../internal/register-custom-element"
 import { getEntityTemperature } from "../../../helpers";
 import { HassEntity, LitTemplateResult, TemperatureUnit } from "../../../types";
 
-import "./stat_line.ts";
+import "./stat_line";
 
 @customElementIfUndef("anycubic-printercard-stat-temperature")
 export class AnycubicPrintercardStatTemperature extends LitElement {

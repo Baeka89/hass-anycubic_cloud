@@ -18,7 +18,7 @@ from .const import (
     PrinterEntityType,
 )
 from .entity import AnycubicCloudEntity, AnycubicCloudEntityDescription
-from .helpers import printer_attributes_for_key, printer_state_for_key
+from .helpers import printer_attributes_for_key
 
 if TYPE_CHECKING:
     from .coordinator import AnycubicCloudDataUpdateCoordinator
@@ -85,22 +85,16 @@ FDM_BUTTON_DESCRIPTIONS: list[AnycubicButtonEntityDescription] = list([
         translation_key="print_stop",
         printer_entity_type=PrinterEntityType.FDM,
     ),
-    AnycubicButtonEntityDescription(
-        key="clear_completed_print_job",
-        translation_key="clear_completed_print_job",
-        printer_entity_type=PrinterEntityType.FDM,
-    ),
-    AnycubicButtonEntityDescription(
-        key="multi_color_box_filament_extrude",
-        translation_key="multi_color_box_filament_extrude",
-        printer_entity_type=PrinterEntityType.FDM,
-    ),
-    AnycubicButtonEntityDescription(
-        key="multi_color_box_filament_retract",
-        translation_key="multi_color_box_filament_retract",
-        printer_entity_type=PrinterEntityType.FDM,
-    ),
 ])
+
+FILE_LIST_BUTTON_TYPES = [
+    AnycubicButtonEntityDescription(
+        key=f"request_file_list_{storage}",
+        translation_key=f"request_file_list_{storage}",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        printer_entity_type=PrinterEntityType.FDM,
+    ) for storage in ("local", "udisk", "cloud")
+]
 
 PRIMARY_MULTI_COLOR_BOX_BUTTON_TYPES: list[AnycubicButtonEntityDescription] = list([
     AnycubicButtonEntityDescription(
@@ -138,6 +132,7 @@ async def async_setup_entry(
             + PRIMARY_DRYING_PRESET_BUTTON_TYPES
             + SECONDARY_DRYING_PRESET_BUTTON_TYPES
             + GLOBAL_BUTTON_TYPES
+            + FILE_LIST_BUTTON_TYPES
             + FDM_BUTTON_DESCRIPTIONS
             + PRIMARY_MULTI_COLOR_BOX_BUTTON_TYPES
             + SECONDARY_MULTI_COLOR_BOX_BUTTON_TYPES
@@ -180,9 +175,9 @@ class AnycubicButton(AnycubicCloudEntity, ButtonEntity):
             )
 
             await self.coordinator.button_press_custom_dry(
-                self._printer_id, 
-                int(float(temp_val)), 
-                int(float(time_val)), 
+                self._printer_id,
+                int(float(temp_val)),
+                int(float(time_val)),
                 is_secondary=("secondary" in self.entity_description.key)
             )
         else:

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /*
@@ -20,7 +19,7 @@ interface ClassElement {
   kind: "field" | "method";
   key: PropertyKey;
   placement: "static" | "prototype" | "own";
-  initializer?: Function;
+  initializer?: (...args: unknown[]) => unknown;
   extras?: ClassElement[];
   finisher?: <T>(clazz: Constructor<T>) => undefined | Constructor<T>;
   descriptor?: PropertyDescriptor;

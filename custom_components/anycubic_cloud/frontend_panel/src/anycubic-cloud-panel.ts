@@ -1,13 +1,13 @@
 import { CSSResult, LitElement, PropertyValues, css, html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 
-import "./views/debug/view-debug.ts";
-import "./views/main/view-main.ts";
-import "./views/files/view-files_cloud.ts";
-import "./views/files/view-files_local.ts";
-import "./views/files/view-files_udisk.ts";
-import "./views/print/view-print-no_cloud_save.ts";
-import "./views/print/view-print-save_in_cloud.ts";
+import "./views/debug/view-debug";
+import "./views/main/view-main";
+import "./views/files/view-files_cloud";
+import "./views/files/view-files_local";
+import "./views/files/view-files_udisk";
+import "./views/print/view-print-no_cloud_save";
+import "./views/print/view-print-save_in_cloud";
 
 import { DEBUG } from "./const";
 import { HASSDomEvent } from "./fire_event";
@@ -160,7 +160,7 @@ export class AnycubicCloudPanel extends LitElement {
       );
     }
 
-    if (changedProperties.has("route")) {
+    if (changedProperties.has("route") || changedProperties.has("hass")) {
       this.printers = getPrinterDevices(this.hass);
       this.selectedPage = getPage(this.route);
       this.selectedPrinterID = getPrinterDevID(this.route);
@@ -198,30 +198,34 @@ export class AnycubicCloudPanel extends LitElement {
           @iron-activate=${this.handlePageSelected}
         >
           <paper-tab page-name="main"> ${this._tabMain} </paper-tab>
-          ${this.deviceType === AnycubicDeviceType.PRINTER
-            ? html`
-                <paper-tab page-name="local-files">
-                  ${this._tabFilesLocal}
-                </paper-tab>
-                <paper-tab page-name="udisk-files">
-                  ${this._tabFilesUdisk}
-                </paper-tab>
-                <paper-tab page-name="cloud-files">
-                  ${this._tabFilesCloud}
-                </paper-tab>
-                <paper-tab page-name="print-no_cloud_save">
-                  ${this._tabPrintNoSave}
-                </paper-tab>
-                <paper-tab page-name="print-save_in_cloud">
-                  ${this._tabPrintSave}
-                </paper-tab>
-              `
-            : null}
-          ${DEBUG // eslint-disable-line @typescript-eslint/no-unnecessary-condition
-            ? html`
-                <paper-tab page-name="debug"> ${this._tabDebug} </paper-tab>
-              `
-            : null}
+          ${
+            this.deviceType === AnycubicDeviceType.PRINTER
+              ? html`
+                  <paper-tab page-name="local-files">
+                    ${this._tabFilesLocal}
+                  </paper-tab>
+                  <paper-tab page-name="udisk-files">
+                    ${this._tabFilesUdisk}
+                  </paper-tab>
+                  <paper-tab page-name="cloud-files">
+                    ${this._tabFilesCloud}
+                  </paper-tab>
+                  <paper-tab page-name="print-no_cloud_save">
+                    ${this._tabPrintNoSave}
+                  </paper-tab>
+                  <paper-tab page-name="print-save_in_cloud">
+                    ${this._tabPrintSave}
+                  </paper-tab>
+                `
+              : null
+          }
+          ${
+            DEBUG // eslint-disable-line @typescript-eslint/no-unnecessary-condition
+              ? html`
+                  <paper-tab page-name="debug"> ${this._tabDebug} </paper-tab>
+                `
+              : null
+          }
         </ha-tabs>
       </div>
       <div class="view">${this.getView(this.route)}</div>
@@ -261,23 +265,25 @@ export class AnycubicCloudPanel extends LitElement {
         <printer-select elevation="2">
           <p>${this._selectPrinter}</p>
           <ul class="printers-container">
-            ${this.printers
-              ? Object.keys(this.printers).map((printerID) => {
-                  const printers = this.printers as HassDeviceList;
-                  return html`<li
-                    class="printer-select-box"
-                    .printer_id=${printerID}
-                    @click=${this._handlePrinterClick}
-                  >
-                    <div class="printer-select-name">
-                      ${printers[printerID].name}
-                    </div>
-                    <div class="printer-select-type">
-                      ${this._deviceTypeLabel(printers[printerID])}
-                    </div>
-                  </li>`;
-                })
-              : null}
+            ${
+              this.printers
+                ? Object.keys(this.printers).map((printerID) => {
+                    const printers = this.printers as HassDeviceList;
+                    return html`<li
+                      class="printer-select-box"
+                      .printer_id=${printerID}
+                      @click=${this._handlePrinterClick}
+                    >
+                      <div class="printer-select-name">
+                        ${printers[printerID].name}
+                      </div>
+                      <div class="printer-select-type">
+                        ${this._deviceTypeLabel(printers[printerID])}
+                      </div>
+                    </li>`;
+                  })
+                : null
+            }
           </ul>
         </printer-select>
       `;

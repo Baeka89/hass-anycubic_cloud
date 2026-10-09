@@ -30,6 +30,7 @@ from .const import (
     CONF_DRYING_PRESET_TEMPERATURE_,
     CONF_ENABLE_PANEL,
     CONF_MQTT_CONNECT_MODE,
+    CONF_MQTT_VERIFY_TLS,
     CONF_PRINTER_ID_LIST,
     CONF_UPDATE_RETRY_COUNT,
     CONF_USER_AUTH_MODE,
@@ -42,6 +43,7 @@ from .const import (
     MAX_UPDATE_RETRY_COUNT,
     MIN_UPDATE_RETRY_COUNT,
 )
+from .helpers import DEFAULT_MQTT_CONNECT_MODE
 
 
 class LocalAnycubicMQTTConnectMode(IntEnum):
@@ -143,7 +145,7 @@ class AnycubicCloudConfigFlow(ConfigFlow, domain=DOMAIN):
                 cookie_jar=session.cookie_jar,
                 debug_logger=LOGGER,
             )
-            
+
             # Authentifizierung setzen wie im Coordinator
             self.api_client.set_authentication(
                 auth_token=self.user_token,
@@ -159,7 +161,7 @@ class AnycubicCloudConfigFlow(ConfigFlow, domain=DOMAIN):
 
             # Drucker abrufen
             printers = await self.api_client.list_my_printers(ignore_init_errors=True)
-            
+
             if not printers:
                 errors["base"] = "no_printers"
                 return errors
@@ -223,6 +225,10 @@ class AnycubicCloudConfigFlow(ConfigFlow, domain=DOMAIN):
         """
         if self.source == SOURCE_REAUTH:
             reauth_entry = self._get_reauth_entry()
+            assert self.api_client is not None
+            user_id = self.api_client.anycubic_auth.api_user_id
+            await self.async_set_unique_id(f"anycubic_cloud_{user_id}")
+            self._abort_if_unique_id_mismatch(reason="wrong_account")
             return self.async_update_and_abort(
                 reauth_entry,
                 data={
@@ -254,6 +260,9 @@ class AnycubicCloudConfigFlow(ConfigFlow, domain=DOMAIN):
                 }
             ),
             errors=errors,
+            description_placeholders={
+                "url": "https://cloud-universe.anycubic.com/file",
+            },
         )
 
     async def async_step_auth_mode_slicer(
@@ -388,11 +397,15 @@ class AnycubicCloudOptionsFlowHandler(OptionsFlow):
 
         fields = {
             vol.Optional(
+                CONF_MQTT_VERIFY_TLS,
+                default=self.config_entry.options.get(CONF_MQTT_VERIFY_TLS, True),
+            ): BooleanSelector(),
+            vol.Optional(
                 CONF_MQTT_CONNECT_MODE,
                 default=str(
                     self.config_entry.options.get(
                         CONF_MQTT_CONNECT_MODE,
-                        LocalAnycubicMQTTConnectMode.Printing_Drying.value,
+                        DEFAULT_MQTT_CONNECT_MODE.value,
                     )
                 ),
             ): vol.In(

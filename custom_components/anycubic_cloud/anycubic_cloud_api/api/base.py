@@ -8,6 +8,8 @@ from typing import Any, overload
 import aiohttp
 from aiofiles import open as aio_file_open
 from aiofiles.os import path as aio_path
+from multidict import CIMultiDict, CIMultiDictProxy
+from yarl import URL
 
 from ..const.api_endpoints import API_ENDPOINT
 from ..const.const import (
@@ -30,6 +32,7 @@ from ..exceptions.exceptions import (
     AnycubicAuthError,
     AnycubicAuthTokensExpired,
 )
+from ..helpers.helpers import redact_urls_in_text
 from ..models.auth import AnycubicAuthentication, AnycubicAuthMode
 from ..models.http import HTTP_METHODS, AnycubicAPIEndpoint
 
@@ -68,7 +71,7 @@ class AnycubicAPIBase:
         self._debug_logger: Any = debug_logger
         self._tokens_changed: bool = False
         self._log_api_call_info: bool = False
-        self._last_warn_api_duration: int | None = None
+        self._last_warn_api_duration: float | None = None
         self._anycubic_auth: AnycubicAuthentication | None = None
 
         if auth_token:
@@ -100,15 +103,15 @@ class AnycubicAPIBase:
 
     def _log_to_debug(self, msg: str) -> None:
         if self._debug_logger:
-            self._debug_logger.debug(msg)
+            self._debug_logger.debug(redact_urls_in_text(msg))
 
     def _log_to_warn(self, msg: str) -> None:
         if self._debug_logger:
-            self._debug_logger.warning(msg)
+            self._debug_logger.warning(redact_urls_in_text(msg))
 
     def _log_to_error(self, msg: str) -> None:
         if self._debug_logger:
-            self._debug_logger.error(msg)
+            self._debug_logger.error(redact_urls_in_text(msg))
 
     #
     #
@@ -186,6 +189,7 @@ class AnycubicAPIBase:
 
         try:
             async with h_coro as resp:
+                resp.raise_for_status()
                 if is_json:
                     resp_data: dict[str, Any] | str = await resp.json()
                 else:
@@ -197,9 +201,26 @@ class AnycubicAPIBase:
                 f"Anycubic API fetch error ({type(error).__name__}): {error} "
                 f"[url: {url}]"
             )
+            # Preserve HTTP status for token renewal, while keeping signed URLs
+            # out of exception chains printed by HA or upload debug tracebacks.
+            cause: Exception
+            if isinstance(error, aiohttp.ClientResponseError):
+                safe_url = URL(redact_urls_in_text(str(error.request_info.real_url)))
+                request_info = aiohttp.RequestInfo(
+                    url=safe_url,
+                    method=getattr(error.request_info, 'method', method.name),
+                    headers=CIMultiDictProxy(CIMultiDict[str]()),
+                    real_url=safe_url,
+                )
+                cause = aiohttp.ClientResponseError(
+                    request_info, (), status=error.status,
+                    message=redact_urls_in_text(error.message),
+                )
+            else:
+                cause = RuntimeError(f"{type(error).__name__}: {redact_urls_in_text(str(error))}")
             raise AnycubicAPIParsingError(
                 ErrorsAPIParsing.api_error_server_maintenance
-            ) from error
+            ) from cause
 
         time_end: float = time.time()
         time_diff: float = time_end - time_start
@@ -207,13 +228,14 @@ class AnycubicAPIBase:
         if (
             over_limit
             and (
-                not self._last_warn_api_duration
+                self._last_warn_api_duration is None
                 or time_end > self._last_warn_api_duration + WARN_INTERVAL_API_DURATION
             )
         ):
             self._log_to_warn(
                 f"Responses from server are taking over {MAX_API_FETCH_TIME_WARN}s (Took {int(time_diff)}s)"
             )
+            self._last_warn_api_duration = time_end
         if self._log_api_call_info:
             self._log_to_debug(
                 f"Finished fetching {url} in {time_diff:.2f}s."
@@ -232,7 +254,7 @@ class AnycubicAPIBase:
         )
 
         if isinstance(resp, str) and len(resp) > 0:
-            raise AnycubicAPIParsingError(ErrorsAPIParsing.api_error_aws.format(resp))
+            raise AnycubicAPIParsingError(ErrorsAPIParsing.api_error_aws.format(redact_urls_in_text(resp)))
 
         return resp
 
@@ -245,16 +267,24 @@ class AnycubicAPIBase:
         with_origin: str | None = AUTH_DOMAIN,
         with_token: bool = True,
     ) -> dict[Any, Any]:
-        resp = await self._fetch_ext_resp(
-            method=endpoint.method,
-            base_url=self._build_api_url(endpoint),
-            query=query,
-            params=params,
-            extra_headers=self.anycubic_auth.get_auth_headers(
-                with_token=with_token
-            ),
-            with_origin=with_origin,
-        )
+        try:
+            resp = await self._fetch_ext_resp(
+                method=endpoint.method,
+                base_url=self._build_api_url(endpoint),
+                query=query,
+                params=params,
+                extra_headers=self.anycubic_auth.get_auth_headers(
+                    with_token=with_token
+                ),
+                with_origin=with_origin,
+            )
+        except AnycubicAPIParsingError as error:
+            cause = error.__cause__
+            if with_token and isinstance(cause, aiohttp.ClientResponseError) and cause.status == 401:
+                raise AnycubicAuthTokensExpired(ErrorsAuthTokenExpired.invalid_credentials) from error
+            raise
+        if not isinstance(resp, dict):
+            raise AnycubicAPIParsingError(ErrorsAPIParsing.api_error_server_maintenance)
         return resp
 
     #
@@ -312,20 +342,23 @@ class AnycubicAPIBase:
             params=params,
             with_token=False,
         )
-        if not resp or not resp['data']:
+        data = resp.get('data')
+        if not isinstance(data, dict) or not isinstance(data.get('token'), str) or not data['token'].strip():
             server_message = resp.get('msg') if resp else None
             error_message = ErrorsAuth.access_token_login_failed.format(server_message)
             self._log_to_debug(error_message)
             raise AnycubicAuthError(error_message)
         self.anycubic_auth.set_auth_token(
-            resp['data']['token']
+            data['token']
         )
         self._log_to_debug("Logged in and retrieved user token with access_token.")
 
     def get_auth_config_dict(self) -> dict[str, Any]:
-        self._tokens_changed = False
-
         return self.anycubic_auth.get_auth_config_dict()
+
+    def mark_auth_config_saved(self, saved_config: dict[str, Any]) -> None:
+        if saved_config == self.anycubic_auth.get_auth_config_dict():
+            self._tokens_changed = False
 
     def load_auth_config_from_dict(
         self,
@@ -400,11 +433,15 @@ class AnycubicAPIBase:
         if raw_data:
             return resp
 
-        data: dict[str, Any] | None = resp['data']
-        if resp and resp.get('msg') == 'request error':
+        if resp.get('msg') == 'request error':
             raise AnycubicAPIParsingError(ErrorsAPIParsing.api_error_user_server_maintenance)
+        if 'data' not in resp:
+            raise AnycubicAPIParsingError(ErrorsAPIParsing.api_error_server_maintenance)
+        data = resp['data']
         if data is None:
             raise AnycubicAuthTokensExpired(ErrorsAuthTokenExpired.invalid_credentials)
+        if not isinstance(data, dict) or 'id' not in data or 'user_email' not in data:
+            raise AnycubicAPIParsingError(ErrorsAPIParsing.api_error_server_maintenance)
 
         self.anycubic_auth.set_api_user_id(data['id'])
         self.anycubic_auth.set_api_user_email(data['user_email'])

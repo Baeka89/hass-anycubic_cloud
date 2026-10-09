@@ -52,7 +52,7 @@ MAX_FILE_UPLOAD_RETRIES = 3
 
 
 def build_anycubic_service_schema(
-    input_service_schema: dict[Any, Any] = {},
+    input_service_schema: dict[Any, Any] | None = None,
     with_slot_number: bool = False,
     with_slot_colours: bool = False,
     with_opt_box: bool = False,
@@ -63,11 +63,11 @@ def build_anycubic_service_schema(
     with_layers: bool = False,
 ) -> vol.Schema:
     service_schema = {
-        **input_service_schema,
+        **(input_service_schema or {}),
     }
 
     if with_slot_number:
-        service_schema[vol.Required(CONF_SLOT_NUMBER)] = cv.positive_int
+        service_schema[vol.Required(CONF_SLOT_NUMBER)] = vol.All(vol.Coerce(int), vol.Range(min=1, max=4))
 
     if with_slot_colours:
         service_schema[vol.Required(CONF_SLOT_COLOR_RED)] = vol.All(
@@ -81,7 +81,7 @@ def build_anycubic_service_schema(
         )
 
     if with_opt_box:
-        service_schema[vol.Optional(CONF_BOX_ID)] = cv.positive_int
+        service_schema[vol.Optional(CONF_BOX_ID)] = vol.All(vol.Coerce(int), vol.Range(min=0, max=1))
 
     if with_speed:
         service_schema[vol.Required(CONF_SPEED)] = cv.positive_int
@@ -100,14 +100,14 @@ def build_anycubic_service_schema(
 
     return vol.Schema(
         vol.All(
-            cv.make_entity_service_schema(
+            vol.Schema(
                 {
                     vol.Required(ATTR_CONFIG_ENTRY): selector.ConfigEntrySelector(
                         {
                             "integration": DOMAIN,
                         }
                     ),
-                    vol.Optional(ATTR_DEVICE_ID): cv.string,
+                    vol.Optional(ATTR_DEVICE_ID): vol.Any(cv.string, vol.All(cv.ensure_list, [cv.string], vol.Length(min=1, max=1))),
                     vol.Optional(CONF_PRINTER_ID): cv.positive_int,
                     **service_schema,
                 }
@@ -126,7 +126,6 @@ class AnycubicCloudServiceCall:
     def __init__(self, hass: HomeAssistant) -> None:
         """Initialize service call."""
         self.hass = hass
-        self._device_id: str | None = None
 
     def _get_coordinator(self, service: ServiceCall) -> AnycubicCloudDataUpdateCoordinator:
         """Get AnycubicCloudDataUpdateCoordinator object."""
@@ -139,10 +138,11 @@ class AnycubicCloudServiceCall:
                 "Could not find Anycubic Cloud config entry."
             )
 
-        coordinator: AnycubicCloudDataUpdateCoordinator = self.hass.data[DOMAIN][entry.entry_id][
-            COORDINATOR
-        ]
+        runtime_data = self.hass.data.get(DOMAIN, {}).get(entry.entry_id)
+        if not runtime_data or COORDINATOR not in runtime_data:
+            raise ServiceValidationError("The Anycubic Cloud config entry is not loaded")
 
+        coordinator: AnycubicCloudDataUpdateCoordinator = runtime_data[COORDINATOR]
         return coordinator
 
     def _get_printer(self, service: ServiceCall) -> AnycubicPrinter:
@@ -160,9 +160,7 @@ class AnycubicCloudServiceCall:
                         "Can only call services for one printer at a time."
                     )
 
-            self._device_id = device_id
-
-            printer = coordinator.get_printer_for_device_id(self._device_id)
+            printer = coordinator.get_printer_for_device_id(device_id)
         else:
             printer_id = service.data[CONF_PRINTER_ID]
             printer = coordinator.get_printer_for_id(printer_id)
@@ -179,6 +177,9 @@ class AnycubicCloudServiceCall:
         if box_id is None:
             box_id = 0
 
+        printer = self._get_printer(service)
+        if printer.multi_color_box_for_id(box_id) is None:
+            raise ServiceValidationError("The requested ACE box is not connected")
         return box_id
 
     def _get_slot_num_list(self, service: ServiceCall) -> list[int] | None:
@@ -441,14 +442,16 @@ class MultiColorBoxFilamentRetract(AnycubicCloudServiceCall):
 class BasePrintWithFile(AnycubicCloudServiceCall):
     """ Base for print with file service calls """
 
-    schema = build_anycubic_service_schema(
-        input_service_schema={
-            vol.Required(CONF_UPLOADED_GCODE_FILE): selector.FileSelector(
-                selector.FileSelectorConfig(accept=".gcode")
-            ),
-            vol.Optional(CONF_SLOT_NUMBER): vol.All(cv.ensure_list, [cv.positive_int]),
-        }
-    )
+    schema = build_anycubic_service_schema(input_service_schema={
+        vol.Required(CONF_UPLOADED_GCODE_FILE): selector.FileSelector(
+            selector.FileSelectorConfig(accept=".gcode")
+        ),
+        vol.Optional(CONF_SLOT_NUMBER): vol.All(
+            cv.ensure_list,
+            [vol.All(vol.Coerce(int), vol.Range(min=1, max=8))],
+            vol.Length(min=1, max=8),
+        ),
+    })
 
     def _read_uploaded_file_bytes(
         self, uploaded_file_id: str
@@ -494,11 +497,32 @@ class BasePrintWithFile(AnycubicCloudServiceCall):
         data = {
             CONF_PRINTER_ID: printer.id,
             CONF_PRINTER_NAME: printer.name,
-            CONF_DEVICE_ID: self._device_id,
+            CONF_DEVICE_ID: service.data.get(ATTR_DEVICE_ID),
             CONF_TYPE: AC_EVENT_PRINT_CLOUD_START,
             CONF_EVENT_DATA: print_response.event_dict,
         }
         self.hass.bus.async_fire(ATTR_ANYCUBIC_EVENT, data)
+
+
+class PrintExistingCloudFile(BasePrintWithFile):
+    """Print a cloud gcode without uploading another file."""
+
+    schema = build_anycubic_service_schema(input_service_schema={
+        vol.Required("gcode_id"): cv.positive_int,
+        vol.Optional(CONF_SLOT_NUMBER): vol.All(
+            cv.ensure_list,
+            [vol.All(vol.Coerce(int), vol.Range(min=1, max=8))],
+            vol.Length(min=1, max=8),
+        ),
+    })
+
+    async def async_call_service(self, service: ServiceCall) -> None:
+        printer = self._get_printer(service)
+        response = await printer.print_with_cloud_gcode_id(
+            gcode_id=service.data["gcode_id"],
+            slot_index_list=self._get_slot_num_list(service),
+        )
+        self._async_fire_event(service, printer, response)
 
 
 class PrintAndUploadSaveInCloud(BasePrintWithFile):
@@ -507,9 +531,9 @@ class PrintAndUploadSaveInCloud(BasePrintWithFile):
     async def async_call_service(self, service: ServiceCall) -> None:
         """Execute service call."""
 
-        file_name, gcode_bytes = await self._get_gcode_data(service)
         printer = self._get_printer(service)
         slot_idx_list = self._get_slot_num_list(service)
+        file_name, gcode_bytes = await self._get_gcode_data(service)
 
         print_response = await printer.print_and_upload_save_in_cloud(
             file_name=file_name,
@@ -531,9 +555,9 @@ class PrintAndUploadNoCloudSave(BasePrintWithFile):
     async def async_call_service(self, service: ServiceCall) -> None:
         """Execute service call."""
 
-        file_name, gcode_bytes = await self._get_gcode_data(service)
         printer = self._get_printer(service)
         slot_idx_list = self._get_slot_num_list(service)
+        file_name, gcode_bytes = await self._get_gcode_data(service)
 
         print_response = await printer.print_and_upload_no_cloud_save(
             file_name=file_name,
@@ -877,6 +901,7 @@ SERVICES = (
     ("multi_color_box_set_slot_pla_se", MultiColorBoxSetSlotPlaSe),
     ("multi_color_box_filament_extrude", MultiColorBoxFilamentExtrude),
     ("multi_color_box_filament_retract", MultiColorBoxFilamentRetract),
+    ("print_existing_cloud_file", PrintExistingCloudFile),
     ("print_and_upload_save_in_cloud", PrintAndUploadSaveInCloud),
     ("print_and_upload_no_cloud_save", PrintAndUploadNoCloudSave),
     ("delete_file_local", DeleteFileLocal),

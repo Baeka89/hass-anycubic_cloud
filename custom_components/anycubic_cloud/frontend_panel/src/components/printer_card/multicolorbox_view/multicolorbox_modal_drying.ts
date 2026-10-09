@@ -28,7 +28,7 @@ import {
 
 import { commonModalStyle } from "../../ui/modal-styles";
 
-import "../../ui/select-dropdown.ts";
+import "../../ui/select-dropdown";
 
 const animOptionsCard: motionOptions = {
   keyframeOptions: {
@@ -227,8 +227,7 @@ export class AnycubicPrintercardMulticolorboxModalDrying extends LitElement {
   @state()
   private _customButtonStart: string;
 
-  // eslint-disable-next-line @typescript-eslint/require-await
-  async firstUpdated(): Promise<void> {
+  firstUpdated(): void {
     if (!this.inline) {
       this.addEventListener("click", (e) => {
         this._closeModal(e);
@@ -296,6 +295,8 @@ export class AnycubicPrintercardMulticolorboxModalDrying extends LitElement {
     }
 
     if (changedProperties.has("box_id")) {
+      this._userEditCustomTemp = false;
+      this._userEditCustomDuration = false;
       if (this.box_id === 1) {
         this._dryingPresetId1 = SECONDARY_DRYING_PRESET_1;
         this._dryingPresetId2 = SECONDARY_DRYING_PRESET_2;
@@ -320,6 +321,7 @@ export class AnycubicPrintercardMulticolorboxModalDrying extends LitElement {
     }
 
     if (
+      changedProperties.has("box_id") ||
       changedProperties.has("hass") ||
       changedProperties.has("selectedPrinterDevice") ||
       changedProperties.has("printerEntities") ||
@@ -331,7 +333,7 @@ export class AnycubicPrintercardMulticolorboxModalDrying extends LitElement {
           this.printerEntities,
           this.printerEntityIdPart,
           this._dryingPresetId1,
-        ) as AnycubicDryingPresetEntity;
+        );
       this._hasDryingPreset1 =
         isPrinterButtonStateAvailable(dryingPresetState1);
       this._dryingPresetTemp1 = String(
@@ -344,7 +346,7 @@ export class AnycubicPrintercardMulticolorboxModalDrying extends LitElement {
           this.printerEntities,
           this.printerEntityIdPart,
           this._dryingPresetId2,
-        ) as AnycubicDryingPresetEntity;
+        );
       this._hasDryingPreset2 =
         isPrinterButtonStateAvailable(dryingPresetState2);
       this._dryingPresetTemp2 = String(
@@ -357,7 +359,7 @@ export class AnycubicPrintercardMulticolorboxModalDrying extends LitElement {
           this.printerEntities,
           this.printerEntityIdPart,
           this._dryingPresetId3,
-        ) as AnycubicDryingPresetEntity;
+        );
       this._hasDryingPreset3 =
         isPrinterButtonStateAvailable(dryingPresetState3);
       this._dryingPresetTemp3 = String(
@@ -370,7 +372,7 @@ export class AnycubicPrintercardMulticolorboxModalDrying extends LitElement {
           this.printerEntities,
           this.printerEntityIdPart,
           this._dryingPresetId4,
-        ) as AnycubicDryingPresetEntity;
+        );
       this._hasDryingPreset4 =
         isPrinterButtonStateAvailable(dryingPresetState4);
       this._dryingPresetTemp4 = String(
@@ -383,7 +385,7 @@ export class AnycubicPrintercardMulticolorboxModalDrying extends LitElement {
           this.printerEntities,
           this.printerEntityIdPart,
           this._dryingPresetId5,
-        ) as AnycubicDryingPresetEntity;
+        );
       this._hasDryingPreset5 =
         isPrinterButtonStateAvailable(dryingPresetState5);
       this._dryingPresetTemp5 = String(
@@ -486,75 +488,89 @@ export class AnycubicPrintercardMulticolorboxModalDrying extends LitElement {
     return html`
       <div>
         <div class="ac-drying-header">${this._heading}</div>
-        ${nothingAvailable
-          ? html`<p class="ac-drying-hint">${this._hintNothingAvailable}</p>`
-          : nothing}
+        ${
+          nothingAvailable
+            ? html`<p class="ac-drying-hint">${this._hintNothingAvailable}</p>`
+            : nothing
+        }
         <div class="ac-drying-buttonscont">
-          ${this._hasDryingPreset1
-            ? html`
-                <div class="ac-drying-buttoncont">
-                  <ha-control-button @click=${this._handleDryingPreset1}>
-                    ${this._buttonTextPreset} 1<br />
-                    ${this._dryingPresetDur1} ${this._buttonTextMinutes} @
-                    ${this._dryingPresetTemp1}°C
-                  </ha-control-button>
-                </div>
-              `
-            : nothing}
-          ${this._hasDryingPreset2
-            ? html`
-                <div class="ac-drying-buttoncont">
-                  <ha-control-button @click=${this._handleDryingPreset2}>
-                    ${this._buttonTextPreset} 2<br />
-                    ${this._dryingPresetDur2} ${this._buttonTextMinutes} @
-                    ${this._dryingPresetTemp2}°C
-                  </ha-control-button>
-                </div>
-              `
-            : nothing}
-          ${this._hasDryingPreset3
-            ? html`
-                <div class="ac-drying-buttoncont">
-                  <ha-control-button @click=${this._handleDryingPreset3}>
-                    ${this._buttonTextPreset} 3<br />
-                    ${this._dryingPresetDur3} ${this._buttonTextMinutes} @
-                    ${this._dryingPresetTemp3}°C
-                  </ha-control-button>
-                </div>
-              `
-            : nothing}
-          ${this._hasDryingPreset4
-            ? html`
-                <div class="ac-drying-buttoncont">
-                  <ha-control-button @click=${this._handleDryingPreset4}>
-                    ${this._buttonTextPreset} 4<br />
-                    ${this._dryingPresetDur4} ${this._buttonTextMinutes} @
-                    ${this._dryingPresetTemp4}°C
-                  </ha-control-button>
-                </div>
-              `
-            : nothing}
-          ${this._hasDryingPreset5
-            ? html`
-                <div class="ac-drying-buttoncont">
-                  <ha-control-button @click=${this._handleDryingPreset5}>
-                    ${this._buttonTextPreset} 5<br />
-                    ${this._dryingPresetDur5} ${this._buttonTextMinutes} @
-                    ${this._dryingPresetTemp5}°C
-                  </ha-control-button>
-                </div>
-              `
-            : nothing}
-          ${this._hasDryingStop
-            ? html`
-                <div class="ac-flex-break"></div>
-                <div class="ac-drying-buttoncont">
-                  <ha-control-button @click=${this._handleDryingStop}>
-                    ${this._buttonStopDrying}
-                  </ha-control-button>
-                </div>
-              `
-            : nothing}
+          ${
+            this._hasDryingPreset1
+              ? html`
+                  <div class="ac-drying-buttoncont">
+                    <ha-control-button @click=${this._handleDryingPreset1}>
+                      ${this._buttonTextPreset} 1<br />
+                      ${this._dryingPresetDur1} ${this._buttonTextMinutes} @
+                      ${this._dryingPresetTemp1}°C
+                    </ha-control-button>
+                  </div>
+                `
+              : nothing
+          }
+          ${
+            this._hasDryingPreset2
+              ? html`
+                  <div class="ac-drying-buttoncont">
+                    <ha-control-button @click=${this._handleDryingPreset2}>
+                      ${this._buttonTextPreset} 2<br />
+                      ${this._dryingPresetDur2} ${this._buttonTextMinutes} @
+                      ${this._dryingPresetTemp2}°C
+                    </ha-control-button>
+                  </div>
+                `
+              : nothing
+          }
+          ${
+            this._hasDryingPreset3
+              ? html`
+                  <div class="ac-drying-buttoncont">
+                    <ha-control-button @click=${this._handleDryingPreset3}>
+                      ${this._buttonTextPreset} 3<br />
+                      ${this._dryingPresetDur3} ${this._buttonTextMinutes} @
+                      ${this._dryingPresetTemp3}°C
+                    </ha-control-button>
+                  </div>
+                `
+              : nothing
+          }
+          ${
+            this._hasDryingPreset4
+              ? html`
+                  <div class="ac-drying-buttoncont">
+                    <ha-control-button @click=${this._handleDryingPreset4}>
+                      ${this._buttonTextPreset} 4<br />
+                      ${this._dryingPresetDur4} ${this._buttonTextMinutes} @
+                      ${this._dryingPresetTemp4}°C
+                    </ha-control-button>
+                  </div>
+                `
+              : nothing
+          }
+          ${
+            this._hasDryingPreset5
+              ? html`
+                  <div class="ac-drying-buttoncont">
+                    <ha-control-button @click=${this._handleDryingPreset5}>
+                      ${this._buttonTextPreset} 5<br />
+                      ${this._dryingPresetDur5} ${this._buttonTextMinutes} @
+                      ${this._dryingPresetTemp5}°C
+                    </ha-control-button>
+                  </div>
+                `
+              : nothing
+          }
+          ${
+            this._hasDryingStop
+              ? html`
+                  <div class="ac-flex-break"></div>
+                  <div class="ac-drying-buttoncont">
+                    <ha-control-button @click=${this._handleDryingStop}>
+                      ${this._buttonStopDrying}
+                    </ha-control-button>
+                  </div>
+                `
+              : nothing
+          }
         </div>
         ${this._hasCustomDrying ? this._renderCustomDrying() : nothing}
       </div>
@@ -655,7 +671,7 @@ export class AnycubicPrintercardMulticolorboxModalDrying extends LitElement {
     const newVal = (
       ev.currentTarget as unknown as TextfieldChangeDetail<number>
     ).value;
-    this._customTemp = Number(newVal);
+    this._customTemp = newVal;
     this._userEditCustomTemp = true;
   };
 
@@ -663,7 +679,7 @@ export class AnycubicPrintercardMulticolorboxModalDrying extends LitElement {
     const newVal = (
       ev.currentTarget as unknown as TextfieldChangeDetail<number>
     ).value;
-    this._customDuration = Number(newVal);
+    this._customDuration = newVal;
     this._userEditCustomDuration = true;
   };
 
@@ -717,7 +733,7 @@ export class AnycubicPrintercardMulticolorboxModalDrying extends LitElement {
     }
   };
 
-  private _closeModal = (e?: Event | undefined): void => {
+  private _closeModal = (e?: Event): void => {
     if (e) {
       e.stopPropagation();
     }

@@ -14,8 +14,8 @@ import { HASSDomEvent, fireEvent } from "../../../fire_event";
 import {
   getDefaultCardConfig,
   getPrinterEntities,
+  getPrinterEntityId,
   getPrinterEntityIdPart,
-  getPrinterSensorStateObj,
   isLCDPrinter,
 } from "../../../helpers";
 
@@ -37,7 +37,7 @@ import {
   TemperatureUnit,
 } from "../../../types";
 
-import "../../ui/multi-select-reorder.ts";
+import "../../ui/multi-select-reorder";
 
 const defaultConfig = getDefaultCardConfig();
 
@@ -191,14 +191,25 @@ export class AnycubicPrintercardConfigure extends LitElement {
         this.printerEntities,
         this.printerEntityIdPart,
       );
-      this.hasColorbox =
-        getPrinterSensorStateObj(
-          this.hass,
-          this.printerEntities,
-          this.printerEntityIdPart,
-          "ace_spools",
-          "inactive",
-        ).state === "active";
+      const selectedDevice = Object.values(this.hass.devices).find(
+        (device) => device.id === this.cardConfig.printer_id,
+      );
+      const devices = [
+        this.cardConfig.printer_id,
+        ...Object.values(this.hass.devices)
+          .filter(
+            (device) =>
+              selectedDevice && device.via_device_id === selectedDevice.id,
+          )
+          .map((device) => device.id),
+      ];
+      this.hasColorbox = devices.some((id) => {
+        const entities = getPrinterEntities(this.hass, id);
+        return Boolean(
+          getPrinterEntityId(entities, "sensor", "ace_spools") ||
+          getPrinterEntityId(entities, "sensor", "secondary_ace_spools"),
+        );
+      });
       this.availableStats = {
         ...StatTypeGeneral,
         ...CalculatedTimeType,
@@ -298,11 +309,13 @@ export class AnycubicPrintercardConfigure extends LitElement {
         >
           <paper-tab page-name="main">${this._tabMain}</paper-tab>
           <paper-tab page-name="stats">${this._tabStats}</paper-tab>
-          ${this.hasColorbox
-            ? html`<paper-tab page-name="colours">
-                ${this._tabColours}
-              </paper-tab>`
-            : nothing}
+          ${
+            this.hasColorbox
+              ? html`<paper-tab page-name="colours">
+                  ${this._tabColours}
+                </paper-tab>`
+              : nothing
+          }
         </ha-tabs>
       </div>
     `;

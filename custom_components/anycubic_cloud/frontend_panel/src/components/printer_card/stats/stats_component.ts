@@ -23,10 +23,10 @@ import {
   TranslationDict,
 } from "../../../types";
 
-import "./progress_line.ts";
-import "./stat_line.ts";
-import "./temperature_stat.ts";
-import "./time_stat.ts";
+import "./progress_line";
+import "./stat_line";
+import "./temperature_stat";
+import "./time_stat";
 
 @customElementIfUndef("anycubic-printercard-stats-component")
 export class AnycubicPrintercardStatsComponent extends LitElement {
@@ -100,6 +100,9 @@ export class AnycubicPrintercardStatsComponent extends LitElement {
   private _entAceTempTarget: HassEntity;
 
   @state()
+  private _timeCounterActive: boolean = false;
+
+  @state()
   private _valStatus: string;
 
   @state()
@@ -160,6 +163,25 @@ export class AnycubicPrintercardStatsComponent extends LitElement {
       changedProperties.has("printerEntities") ||
       changedProperties.has("printerEntityIdPart")
     ) {
+      this._timeCounterActive =
+        getPrinterBinarySensorState(
+          this.hass,
+          this.printerEntities,
+          this.printerEntityIdPart,
+          "job_in_progress",
+          true,
+          false,
+          false,
+        ) === true &&
+        getPrinterBinarySensorState(
+          this.hass,
+          this.printerEntities,
+          this.printerEntityIdPart,
+          "job_is_paused",
+          true,
+          false,
+          false,
+        ) !== true;
       this._entETA = getPrinterSensorStateObj(
         this.hass,
         this.printerEntities,
@@ -258,12 +280,10 @@ export class AnycubicPrintercardStatsComponent extends LitElement {
         "job_speed_mode",
         "",
         { available_modes: [], print_speed_mode_code: -1 },
-      ) as AnycubicSpeedModeEntity;
+      );
       const availableSpeedModes = speedModesFromStateObj(speedModeState);
       const currentSpeedModeKey: number =
-        (speedModeState.attributes.print_speed_mode_code as
-          | number
-          | undefined) ?? 0;
+        speedModeState.attributes.print_speed_mode_code ?? 0;
       this._valSpeedMode =
         currentSpeedModeKey >= 0 && currentSpeedModeKey in availableSpeedModes
           ? availableSpeedModes[currentSpeedModeKey]
@@ -395,17 +415,21 @@ export class AnycubicPrintercardStatsComponent extends LitElement {
   render(): LitTemplateResult {
     return html`
       <div class="ac-stats-box ac-stats-section">
-        ${this.showPercent
-          ? html`
-              <div class="ac-stats-box ac-stats-part-percent">
-                <p class="ac-stats-part-percent-text">
-                  ${this.round
-                    ? Math.round(this.progressPercent)
-                    : this.progressPercent}%
-                </p>
-              </div>
-            `
-          : null}
+        ${
+          this.showPercent
+            ? html`
+                <div class="ac-stats-box ac-stats-part-percent">
+                  <p class="ac-stats-part-percent-text">
+                    ${
+                      this.round
+                        ? Math.round(this.progressPercent)
+                        : this.progressPercent
+                    }%
+                  </p>
+                </div>
+              `
+            : null
+        }
         <div class="ac-stats-box ac-stats-section">${this._renderStats()}</div>
       </div>
     `;
@@ -433,6 +457,7 @@ export class AnycubicPrintercardStatsComponent extends LitElement {
                 .direction=${0}
                 .round=${this.round}
                 .use_24hr=${this.use_24hr}
+                .timeZone=${this.hass.config?.time_zone}
               ></anycubic-printercard-stat-time>
             `;
           case PrinterCardStatType.Elapsed:
@@ -441,9 +466,10 @@ export class AnycubicPrintercardStatsComponent extends LitElement {
                 .timeEntity=${this._entElapsed}
                 .timeType=${condition}
                 .name=${this._statTranslations[condition]}
-                .direction=${1}
+                .direction=${this._timeCounterActive ? 1 : 0}
                 .round=${this.round}
                 .use_24hr=${this.use_24hr}
+                .timeZone=${this.hass.config?.time_zone}
               ></anycubic-printercard-stat-time>
             `;
 
@@ -453,9 +479,10 @@ export class AnycubicPrintercardStatsComponent extends LitElement {
                 .timeEntity=${this._entRemaining}
                 .timeType=${condition}
                 .name=${this._statTranslations[condition]}
-                .direction=${-1}
+                .direction=${this._timeCounterActive ? -1 : 0}
                 .round=${this.round}
                 .use_24hr=${this.use_24hr}
+                .timeZone=${this.hass.config?.time_zone}
               ></anycubic-printercard-stat-time>
             `;
 

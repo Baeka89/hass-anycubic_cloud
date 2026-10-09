@@ -16,17 +16,10 @@ from .const import (
     PrinterEntityType,
 )
 from .entity import AnycubicCloudEntity, AnycubicCloudEntityDescription
-from .helpers import printer_state_for_key
+from .helpers import printer_attributes_for_key
 
 if TYPE_CHECKING:
     from .coordinator import AnycubicCloudDataUpdateCoordinator
-
-SPEED_MODES = {
-    0: "Leise",
-    1: "Standard",
-    2: "Schnell"
-}
-INV_SPEED_MODES = {v: k for k, v in SPEED_MODES.items()}
 
 
 @dataclass(frozen=True)
@@ -40,7 +33,7 @@ FDM_SELECT_DESCRIPTIONS: list[AnycubicSelectEntityDescription] = list([
     AnycubicSelectEntityDescription(
         key="print_speed_mode",
         translation_key="print_speed_mode",
-        options=list(SPEED_MODES.values()),
+        options=[],
         printer_entity_type=PrinterEntityType.FDM,
     ),
 ])
@@ -79,7 +72,7 @@ class AnycubicSelect(AnycubicCloudEntity, SelectEntity):
     """Representation of a Anycubic Cloud select control."""
 
     entity_description: AnycubicSelectEntityDescription
-    
+
     _attr_has_entity_name = True
 
     def __init__(
@@ -91,35 +84,36 @@ class AnycubicSelect(AnycubicCloudEntity, SelectEntity):
     ) -> None:
         """Initiate Anycubic Select."""
         super().__init__(hass, coordinator, printer_id, entity_description)
-        self._attr_name = entity_description.name
+
+    def _speed_attributes(self) -> dict[str, Any]:
+        return printer_attributes_for_key(
+            self.coordinator, self._printer_id, "job_speed_mode"
+        ) or {}
+
+    @property
+    def options(self) -> list[str]:
+        """Use the modes advertised by this printer, without guessed IDs."""
+        return [str(mode["description"]) for mode in
+                self._speed_attributes().get("available_modes") or []]
 
     @property
     def available(self) -> bool:
-        """Return if entity is available."""
-        return printer_state_for_key(
-            self.coordinator,
-            self._printer_id,
-            self.entity_description.key
-        ) is not None
+        return self.coordinator.last_update_success and bool(self.options)
 
     @property
     def current_option(self) -> str | None:
-        """Return the selected option."""
-        state = printer_state_for_key(self.coordinator, self._printer_id, self.entity_description.key)
-        if state is None:
-            return None
-        return SPEED_MODES.get(int(state), "Standard")
+        attributes = self._speed_attributes()
+        for mode in attributes.get("available_modes") or []:
+            if mode["mode"] == attributes.get("print_speed_mode_code"):
+                return str(mode["description"])
+        return None
 
     async def async_select_option(self, option: str) -> None:
-        """Change the selected option."""
-        mode_id = INV_SPEED_MODES.get(option, 1)
-        key = self.entity_description.key
-
-        # Läuft zentral über den Coordinator, der die passende Printer-API-Methode
-        # aufruft (siehe coordinator.set_select_option). Es gibt kein
-        # `coordinator.api` - die AnycubicAPI-Instanz heißt `anycubic_api` und
-        # bietet keine `set_speed_mode`-Methode; die eigentliche Aktion läuft
-        # über `printer.change_print_setting_speed_mode(...)`.
-        await self.coordinator.set_select_option(self._printer_id, key, mode_id)
-
-        await self.coordinator.async_request_refresh()
+        for mode in self._speed_attributes().get("available_modes") or []:
+            if str(mode["description"]) == option:
+                await self.coordinator.set_select_option(
+                    self._printer_id, self.entity_description.key, int(mode["mode"])
+                )
+                await self.coordinator.async_request_refresh()
+                return
+        raise ValueError(f"Unsupported print speed mode: {option}")

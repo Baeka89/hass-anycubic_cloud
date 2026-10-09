@@ -86,6 +86,7 @@ export type HassEntityInfos = {
 export interface HomeAssistant {
   connection: Connection;
   language: string;
+  config?: { time_zone?: string };
   panels: {
     [name: string]: {
       component_name: string;
@@ -234,8 +235,7 @@ export interface AnimatedPrinterXYDimension {
   Y: number;
 }
 
-export interface AnimatedPrinterLTDimension
-  extends AnimatedPrinterBasicDimension {
+export interface AnimatedPrinterLTDimension extends AnimatedPrinterBasicDimension {
   left: number;
   top: number;
 }
@@ -252,8 +252,7 @@ export interface AnimatedPrinterBuildPlateDimension {
   verticalOffset: number;
 }
 
-export interface AnimatedPrinterAxisConfig
-  extends AnimatedPrinterBasicDimension {
+export interface AnimatedPrinterAxisConfig extends AnimatedPrinterBasicDimension {
   stepper: boolean;
   offsetLeft: number;
   extruder: AnimatedPrinterBasicDimension;
@@ -357,8 +356,8 @@ export interface AnycubicTargetTempEntity extends HassEntity {
 
 export interface AnycubicSpeedModeEntity extends HassEntity {
   attributes: HassEntityAttributeBase & {
-    available_modes: AnycubicSpeedMode[];
-    print_speed_mode_code: number;
+    available_modes?: AnycubicSpeedMode[];
+    print_speed_mode_code?: number;
   };
 }
 

@@ -32,7 +32,7 @@ import {
   TranslationDict,
 } from "../../types";
 
-import "../../components/printer_card/card/card.ts";
+import "../../components/printer_card/card/card";
 
 const monitoredStatsBasic: PrinterCardStatType[] =
   getPanelBasicMonitoredStats();
@@ -205,7 +205,8 @@ export class AnycubicViewMain extends LitElement {
 
     if (
       changedProperties.has("selectedPrinterID") ||
-      changedProperties.has("selectedPrinterDevice")
+      changedProperties.has("selectedPrinterDevice") ||
+      changedProperties.has("hass")
     ) {
       this.printerEntities = getPrinterEntities(
         this.hass,
@@ -351,16 +352,13 @@ export class AnycubicViewMain extends LitElement {
     this.aceDryingProgress =
       typeof this.aceStateDryingRemaining !== "undefined" &&
       typeof this.aceStateDryingTotal !== "undefined"
-        ? String(
-            (this.aceStateDryingTotal > 0
-              ? Math.round(
-                  (1 -
-                    this.aceStateDryingRemaining / this.aceStateDryingTotal) *
-                    10000,
-                ) / 100
-              : 0
-            ).toFixed(2),
-          ) + "%"
+        ? (this.aceStateDryingTotal > 0
+            ? Math.round(
+                (1 - this.aceStateDryingRemaining / this.aceStateDryingTotal) *
+                  10000,
+              ) / 100
+            : 0
+          ).toFixed(2) + "%"
         : undefined;
   }
 
@@ -452,26 +450,28 @@ export class AnycubicViewMain extends LitElement {
         "printer_mqtt_active",
         this.printerStateMqttActive,
       )}
-      ${this.isFDM
-        ? html`
-            ${this._renderInfoRow(
-              "curr_nozzle_temp",
-              this.printerStateCurrNozzleTemp,
-            )}
-            ${this._renderInfoRow(
-              "curr_hotbed_temp",
-              this.printerStateCurrHotbedTemp,
-            )}
-            ${this._renderInfoRow(
-              "target_nozzle_temp",
-              this.printerStateTargetNozzleTemp,
-            )}
-            ${this._renderInfoRow(
-              "target_hotbed_temp",
-              this.printerStateTargetHotbedTemp,
-            )}
-          `
-        : nothing}
+      ${
+        this.isFDM
+          ? html`
+              ${this._renderInfoRow(
+                "curr_nozzle_temp",
+                this.printerStateCurrNozzleTemp,
+              )}
+              ${this._renderInfoRow(
+                "curr_hotbed_temp",
+                this.printerStateCurrHotbedTemp,
+              )}
+              ${this._renderInfoRow(
+                "target_nozzle_temp",
+                this.printerStateTargetNozzleTemp,
+              )}
+              ${this._renderInfoRow(
+                "target_hotbed_temp",
+                this.printerStateTargetHotbedTemp,
+              )}
+            `
+          : nothing
+      }
       ${this._renderInfoRow("job_state", this.jobStatePrintState)}
       ${this._renderInfoRow("job_progress", this.jobStateProgress)}
     `;
@@ -494,8 +494,9 @@ export class AnycubicViewMain extends LitElement {
           .lightEntityId=${this.panel.config.lightEntityId}
           .powerEntityId=${this.panel.config.powerEntityId}
           .cameraEntityId=${this.panel.config.cameraEntityId}
-          .monitoredStats=${this.panel.config.monitoredStats ??
-          this.monitoredStats}
+          .monitoredStats=${
+            this.panel.config.monitoredStats ?? this.monitoredStats
+          }
           .scaleFactor=${this.panel.config.scaleFactor}
           .slotColors=${this.panel.config.slotColors}
           .showSettingsButton=${this.panel.config.showSettingsButton ?? true}

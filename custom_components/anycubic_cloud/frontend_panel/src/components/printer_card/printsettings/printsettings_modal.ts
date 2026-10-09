@@ -35,7 +35,7 @@ import {
 
 import { commonModalStyle } from "../../ui/modal-styles";
 
-import "../../ui/select-dropdown.ts";
+import "../../ui/select-dropdown";
 
 const animOptionsCard: motionOptions = {
   keyframeOptions: {
@@ -198,8 +198,7 @@ export class AnycubicPrintercardPrintsettingsModal extends LitElement {
   @state()
   private _changingSettings: boolean = false;
 
-  // eslint-disable-next-line @typescript-eslint/require-await
-  async firstUpdated(): Promise<void> {
+  firstUpdated(): void {
     this.addEventListener("ac-select-dropdown", this._handleDropdownEvent);
     this.addEventListener("click", (e) => {
       this._closeModal(e);
@@ -364,13 +363,13 @@ export class AnycubicPrintercardPrintsettingsModal extends LitElement {
             this.printerEntityIdPart,
             "job_speed_mode",
             "",
-            { available_modes: [], job_speed_mode_code: -1 },
-          ) as AnycubicSpeedModeEntity;
+            { available_modes: [], print_speed_mode_code: -1 },
+          );
         this.availableSpeedModes = speedModesFromStateObj(
           speedModeState,
         ) as SelectDropdownProps;
         this.currentSpeedModeKey =
-          speedModeState.attributes.print_speed_mode_code;
+          speedModeState.attributes.print_speed_mode_code ?? -1;
         this.currentSpeedModeDescr =
           this.currentSpeedModeKey >= 0 &&
           this.currentSpeedModeKey in this.availableSpeedModes
@@ -467,152 +466,182 @@ export class AnycubicPrintercardPrintsettingsModal extends LitElement {
               ${this._buttonPrintCancel}
             </ha-control-button>
           </div>
-          ${this.isFDM
-            ? html`
-                <div class="ac-settings-row ac-settings-buttonrow">
-                  <ha-control-button
-                    .disabled=${this._pressingFinishJob}
-                    @click=${this._pressFinishJob}
-                  >
-                    ${this._buttonFinishJob}
-                  </ha-control-button>
-                </div>
-                <div class="ac-settings-row ac-settings-buttonrow-split">
-                  <ha-control-button
-                    .disabled=${this._pressingRetract}
-                    @click=${this._pressRetractFilament}
-                  >
-                    ${this._buttonRetractFilament}
-                  </ha-control-button>
-                  <ha-control-button
-                    .disabled=${this._pressingExtrude}
-                    @click=${this._pressExtrudeFilament}
-                  >
-                    ${this._buttonExtrudeFilament}
-                  </ha-control-button>
-                </div>
-              `
-            : nothing}
-          ${this.isFDM
-            ? html`
-                <div class="ac-settings-row">
-                  <anycubic-ui-select-dropdown
-                    .availableOptions=${this.availableSpeedModes}
-                    .placeholder=${this.currentSpeedModeDescr}
-                    .initialItem=${this.currentSpeedModeDescr}
-                  ></anycubic-ui-select-dropdown>
-                  <ha-control-button
-                    .disabled=${this._changingSettings}
-                    @click=${this._handleSaveSpeedModeButton}
-                  >
-                    ${this._buttonSaveSpeedMode}
-                  </ha-control-button>
-                </div>
-                <div class="ac-settings-row">
-                  <div class="ac-input-group">
-                    <label class="ac-input-label"
-                      >${this._labelNozzleTemperature}</label
+          ${
+            this.isFDM
+              ? html`
+                  <div class="ac-settings-row ac-settings-buttonrow">
+                    ${
+                      getPrinterEntityId(
+                        this.printerEntities,
+                        "button",
+                        "clear_completed_print_job",
+                      )
+                        ? html` <ha-control-button
+                            .disabled=${this._pressingFinishJob}
+                            @click=${this._pressFinishJob}
+                          >
+                            ${this._buttonFinishJob}
+                          </ha-control-button>`
+                        : nothing
+                    }
+                  </div>
+                  <div class="ac-settings-row ac-settings-buttonrow-split">
+                    ${
+                      getPrinterEntityId(
+                        this.printerEntities,
+                        "button",
+                        "retract_filament",
+                      )
+                        ? html` <ha-control-button
+                            .disabled=${this._pressingRetract}
+                            @click=${this._pressRetractFilament}
+                          >
+                            ${this._buttonRetractFilament}
+                          </ha-control-button>`
+                        : nothing
+                    }
+                    ${
+                      getPrinterEntityId(
+                        this.printerEntities,
+                        "button",
+                        "extrude_filament",
+                      )
+                        ? html` <ha-control-button
+                            .disabled=${this._pressingExtrude}
+                            @click=${this._pressExtrudeFilament}
+                          >
+                            ${this._buttonExtrudeFilament}
+                          </ha-control-button>`
+                        : nothing
+                    }
+                  </div>
+                `
+              : nothing
+          }
+          ${
+            this.isFDM
+              ? html`
+                  <div class="ac-settings-row">
+                    <anycubic-ui-select-dropdown
+                      .availableOptions=${this.availableSpeedModes}
+                      .placeholder=${this.currentSpeedModeDescr}
+                      .initialItem=${this.currentSpeedModeDescr}
+                    ></anycubic-ui-select-dropdown>
+                    <ha-control-button
+                      .disabled=${this._changingSettings}
+                      @click=${this._handleSaveSpeedModeButton}
                     >
-                    <input
-                      class="ac-number-input"
-                      type="number"
-                      min=${this.minTargetTempNozzle}
-                      max=${this.maxTargetTempNozzle}
-                      .value=${String(this.currentTargetTempNozzle)}
-                      placeholder=${this.currentTargetTempNozzle}
-                      @input=${this._handleTargetTempNozzleChange}
-                      @keydown=${this._handleTargetTempNozzleKeyDown}
-                    />
+                      ${this._buttonSaveSpeedMode}
+                    </ha-control-button>
                   </div>
-                  <ha-control-button
-                    .disabled=${this._changingSettings}
-                    @click=${this._handleSaveTargetTempNozzleButton}
-                  >
-                    ${this._buttonSaveTargetNozzle}
-                  </ha-control-button>
-                </div>
-                <div class="ac-settings-row">
-                  <div class="ac-input-group">
-                    <label class="ac-input-label"
-                      >${this._labelHotbedTemperature}</label
+                  <div class="ac-settings-row">
+                    <div class="ac-input-group">
+                      <label class="ac-input-label"
+                        >${this._labelNozzleTemperature}</label
+                      >
+                      <input
+                        class="ac-number-input"
+                        type="number"
+                        min=${this.minTargetTempNozzle}
+                        max=${this.maxTargetTempNozzle}
+                        .value=${String(this.currentTargetTempNozzle)}
+                        placeholder=${this.currentTargetTempNozzle}
+                        @input=${this._handleTargetTempNozzleChange}
+                        @keydown=${this._handleTargetTempNozzleKeyDown}
+                      />
+                    </div>
+                    <ha-control-button
+                      .disabled=${this._changingSettings}
+                      @click=${this._handleSaveTargetTempNozzleButton}
                     >
-                    <input
-                      class="ac-number-input"
-                      type="number"
-                      min=${this.minTargetTempHotbed}
-                      max=${this.maxTargetTempHotbed}
-                      .value=${String(this.currentTargetTempHotbed)}
-                      placeholder=${this.currentTargetTempHotbed}
-                      @input=${this._handleTargetTempHotbedChange}
-                      @keydown=${this._handleTargetTempHotbedKeyDown}
-                    />
+                      ${this._buttonSaveTargetNozzle}
+                    </ha-control-button>
                   </div>
-                  <ha-control-button
-                    .disabled=${this._changingSettings}
-                    @click=${this._handleSaveTargetTempHotbedButton}
-                  >
-                    ${this._buttonSaveTargetHotbed}
-                  </ha-control-button>
-                </div>
-                <div class="ac-settings-row">
-                  <div class="ac-input-group">
-                    <label class="ac-input-label">${this._labelFanSpeed}</label>
-                    <input
-                      class="ac-number-input"
-                      type="number"
-                      .value=${String(this.currentFanSpeed)}
-                      placeholder=${this.currentFanSpeed}
-                      min="0"
-                      max="100"
-                      @input=${this._handleFanSpeedChange}
-                      @keydown=${this._handleFanSpeedKeyDown}
-                    />
+                  <div class="ac-settings-row">
+                    <div class="ac-input-group">
+                      <label class="ac-input-label"
+                        >${this._labelHotbedTemperature}</label
+                      >
+                      <input
+                        class="ac-number-input"
+                        type="number"
+                        min=${this.minTargetTempHotbed}
+                        max=${this.maxTargetTempHotbed}
+                        .value=${String(this.currentTargetTempHotbed)}
+                        placeholder=${this.currentTargetTempHotbed}
+                        @input=${this._handleTargetTempHotbedChange}
+                        @keydown=${this._handleTargetTempHotbedKeyDown}
+                      />
+                    </div>
+                    <ha-control-button
+                      .disabled=${this._changingSettings}
+                      @click=${this._handleSaveTargetTempHotbedButton}
+                    >
+                      ${this._buttonSaveTargetHotbed}
+                    </ha-control-button>
                   </div>
-                  <ha-control-button
-                    .disabled=${this._changingSettings}
-                    @click=${this._handleSaveFanSpeedButton}
-                  >
-                    ${this._buttonSaveFanSpeed}
-                  </ha-control-button>
-                </div>
-                <div class="ac-settings-row ac-disabled-feature">
-                  <ha-textfield
-                    .value=${this.currentAuxFanSpeed}
-                    .placeholder=${this.currentAuxFanSpeed}
-                    .label=${this._labelAuxFanSpeed}
-                    .type=${"number"}
-                    .min=${0}
-                    .max=${100}
-                    @input=${this._handleAuxFanSpeedChange}
-                    @keydown=${this._handleAuxFanSpeedKeyDown}
-                  ></ha-textfield>
-                  <ha-control-button
-                    .disabled=${this._changingSettings}
-                    @click=${this._handleSaveAuxFanSpeedButton}
-                  >
-                    ${this._buttonSaveAuxFanSpeed}
-                  </ha-control-button>
-                </div>
-                <div class="ac-settings-row ac-disabled-feature">
-                  <ha-textfield
-                    .value=${this.currentBoxFanSpeed}
-                    .placeholder=${this.currentBoxFanSpeed}
-                    .label=${this._labelBoxFanSpeed}
-                    .type=${"number"}
-                    .min=${0}
-                    .max=${100}
-                    @input=${this._handleBoxFanSpeedChange}
-                    @keydown=${this._handleBoxFanSpeedKeyDown}
-                  ></ha-textfield>
-                  <ha-control-button
-                    .disabled=${this._changingSettings}
-                    @click=${this._handleSaveBoxFanSpeedButton}
-                  >
-                    ${this._buttonSaveBoxFanSpeed}
-                  </ha-control-button>
-                </div>
-              `
-            : nothing}
+                  <div class="ac-settings-row">
+                    <div class="ac-input-group">
+                      <label class="ac-input-label"
+                        >${this._labelFanSpeed}</label
+                      >
+                      <input
+                        class="ac-number-input"
+                        type="number"
+                        .value=${String(this.currentFanSpeed)}
+                        placeholder=${this.currentFanSpeed}
+                        min="0"
+                        max="100"
+                        @input=${this._handleFanSpeedChange}
+                        @keydown=${this._handleFanSpeedKeyDown}
+                      />
+                    </div>
+                    <ha-control-button
+                      .disabled=${this._changingSettings}
+                      @click=${this._handleSaveFanSpeedButton}
+                    >
+                      ${this._buttonSaveFanSpeed}
+                    </ha-control-button>
+                  </div>
+                  <div class="ac-settings-row ac-disabled-feature">
+                    <ha-textfield
+                      .value=${this.currentAuxFanSpeed}
+                      .placeholder=${this.currentAuxFanSpeed}
+                      .label=${this._labelAuxFanSpeed}
+                      .type=${"number"}
+                      .min=${0}
+                      .max=${100}
+                      @input=${this._handleAuxFanSpeedChange}
+                      @keydown=${this._handleAuxFanSpeedKeyDown}
+                    ></ha-textfield>
+                    <ha-control-button
+                      .disabled=${this._changingSettings}
+                      @click=${this._handleSaveAuxFanSpeedButton}
+                    >
+                      ${this._buttonSaveAuxFanSpeed}
+                    </ha-control-button>
+                  </div>
+                  <div class="ac-settings-row ac-disabled-feature">
+                    <ha-textfield
+                      .value=${this.currentBoxFanSpeed}
+                      .placeholder=${this.currentBoxFanSpeed}
+                      .label=${this._labelBoxFanSpeed}
+                      .type=${"number"}
+                      .min=${0}
+                      .max=${100}
+                      @input=${this._handleBoxFanSpeedChange}
+                      @keydown=${this._handleBoxFanSpeedKeyDown}
+                    ></ha-textfield>
+                    <ha-control-button
+                      .disabled=${this._changingSettings}
+                      @click=${this._handleSaveBoxFanSpeedButton}
+                    >
+                      ${this._buttonSaveBoxFanSpeed}
+                    </ha-control-button>
+                  </div>
+                `
+              : nothing
+          }
         </div>
       </div>
     `;
@@ -634,19 +663,17 @@ export class AnycubicPrintercardPrintsettingsModal extends LitElement {
   };
 
   private _pressHassButton(suffix: string): void {
+    const entityId = getPrinterEntityId(this.printerEntities, "button", suffix);
+    if (!entityId) {
+      return;
+    }
     this._changingSettings = true;
     this.hass
-      .callService("button", "press", {
-        entity_id: getPrinterEntityId(
-          this.printerEntityIdPart,
-          "button",
-          suffix,
-        ),
-      })
+      .callService("button", "press", { entity_id: entityId })
       .then(() => {
         this._changingSettings = false;
       })
-      .catch((_e: unknown) => {
+      .catch(() => {
         this._changingSettings = false;
       });
   }
@@ -656,7 +683,7 @@ export class AnycubicPrintercardPrintsettingsModal extends LitElement {
     this.hass
       .callService("button", "press", {
         entity_id: getPrinterEntityId(
-          this.printerEntityIdPart,
+          this.printerEntities,
           "button",
           "clear_completed_print_job",
         ),
@@ -674,7 +701,7 @@ export class AnycubicPrintercardPrintsettingsModal extends LitElement {
     this.hass
       .callService("button", "press", {
         entity_id: getPrinterEntityId(
-          this.printerEntityIdPart,
+          this.printerEntities,
           "button",
           "retract_filament",
         ),
@@ -692,7 +719,7 @@ export class AnycubicPrintercardPrintsettingsModal extends LitElement {
     this.hass
       .callService("button", "press", {
         entity_id: getPrinterEntityId(
-          this.printerEntityIdPart,
+          this.printerEntities,
           "button",
           "extrude_filament",
         ),
@@ -731,7 +758,7 @@ export class AnycubicPrintercardPrintsettingsModal extends LitElement {
     const newSpeed = (
       ev.currentTarget as unknown as TextfieldChangeDetail<number>
     ).value;
-    this.currentFanSpeed = Number(newSpeed);
+    this.currentFanSpeed = newSpeed;
     this._userEditFanSpeed = true;
   };
 
@@ -739,7 +766,7 @@ export class AnycubicPrintercardPrintsettingsModal extends LitElement {
     const newSpeed = (
       ev.currentTarget as unknown as TextfieldChangeDetail<number>
     ).value;
-    this.currentAuxFanSpeed = Number(newSpeed);
+    this.currentAuxFanSpeed = newSpeed;
     this._userEditAuxFanSpeed = true;
   };
 
@@ -747,7 +774,7 @@ export class AnycubicPrintercardPrintsettingsModal extends LitElement {
     const newSpeed = (
       ev.currentTarget as unknown as TextfieldChangeDetail<number>
     ).value;
-    this.currentBoxFanSpeed = Number(newSpeed);
+    this.currentBoxFanSpeed = newSpeed;
     this._userEditBoxFanSpeed = true;
   };
 
@@ -782,7 +809,7 @@ export class AnycubicPrintercardPrintsettingsModal extends LitElement {
     const newTemp = (
       ev.currentTarget as unknown as TextfieldChangeDetail<number>
     ).value;
-    this.currentTargetTempNozzle = Number(newTemp);
+    this.currentTargetTempNozzle = newTemp;
     this._userEditTargetTempNozzle = true;
   };
 
@@ -790,7 +817,7 @@ export class AnycubicPrintercardPrintsettingsModal extends LitElement {
     const newTemp = (
       ev.currentTarget as unknown as TextfieldChangeDetail<number>
     ).value;
-    this.currentTargetTempHotbed = Number(newTemp);
+    this.currentTargetTempHotbed = newTemp;
     this._userEditTargetTempHotbed = true;
   };
 
@@ -874,7 +901,7 @@ export class AnycubicPrintercardPrintsettingsModal extends LitElement {
     this._userEditSpeedMode = false;
   }
 
-  private _closeModal = (e?: Event | undefined): void => {
+  private _closeModal = (e?: Event): void => {
     if (e) {
       e.stopPropagation();
     }

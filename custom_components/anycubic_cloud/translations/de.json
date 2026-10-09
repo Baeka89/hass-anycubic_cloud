@@ -2,7 +2,8 @@
   "config": {
     "abort": {
       "already_configured": "Bereits konfiguriert.",
-      "reauth_successful": "Erneute Authentifizierung erfolgreich."
+      "reauth_successful": "Erneute Authentifizierung erfolgreich.",
+      "wrong_account": "Die Zugangsdaten geh\u00f6ren zu einem anderen Anycubic-Konto."
     },
     "error": {
       "invalid_auth": "Ung\u00fcltige Authentifizierung.",
@@ -25,7 +26,7 @@
       },
       "auth_mode_web": {
         "title": "Authentifizierungsmodus - Web",
-        "description": "Rufe deinen Token von https://cloud-universe.anycubic.com/file ab (Anleitung siehe readme).",
+        "description": "Rufe deinen Token von {url} ab (Anleitung siehe readme).",
         "data": {
           "user_token": "Benutzer-Token"
         }
@@ -92,7 +93,6 @@
         "description": "MQTT-Verbindungsmodus: legt fest, wann sich die Integration live mit dem Drucker verbindet (statt nur alle ~60s \u00fcber die Cloud abzufragen).\n\nTrocknungs-Presets: hier hinterlegst du bis zu 5 feste Kombinationen aus Dauer (Stunden) und Temperatur (\u00b0C). Jedes Preset erscheint danach als eigener Knopf 'Trocknungs-Preset 1-5' am Drucker/ACE-Ger\u00e4t - ein Tastendruck startet die Trocknung sofort mit genau diesen Werten, ohne vorher etwas einstellen zu m\u00fcssen.",
         "data": {
           "mqtt_connect_mode": "MQTT-Verbindungsmodus",
-          "update_retry_count": "Update-Wiederholungen pro Zyklus",
           "drying_preset_duration_1": "Preset 1: Dauer (Stunden)",
           "drying_preset_temperature_1": "Preset 1: Temperatur (\u00b0C)",
           "drying_preset_duration_2": "Preset 2: Dauer (Stunden)",
@@ -102,11 +102,12 @@
           "drying_preset_duration_4": "Preset 4: Dauer (Stunden)",
           "drying_preset_temperature_4": "Preset 4: Temperatur (\u00b0C)",
           "drying_preset_duration_5": "Preset 5: Dauer (Stunden)",
-          "drying_preset_temperature_5": "Preset 5: Temperatur (\u00b0C)"
+          "drying_preset_temperature_5": "Preset 5: Temperatur (\u00b0C)",
+          "update_retry_count": "Update-Wiederholungen pro Zyklus",
+          "mqtt_verify_tls": "MQTT-Serverzertifikat und Hostnamen pr\u00fcfen"
         },
         "data_description": {
           "mqtt_connect_mode": "Wie aggressiv die Integration eine Live-MQTT-Verbindung zum Drucker offen h\u00e4lt.",
-          "update_retry_count": "Wie oft ein fehlgeschlagener Cloud-Update-Zyklus wiederholt wird (mit exponentiellem Backoff: 1s, 2s, 4s, ...), bevor er als endg\u00fcltig fehlgeschlagen z\u00e4hlt. 0 deaktiviert Retries (bisheriges Verhalten).",
           "drying_preset_duration_1": "Wie lange 'Trocknungs-Preset 1' trocknet.",
           "drying_preset_temperature_1": "Bei welcher Temperatur 'Trocknungs-Preset 1' trocknet.",
           "drying_preset_duration_2": "Wie lange 'Trocknungs-Preset 2' trocknet.",
@@ -116,7 +117,9 @@
           "drying_preset_duration_4": "Wie lange 'Trocknungs-Preset 4' trocknet.",
           "drying_preset_temperature_4": "Bei welcher Temperatur 'Trocknungs-Preset 4' trocknet.",
           "drying_preset_duration_5": "Wie lange 'Trocknungs-Preset 5' trocknet.",
-          "drying_preset_temperature_5": "Bei welcher Temperatur 'Trocknungs-Preset 5' trocknet."
+          "drying_preset_temperature_5": "Bei welcher Temperatur 'Trocknungs-Preset 5' trocknet.",
+          "update_retry_count": "Wie oft ein fehlgeschlagener Cloud-Update-Zyklus wiederholt wird (mit exponentiellem Backoff: 1s, 2s, 4s, ...), bevor er als endg\u00fcltig fehlgeschlagen z\u00e4hlt. 0 deaktiviert Retries (bisheriges Verhalten).",
+          "mqtt_verify_tls": "Standardm\u00e4\u00dfig aktiv. Nur f\u00fcr den ausdr\u00fccklich gew\u00e4hlten Kompatibilit\u00e4tsmodus ohne Serverpr\u00fcfung und mit breiterer Cipher-Auswahl deaktivieren. Die Verbindung bleibt verschl\u00fcsselt, die Serveridentit\u00e4t wird aber nicht gepr\u00fcft. Kein automatischer R\u00fcckfall; Speichern l\u00e4dt die Integration neu."
         }
       }
     }
@@ -217,6 +220,15 @@
       },
       "secondary_dry_stop": {
         "name": "Trocknung stoppen"
+      },
+      "request_file_list_local": {
+        "name": "Lokale Dateien aktualisieren"
+      },
+      "request_file_list_udisk": {
+        "name": "USB-Dateien aktualisieren"
+      },
+      "request_file_list_cloud": {
+        "name": "Cloud-Dateien aktualisieren"
       }
     },
     "image": {
@@ -264,12 +276,6 @@
       "job_z_thick": {
         "name": "Schichtdicke (Z)"
       },
-      "features": {
-        "name": "Unterst\u00fctzte Funktionen"
-      },
-      "unknown_type_function_ids": {
-        "name": "Unbekannte Capability-IDs"
-      },
       "job_model_height": {
         "name": "Modellh\u00f6he"
       },
@@ -302,12 +308,6 @@
       },
       "target_hotbed_temp": {
         "name": "Solltemperatur Bett"
-      },
-      "curr_chamber_temp": {
-        "name": "Kammertemperatur"
-      },
-      "target_chamber_temp": {
-        "name": "Solltemperatur Kammer"
       },
       "print_speed_pct": {
         "name": "Druckgeschwindigkeit %"
@@ -353,6 +353,18 @@
       },
       "secondary_dry_status_remaining_time": {
         "name": "Sekund\u00e4re Trocknung verbleibende Zeit"
+      },
+      "curr_chamber_temp": {
+        "name": "Kammertemperatur"
+      },
+      "features": {
+        "name": "Unterst\u00fctzte Funktionen"
+      },
+      "target_chamber_temp": {
+        "name": "Solltemperatur Kammer"
+      },
+      "unknown_type_function_ids": {
+        "name": "Unbekannte Capability-IDs"
       }
     },
     "number": {
@@ -1180,11 +1192,11 @@
       }
     }
   },
+  "exceptions": {},
   "issues": {
     "degraded_cloud_connection": {
       "title": "Anycubic Cloud Verbindung anhaltend gest\u00f6rt",
       "description": "Die Verbindung zur Anycubic Cloud f\u00fcr **{name}** ist wiederholt fehlgeschlagen, auch nach automatischen Wiederholungsversuchen. Das deutet meist auf eine vor\u00fcbergehende St\u00f6rung der Anycubic Cloud oder ein lokales Netzwerk-/DNS-Problem hin, nicht auf ein Problem mit dem Drucker selbst.\n\nDie Integration versucht im Hintergrund automatisch weiter - es ist keine Aktion erforderlich. Dieser Hinweis verschwindet automatisch, sobald ein Update wieder erfolgreich war."
     }
-  },
-  "exceptions": {}
+  }
 }

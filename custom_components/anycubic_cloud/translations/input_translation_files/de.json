@@ -159,7 +159,8 @@
   "config": {
     "abort": {
       "already_configured": "Bereits konfiguriert.",
-      "reauth_successful": "Erneute Authentifizierung erfolgreich."
+      "reauth_successful": "Erneute Authentifizierung erfolgreich.",
+      "wrong_account": "Die Zugangsdaten gehören zu einem anderen Anycubic-Konto."
     },
     "error": {
       "invalid_auth": "Ungültige Authentifizierung.",
@@ -182,7 +183,7 @@
       },
       "auth_mode_web": {
         "title": "Authentifizierungsmodus - Web",
-        "description": "Rufe deinen Token von https://cloud-universe.anycubic.com/file ab (Anleitung siehe readme).",
+        "description": "Rufe deinen Token von {url} ab (Anleitung siehe readme).",
         "data": {
           "user_token": "[%key:common::user_token%]"
         }
@@ -258,7 +259,9 @@
           "drying_preset_duration_4": "Preset 4: Dauer (Stunden)",
           "drying_preset_temperature_4": "Preset 4: Temperatur (°C)",
           "drying_preset_duration_5": "Preset 5: Dauer (Stunden)",
-          "drying_preset_temperature_5": "Preset 5: Temperatur (°C)"
+          "drying_preset_temperature_5": "Preset 5: Temperatur (°C)",
+          "update_retry_count": "Update-Wiederholungen pro Zyklus",
+          "mqtt_verify_tls": "MQTT-Serverzertifikat und Hostnamen prüfen"
         },
         "data_description": {
           "mqtt_connect_mode": "Wie aggressiv die Integration eine Live-MQTT-Verbindung zum Drucker offen hält.",
@@ -271,7 +274,9 @@
           "drying_preset_duration_4": "Wie lange 'Trocknungs-Preset 4' trocknet.",
           "drying_preset_temperature_4": "Bei welcher Temperatur 'Trocknungs-Preset 4' trocknet.",
           "drying_preset_duration_5": "Wie lange 'Trocknungs-Preset 5' trocknet.",
-          "drying_preset_temperature_5": "Bei welcher Temperatur 'Trocknungs-Preset 5' trocknet."
+          "drying_preset_temperature_5": "Bei welcher Temperatur 'Trocknungs-Preset 5' trocknet.",
+          "update_retry_count": "Wie oft ein fehlgeschlagener Cloud-Update-Zyklus wiederholt wird (mit exponentiellem Backoff: 1s, 2s, 4s, ...), bevor er als endgültig fehlgeschlagen zählt. 0 deaktiviert Retries (bisheriges Verhalten).",
+          "mqtt_verify_tls": "Standardmäßig aktiv. Nur für den ausdrücklich gewählten Kompatibilitätsmodus ohne Serverprüfung und mit breiterer Cipher-Auswahl deaktivieren. Die Verbindung bleibt verschlüsselt, die Serveridentität wird aber nicht geprüft. Kein automatischer Rückfall; Speichern lädt die Integration neu."
         }
       }
     }
@@ -372,6 +377,15 @@
       },
       "secondary_dry_stop": {
         "name": "Trocknung stoppen"
+      },
+      "request_file_list_local": {
+        "name": "Lokale Dateien aktualisieren"
+      },
+      "request_file_list_udisk": {
+        "name": "USB-Dateien aktualisieren"
+      },
+      "request_file_list_cloud": {
+        "name": "Cloud-Dateien aktualisieren"
       }
     },
     "image": {
@@ -496,6 +510,18 @@
       },
       "secondary_dry_status_remaining_time": {
         "name": "Sekundäre Trocknung verbleibende Zeit"
+      },
+      "curr_chamber_temp": {
+        "name": "Kammertemperatur"
+      },
+      "features": {
+        "name": "Unterstützte Funktionen"
+      },
+      "target_chamber_temp": {
+        "name": "Solltemperatur Kammer"
+      },
+      "unknown_type_function_ids": {
+        "name": "Unbekannte Capability-IDs"
       }
     },
     "number": {
@@ -557,6 +583,9 @@
     "light": {
       "printer_light": {
         "name": "Drucker-Licht"
+      },
+      "printer_box_light": {
+        "name": "Raumlicht"
       }
     }
   },
@@ -794,5 +823,11 @@
       "[%dictkey:common::service_fieldsets::fields#print_existing%]": {}
     }
   },
-  "exceptions": {}
+  "exceptions": {},
+  "issues": {
+    "degraded_cloud_connection": {
+      "title": "Anycubic Cloud Verbindung anhaltend gestört",
+      "description": "Die Verbindung zur Anycubic Cloud für **{name}** ist wiederholt fehlgeschlagen, auch nach automatischen Wiederholungsversuchen. Das deutet meist auf eine vorübergehende Störung der Anycubic Cloud oder ein lokales Netzwerk-/DNS-Problem hin, nicht auf ein Problem mit dem Drucker selbst.\n\nDie Integration versucht im Hintergrund automatisch weiter - es ist keine Aktion erforderlich. Dieser Hinweis verschwindet automatisch, sobald ein Update wieder erfolgreich war."
+    }
+  }
 }

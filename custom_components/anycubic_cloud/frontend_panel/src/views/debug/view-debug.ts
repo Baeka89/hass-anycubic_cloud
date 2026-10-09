@@ -44,7 +44,10 @@ export class AnycubicViewDebug extends LitElement {
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     super.willUpdate(changedProperties);
 
-    if (!changedProperties.has("selectedPrinterID")) {
+    if (
+      !changedProperties.has("selectedPrinterID") &&
+      !changedProperties.has("hass")
+    ) {
       return;
     }
 
