@@ -10,7 +10,7 @@ import { customElementIfUndef } from "../../../internal/register-custom-element"
 
 import { HASSDomEvent, fireEvent } from "../../../fire_event";
 
-import "../../ui/toggle-switch.ts";
+import "../../ui/toggle-switch";
 
 import {
   getPrinterSensorStateObj,
@@ -87,8 +87,7 @@ export class AnycubicPrintercardMulticolorboxModalSettings extends LitElement {
   @state()
   private _hintSpoolsUnavailable: string;
 
-  // eslint-disable-next-line @typescript-eslint/require-await
-  async firstUpdated(): Promise<void> {
+  firstUpdated(): void {
     this.addEventListener("click", (e) => {
       this._closeModal(e);
     });
@@ -130,6 +129,7 @@ export class AnycubicPrintercardMulticolorboxModalSettings extends LitElement {
     }
 
     if (
+      changedProperties.has("box_id") ||
       changedProperties.has("hass") ||
       changedProperties.has("printerEntities") ||
       changedProperties.has("printerEntityIdPart")
@@ -138,17 +138,20 @@ export class AnycubicPrintercardMulticolorboxModalSettings extends LitElement {
         this.hass,
         this.printerEntities,
         this.printerEntityIdPart,
-        PRIMARY_ENTITY_ID_SPOOLS,
+        this.box_id === 1 ? "secondary_ace_spools" : PRIMARY_ENTITY_ID_SPOOLS,
         "not loaded",
         { spool_info: [] },
       ) as AnycubicSpoolInfoEntity;
-      this.spoolList = spoolsEntity.attributes.spool_info;
+      const spools = spoolsEntity.attributes.spool_info;
+      this.spoolList = Array.isArray(spools) ? spools : [];
       this._spoolsUnavailable = this.spoolList.length === 0;
       this._runoutRefillState = getPrinterSwitchStateObj(
         this.hass,
         this.printerEntities,
         this.printerEntityIdPart,
-        PRIMARY_ENTITY_ID_RUNOUT_REFILL,
+        this.box_id === 1
+          ? "secondary_multi_color_box_runout_refill"
+          : PRIMARY_ENTITY_ID_RUNOUT_REFILL,
       );
     }
   }
@@ -190,16 +193,20 @@ export class AnycubicPrintercardMulticolorboxModalSettings extends LitElement {
         <span>${this._labelRunoutRefill}</span>
         <anycubic-ui-toggle-switch
           .checked=${this._runoutRefillState?.state === "on"}
-          .disabled=${this._changingRunout ||
-          !this._runoutRefillState ||
-          this._runoutRefillState.state === "unavailable"}
+          .disabled=${
+            this._changingRunout ||
+            !this._runoutRefillState ||
+            this._runoutRefillState.state === "unavailable"
+          }
           @ac-toggle-change=${this._handleRunoutRefillChanged}
         ></anycubic-ui-toggle-switch>
       </div>
       <p class="ac-modal-label">${this._labelSpools}</p>
-      ${this._spoolsUnavailable
-        ? html`<p class="ac-settings-hint">${this._hintSpoolsUnavailable}</p>`
-        : nothing}
+      ${
+        this._spoolsUnavailable
+          ? html`<p class="ac-settings-hint">${this._hintSpoolsUnavailable}</p>`
+          : nothing
+      }
       <div class="ac-settings-spool-list">
         ${map(
           this._displaySpoolList(),
@@ -257,7 +264,9 @@ export class AnycubicPrintercardMulticolorboxModalSettings extends LitElement {
       this.printerEntities,
       this.printerEntityIdPart,
       "switch",
-      PRIMARY_ENTITY_ID_RUNOUT_REFILL,
+      this.box_id === 1
+        ? "secondary_multi_color_box_runout_refill"
+        : PRIMARY_ENTITY_ID_RUNOUT_REFILL,
     );
     if (!ent) {
       return;
@@ -301,7 +310,7 @@ export class AnycubicPrintercardMulticolorboxModalSettings extends LitElement {
     }
   };
 
-  private _closeModal = (e?: Event | undefined): void => {
+  private _closeModal = (e?: Event): void => {
     if (e) {
       e.stopPropagation();
     }

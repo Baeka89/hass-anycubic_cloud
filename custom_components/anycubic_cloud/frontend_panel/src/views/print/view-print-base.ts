@@ -41,10 +41,11 @@ export class AnycubicViewPrintBase extends LitElement {
   @property({ attribute: "selected-printer-device" })
   public selectedPrinterDevice: HassDevice | undefined;
 
-  @state() private _scriptData: Record<
-    string,
-    string | Record<string, string> | undefined
-  > = {};
+  @state() private _scriptData: {
+    action?: string;
+    service?: string;
+    data?: Record<string, unknown>;
+  } = {};
 
   @state()
   private _error: string | undefined;
@@ -58,8 +59,10 @@ export class AnycubicViewPrintBase extends LitElement {
   @state()
   private _buttonProgress: boolean = false;
 
-  async firstUpdated(): Promise<void> {
-    await loadHaServiceControl();
+  firstUpdated(): void {
+    void loadHaServiceControl().catch((error: unknown) => {
+      this._error = error instanceof Error ? error.message : String(error);
+    });
   }
 
   protected override willUpdate(changedProperties: PropertyValues): void {
@@ -69,7 +72,10 @@ export class AnycubicViewPrintBase extends LitElement {
       this._buttonPrint = localize("common.actions.print", this.language);
     }
 
-    if (changedProperties.has("selectedPrinterDevice")) {
+    if (
+      changedProperties.has("selectedPrinterDevice") ||
+      changedProperties.has("selectedPrinterID")
+    ) {
       if (this.selectedPrinterDevice) {
         const srvName = `${platform}.${this._serviceName}`;
         this._scriptData = {
@@ -77,12 +83,17 @@ export class AnycubicViewPrintBase extends LitElement {
           action: srvName,
           service: srvName,
           data: {
-            ...((this._scriptData.data as object | undefined) ||
-              ({} as object)),
+            ...(this._scriptData.data || {}),
             config_entry: this.selectedPrinterDevice.primary_config_entry,
             device_id: this.selectedPrinterDevice.id,
           },
         };
+      } else {
+        const data = { ...(this._scriptData.data || {}) };
+        delete data.device_id;
+        delete data.printer_id;
+        delete data.config_entry;
+        this._scriptData = { ...this._scriptData, data };
       }
     }
   }
@@ -98,14 +109,17 @@ export class AnycubicViewPrintBase extends LitElement {
           .narrow=${this.narrow}
           @value-changed=${this._scriptDataChanged}
         ></ha-service-control>
-        ${this._error !== undefined
-          ? html`<ha-alert alert-type="error">${this._error}</ha-alert>`
-          : nothing}
+        ${
+          this._error !== undefined
+            ? html`<ha-alert alert-type="error">${this._error}</ha-alert>`
+            : nothing
+        }
         <ha-progress-button
           class="print-button"
           raised
           @click=${this._runScript}
           .progress=${this._buttonProgress}
+          .disabled=${!this.selectedPrinterDevice || this.selectedPrinterDevice.id !== this.selectedPrinterID || this._buttonProgress}
         >
           <ha-svg-icon .path=${mdiPlay}></ha-svg-icon>
           ${this._buttonPrint}
@@ -115,7 +129,18 @@ export class AnycubicViewPrintBase extends LitElement {
   }
 
   private _scriptDataChanged = (ev: HASSDomEvent<FormChangeDetail>): void => {
-    this._scriptData = { ...this._scriptData, ...ev.detail.value };
+    const value = { ...this._scriptData, ...ev.detail.value };
+    const data: Record<string, unknown> = { ...(value.data || {}) };
+    delete data.printer_id;
+    const device = this.selectedPrinterDevice;
+    if (device && device.id === this.selectedPrinterID) {
+      data.device_id = device.id;
+      data.config_entry = device.primary_config_entry;
+    } else {
+      delete data.device_id;
+      delete data.config_entry;
+    }
+    this._scriptData = { ...value, data };
     this._error = undefined;
   };
 
@@ -123,10 +148,24 @@ export class AnycubicViewPrintBase extends LitElement {
     const button = ev.currentTarget as unknown as HassProgressButton;
     this._error = undefined;
     ev.stopPropagation();
+    const device = this.selectedPrinterDevice;
+    if (
+      !device ||
+      device.id !== this.selectedPrinterID ||
+      this._buttonProgress
+    ) {
+      return;
+    }
+    const data: Record<string, unknown> = {
+      ...(this._scriptData.data || {}),
+      device_id: device.id,
+      config_entry: device.primary_config_entry,
+    };
+    delete data.printer_id;
     this._buttonProgress = true;
     fireHaptic();
     this.hass
-      .callService(platform, this._serviceName, this._scriptData.data as object)
+      .callService(platform, this._serviceName, data)
       .then(() => {
         button.actionSuccess();
         this._buttonProgress = false;

@@ -73,35 +73,36 @@ class AnycubicGcodeFile(UserDict[str, Any]):
         if self._material_list is not None:
             return self._material_list
 
-        filament_used_g = self.data.get('filament_used_g')
-        filament_used_mm = self.data.get('filament_used_mm')
-        filament_used_cm3 = self.data.get('filament_used_cm3')
+        def filament_values(key: str) -> list[Any]:
+            value = self.data.get(key)
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                return [value]
+            return value if isinstance(value, list) else []
+
+        filament_used_g = filament_values('filament_used_g')
+        filament_used_mm = filament_values('filament_used_mm')
+        filament_used_cm3 = filament_values('filament_used_cm3')
         ams_data = self.data.get('paint_info')
-
-        if not ams_data:
+        if not isinstance(ams_data, list) or not ams_data:
             raise AnycubicGcodeParsingError(ErrorsGcodeParsing.empty_paint_info)
-
-        if not filament_used_g or len(filament_used_g) < 1:
+        if not filament_used_g:
             raise AnycubicGcodeParsingError(ErrorsGcodeParsing.empty_used_filament)
-
-        if len(filament_used_g) < len(ams_data):
-            raise AnycubicGcodeParsingError(ErrorsGcodeParsing.invalid_used_filament)
-
-        if not filament_used_mm or len(filament_used_mm) < len(ams_data):
-            filament_used_mm = list([None for x in range(len(ams_data))])
-
-        if not filament_used_cm3 or len(filament_used_cm3) < len(ams_data):
-            filament_used_cm3 = list([None for x in range(len(ams_data))])
-
-        self._material_list = list([
-            {
+        materials = []
+        for paint_info in ams_data:
+            if not isinstance(paint_info, dict):
+                raise AnycubicGcodeParsingError(ErrorsGcodeParsing.invalid_used_filament)
+            index = paint_info.get('paint_index')
+            if type(index) is not int or not 0 <= index < len(filament_used_g):
+                raise AnycubicGcodeParsingError(ErrorsGcodeParsing.invalid_used_filament)
+            weight = filament_used_g[index]
+            if isinstance(weight, bool) or not isinstance(weight, (int, float)):
+                raise AnycubicGcodeParsingError(ErrorsGcodeParsing.invalid_used_filament)
+            materials.append({
                 **paint_info,
-                'filament_used': filament_used_g[paint_info['paint_index']],
-                'filament_used_mm': filament_used_mm[paint_info['paint_index']],
-                'filament_used_cm3': filament_used_cm3[paint_info['paint_index']],
-            } for paint_info in ams_data
-        ])
-
-        self.data['material_list'] = self._material_list
-
-        return self._material_list
+                'filament_used': weight,
+                'filament_used_mm': filament_used_mm[index] if index < len(filament_used_mm) else None,
+                'filament_used_cm3': filament_used_cm3[index] if index < len(filament_used_cm3) else None,
+            })
+        self._material_list = materials
+        self.data['material_list'] = materials
+        return materials

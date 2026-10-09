@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import traceback
 from os.path import basename as path_basename
 from typing import TYPE_CHECKING, Any
@@ -13,6 +14,9 @@ from ..exceptions.exceptions import AnycubicAPIError
 if TYPE_CHECKING:
     from ..anycubic_api import AnycubicAPI
     from ..data_models.files import AnycubicCloudStore
+
+
+UPLOAD_UNLOCK_TIMEOUT = 15
 
 
 class AnycubicCloudUpload:
@@ -196,6 +200,32 @@ class AnycubicCloudUpload:
             is_delete_cos=(self.upload_error is not None),
         )
 
+    async def _async_finish_unlock_storage_space(self) -> None:
+        """Finish bounded cleanup even when the caller cancels during unlock."""
+        async def unlock() -> None:
+            async with asyncio.timeout(UPLOAD_UNLOCK_TIMEOUT):
+                await self.async_unlock_storage_space()
+
+        cleanup = asyncio.create_task(unlock())
+        cancelled: asyncio.CancelledError | None = None
+        while not cleanup.done():
+            try:
+                # asyncio.wait does not cancel the independent cleanup task.
+                await asyncio.wait({cleanup})
+            except asyncio.CancelledError as error:
+                cancelled = error
+            except Exception:
+                break
+        try:
+            cleanup.result()
+        except Exception as error:
+            if cancelled is not None:
+                self._api_parent._log_to_debug(f"Upload cleanup failed after cancellation: {type(error).__name__}")
+                raise cancelled from None
+            raise
+        if cancelled is not None:
+            raise cancelled
+
     async def async_upload_and_set_cloud_file_id(self) -> None:
         if self._lock_data is None:
             raise AnycubicAPIError(ErrorsCloudUpload.missing_lock_data)
@@ -234,16 +264,18 @@ class AnycubicCloudUpload:
 
         await self.async_lock_storage_space()
 
-        await self.async_upload_and_set_cloud_file_id()
-
-        self.check_upload_succeeded()
-
-        assert self.cloud_file_id is not None
-
-        await self.async_unlock_storage_space()
-
-        self.check_upload_succeeded()
-
-        await self.async_check_decreased_cloud_space()
+        try:
+            await self.async_upload_and_set_cloud_file_id()
+            self.check_upload_succeeded()
+            assert self.cloud_file_id is not None
+        except BaseException as error:
+            self.set_error(error)
+            try:
+                await self._async_finish_unlock_storage_space()
+            except Exception as unlock_error:
+                self._api_parent._log_to_debug(f"Failed to unlock upload: {unlock_error}")
+            raise
+        else:
+            await self._async_finish_unlock_storage_space()
 
         return self.cloud_file_id

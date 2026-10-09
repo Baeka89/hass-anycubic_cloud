@@ -31,7 +31,8 @@
 /* global HASSDomEvents */
 
 declare global {
-  // tslint:disable-next-line
+  // This interface is intentionally empty so consumers can augment event names.
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   interface HASSDomEvents {}
 }
 

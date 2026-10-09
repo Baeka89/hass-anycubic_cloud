@@ -21,8 +21,8 @@ import {
   undefinedDefault,
 } from "../../helpers";
 
-import "./card/card.ts";
-import "./configure/configure.ts";
+import "./card/card";
+import "./configure/configure";
 
 window.console.info(
   `%c ANYCUBIC-CARD %c v${pkgjson.version} `,
@@ -46,14 +46,16 @@ export class AnycubicPrintercardEditor extends LitElement {
   @state()
   private language: string;
 
-  // eslint-disable-next-line @typescript-eslint/require-await
-  async firstUpdated(): Promise<void> {
+  firstUpdated(): void {
     this.printers = getPrinterDevices(this.hass);
   }
 
   protected willUpdate(changedProperties: PropertyValues<this>): void {
     super.willUpdate(changedProperties);
 
+    if (changedProperties.has("hass")) {
+      this.printers = getPrinterDevices(this.hass);
+    }
     if (changedProperties.has("hass") && this.hass.language !== this.language) {
       this.language = this.hass.language;
     }
@@ -170,8 +172,7 @@ export class AnycubicCard extends LitElement {
   @state()
   private monitoredStats: PrinterCardStatType[] | undefined;
 
-  // eslint-disable-next-line @typescript-eslint/require-await
-  async firstUpdated(): Promise<void> {
+  firstUpdated(): void {
     this.printers = getPrinterDevices(this.hass);
     this.requestUpdate();
   }
@@ -179,6 +180,9 @@ export class AnycubicCard extends LitElement {
   protected willUpdate(changedProperties: PropertyValues): void {
     super.willUpdate(changedProperties);
 
+    if (changedProperties.has("hass")) {
+      this.printers = getPrinterDevices(this.hass);
+    }
     if (changedProperties.has("hass") && this.hass.language !== this.language) {
       this.language = this.hass.language;
     }

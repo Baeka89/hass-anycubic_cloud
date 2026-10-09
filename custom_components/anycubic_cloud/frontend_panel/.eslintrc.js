@@ -15,7 +15,6 @@ module.exports = {
     sourceType: "module",  // Allows for the use of imports
     experimentalDecorators: true,
     emitDecoratorMetadata: true,
-    projectService: true,
     tsconfigRootDir: __dirname,
     project: "./tsconfig.json",
   },

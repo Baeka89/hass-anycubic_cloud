@@ -243,6 +243,7 @@ class AnycubicCloudFile:
     def data_object(self) -> dict[str, Any]:
         return {
             'id': self.id,
+            'gcode_id': self.gcode_id,
             'name': self.old_filename,
             'size_mb': self.size_mb,
         }

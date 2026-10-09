@@ -364,7 +364,7 @@ class AnycubicSensor(AnycubicCloudEntity, SensorEntity):
 
     @property
     def available(self) -> bool:
-        return printer_state_for_key(
+        return self.coordinator.last_update_success and printer_state_for_key(
             self.coordinator,
             self._printer_id,
             self.entity_description.key

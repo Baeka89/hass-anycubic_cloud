@@ -58,6 +58,10 @@ from .base import AnycubicAPIBase
 
 class AnycubicAPIFunctions(AnycubicAPIBase):
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._ace_action_locks: dict[tuple[int, int], asyncio.Lock] = {}
+
     #
     #
     # General API Calls
@@ -290,19 +294,22 @@ class AnycubicAPIFunctions(AnycubicAPIBase):
         page: int = 1,
         limit: int = 10,
     ) -> list[dict[str, Any]] | None:
-        user_files = await self.get_user_cloud_files(
-            printable=printable,
-            machine_type=machine_type,
-            page=page,
-            limit=limit,
-        )
-
-        if not user_files or len(user_files) < 1:
-            return None
-
-        file_list = list([
-            file.data_object for file in user_files
-        ])
+        file_list: list[dict[str, Any]] = []
+        seen_ids: set[int] = set()
+        while True:
+            user_files = await self.get_user_cloud_files(
+                printable=printable, machine_type=machine_type, page=page, limit=limit,
+            )
+            if not user_files:
+                break
+            new_files = [file for file in user_files if file.id not in seen_ids]
+            if not new_files:
+                break  # Protect against a server that ignores the page parameter.
+            file_list.extend(file.data_object for file in new_files)
+            seen_ids.update(file.id for file in new_files)
+            if len(user_files) < limit:
+                break
+            page += 1
         return file_list
 
     @overload
@@ -426,12 +433,16 @@ class AnycubicAPIFunctions(AnycubicAPIBase):
             else:
                 raise AnycubicAPIError(ErrorsGeneral.send_order_fail.format(error_message))
 
-        data: str | None = resp['data'].get('msgid')
-
-        if data is None:
-            self._log_to_error(f"Empty reply when sending order to Anycubic Cloud, message: {error_message}")
-
+        response_data = resp['data']
+        data = response_data.get('msgid') if isinstance(response_data, dict) else None
+        if not isinstance(data, str) or not data.strip():
+            raise AnycubicAPIError(ErrorsGeneral.send_order_fail.format(error_message))
         return data
+
+    @staticmethod
+    def _validate_ace_box(printer: AnycubicPrinter, box_id: int) -> None:
+        if box_id not in (0, 1) or printer.multi_color_box_for_id(box_id) is None:
+            raise AnycubicAPIError("The requested ACE box is not connected")
 
     async def _send_order_multi_color_box_set_slot(
         self,
@@ -443,6 +454,10 @@ class AnycubicAPIFunctions(AnycubicAPIBase):
     ) -> str | None:
         if not printer:
             return None
+
+        self._validate_ace_box(printer, box_id)
+        if not 0 <= slot_index <= 3:
+            raise AnycubicAPIError("ACE slot index must be between 0 and 3")
 
         slot_params = {
             'color': slot_color.data,
@@ -482,8 +497,9 @@ class AnycubicAPIFunctions(AnycubicAPIBase):
         if not printer:
             return None
 
-        if feed_type == AnycubicFeedType.Feed and slot_index < 0:
-            return None
+        self._validate_ace_box(printer, box_id)
+        if feed_type == AnycubicFeedType.Feed and not 0 <= slot_index <= 3:
+            raise AnycubicAPIError("ACE slot index must be between 0 and 3")
 
         if feed_type == AnycubicFeedType.Retract:
             slot_index = -1
@@ -558,6 +574,8 @@ class AnycubicAPIFunctions(AnycubicAPIBase):
     ) -> str | None:
         if not printer:
             return None
+
+        self._validate_ace_box(printer, box_id)
 
         box_list = list([
             {
@@ -984,24 +1002,17 @@ class AnycubicAPIFunctions(AnycubicAPIBase):
         if not printer:
             return None
 
-        if not printer.primary_multi_color_box:
-            return None
-
         if box_id < 0:
             box_id = 0
 
-        if (
-            not printer.multi_color_box_fw_version or
-            len(printer.multi_color_box_fw_version) < (box_id + 1)
-        ):
+        if printer.multi_color_box_for_id(box_id) is None:
             return None
 
-        if (
-            not printer.multi_color_box_fw_version[box_id].update_available
-        ):
+        firmware = printer._firmware_for_ace(box_id)
+        if firmware is None or not firmware.update_available:
             return None
 
-        expected_version = printer.multi_color_box_fw_version[box_id].available_version
+        expected_version = firmware.available_version
 
         resp = await self._update_muli_color_box_firmware(
             printer_id=printer.id,
@@ -1019,22 +1030,32 @@ class AnycubicAPIFunctions(AnycubicAPIBase):
         self,
         printer: AnycubicPrinter,
     ) -> list[str | None] | None:
-        if (
-            not printer.multi_color_box_fw_version or
-            len(printer.multi_color_box_fw_version) < 0
-        ):
+        if not printer.multi_color_box_fw_version:
             return None
 
         updated_versions = list()
-
-        for x in range(len(printer.multi_color_box_fw_version)):
-            resp = await self.update_printer_multi_color_box_firmware(
-                printer,
-                x
-            )
+        for index, firmware in enumerate(printer.multi_color_box_fw_version):
+            box_id = firmware.box_id if firmware.box_id is not None else index
+            resp = await self.update_printer_multi_color_box_firmware(printer, box_id)
             updated_versions.append(resp)
 
         return updated_versions
+
+    async def get_cloud_file_for_id(self, cloud_file_id: int) -> AnycubicCloudFile | None:
+        page = 1
+        seen_ids: set[int] = set()
+        while True:
+            files = await self.get_user_cloud_files(printable=True, machine_type=0, page=page, limit=100)
+            if not files:
+                return None
+            for file in files:
+                if file.id == cloud_file_id:
+                    return file
+            ids = {file.id for file in files}
+            if len(files) < 100 or ids <= seen_ids:
+                return None
+            seen_ids.update(ids)
+            page += 1
 
     async def get_latest_cloud_file(
         self,
@@ -1128,7 +1149,7 @@ class AnycubicAPIFunctions(AnycubicAPIBase):
         if not printer:
             return None
 
-        if not printer.primary_multi_color_box:
+        if not printer.multi_color_box:
             return None
 
         if box_id < 0:
@@ -1155,7 +1176,7 @@ class AnycubicAPIFunctions(AnycubicAPIBase):
         if not printer:
             return None
 
-        if not printer.primary_multi_color_box:
+        if not printer.multi_color_box:
             return None
 
         if box_id < 0:
@@ -1170,118 +1191,32 @@ class AnycubicAPIFunctions(AnycubicAPIBase):
 
         return resp
 
-    async def multi_color_box_set_auto_feed(
-        self,
-        printer: AnycubicPrinter,
-        enabled: bool,
-        box_id: int = -1,
-    ) -> str | None:
-        if not printer:
-            return None
+    async def _apply_auto_feed(self, printer: AnycubicPrinter, box_id: int, enabled: bool | None) -> str | None:
+        box_id = max(0, box_id)
+        lock = self._ace_action_locks.setdefault((printer.id, box_id), asyncio.Lock())
+        async with lock:
+            self._validate_ace_box(printer, box_id)
+            box = printer.multi_color_box_for_id(box_id)
+            assert box is not None
+            target = not bool(box.auto_feed) if enabled is None else enabled
+            response = await self._send_order_multi_color_auto_feed(printer, target, box_id)
+            if response is not None:
+                current_box = printer.multi_color_box_for_id(box_id)
+                if current_box is not None:
+                    current_box.set_auto_feed(target)
+            return response
 
-        if not printer.primary_multi_color_box:
-            return None
+    async def multi_color_box_set_auto_feed(self, printer: AnycubicPrinter, enabled: bool, box_id: int = -1) -> str | None:
+        return await self._apply_auto_feed(printer, box_id, enabled)
 
-        if box_id < 0:
-            box_id = 0
+    async def multi_color_box_toggle_auto_feed(self, printer: AnycubicPrinter, box_id: int = -1) -> str | None:
+        return await self._apply_auto_feed(printer, box_id, None)
 
-        resp = await self._send_order_multi_color_auto_feed(
-            printer,
-            enabled,
-            box_id,
-        )
+    async def multi_color_box_switch_on_auto_feed(self, printer: AnycubicPrinter, box_id: int = -1) -> str | None:
+        return await self._apply_auto_feed(printer, box_id, True)
 
-        return resp
-
-    async def multi_color_box_toggle_auto_feed(
-        self,
-        printer: AnycubicPrinter,
-        box_id: int = -1,
-    ) -> str | None:
-        if not printer:
-            return None
-
-        if not printer.primary_multi_color_box:
-            return None
-
-        if box_id < 0:
-            box_id = 0
-
-        assert printer.multi_color_box
-
-        current_auto_feed = bool(printer.multi_color_box[box_id].auto_feed)
-
-        printer.multi_color_box[box_id].set_auto_feed(not current_auto_feed)
-
-        resp = await self._send_order_multi_color_auto_feed(
-            printer,
-            (not current_auto_feed),
-            box_id,
-        )
-
-        return resp
-
-    async def multi_color_box_switch_on_auto_feed(
-        self,
-        printer: AnycubicPrinter,
-        box_id: int = -1,
-    ) -> str | None:
-        if not printer:
-            return None
-
-        if not printer.primary_multi_color_box:
-            return None
-
-        if box_id < 0:
-            box_id = 0
-
-        assert printer.multi_color_box
-
-        current_auto_feed = bool(printer.multi_color_box[box_id].auto_feed)
-
-        if current_auto_feed:
-            return None
-
-        printer.multi_color_box[box_id].set_auto_feed(True)
-
-        resp = await self._send_order_multi_color_auto_feed(
-            printer,
-            True,
-            box_id,
-        )
-
-        return resp
-
-    async def multi_color_box_switch_off_auto_feed(
-        self,
-        printer: AnycubicPrinter,
-        box_id: int = -1,
-    ) -> str | None:
-        if not printer:
-            return None
-
-        if not printer.primary_multi_color_box:
-            return None
-
-        if box_id < 0:
-            box_id = 0
-
-        assert printer.multi_color_box
-
-        current_auto_feed = bool(printer.multi_color_box[box_id].auto_feed)
-
-        if not current_auto_feed:
-            return None
-
-        printer.multi_color_box[box_id].set_auto_feed(False)
-
-        resp = await self._send_order_multi_color_auto_feed(
-            printer,
-            False,
-            box_id,
-        )
-
-        return resp
+    async def multi_color_box_switch_off_auto_feed(self, printer: AnycubicPrinter, box_id: int = -1) -> str | None:
+        return await self._apply_auto_feed(printer, box_id, False)
 
     async def multi_color_box_set_slot(
         self,
@@ -1305,9 +1240,12 @@ class AnycubicAPIFunctions(AnycubicAPIBase):
             raise AnycubicAPIError(ErrorsGeneral.set_slot_color_invalid)
 
         if slot_color is None:
-            assert slot_color_red
-            assert slot_color_green
-            assert slot_color_blue
+            assert slot_color_red is not None
+            assert slot_color_green is not None
+            assert slot_color_blue is not None
+            if any(not 0 <= channel <= 255 for channel in
+                   (slot_color_red, slot_color_green, slot_color_blue)):
+                raise AnycubicAPIError(ErrorsGeneral.set_slot_color_invalid)
             slot_color = AnycubicMaterialColor(
                 slot_color_red,
                 slot_color_green,
@@ -1476,9 +1414,7 @@ class AnycubicAPIFunctions(AnycubicAPIBase):
         if not printer:
             return None
 
-        if not printer.primary_multi_color_box:
-            return None
-
+        self._validate_ace_box(printer, max(0, box_id))
         order_params = {
             'duration': duration,
             'target_temp': target_temp,
@@ -1502,18 +1438,20 @@ class AnycubicAPIFunctions(AnycubicAPIBase):
         if not printer:
             return None
 
-        if not printer.primary_multi_color_box:
+        if not printer.multi_color_box:
             return None
 
         if box_id >= 0:
             order_params: list[dict[str, Any]] | dict[str, Any] = {
                 'status': 0,
+                'box_id': box_id,
             }
         else:
             order_params = [
                 {
-                    'status': 0
-                } for x in range(printer.connected_ace_units)
+                    'status': 0,
+                    'box_id': box.box_id,
+                } for box in printer.multi_color_box or []
             ]
 
         resp = await self._send_order_multi_color_box_dry(
@@ -1792,10 +1730,10 @@ class AnycubicAPIFunctions(AnycubicAPIBase):
         if printer is None:
             raise AnycubicAPIError(ErrorsGeneral.no_printer_to_print)
 
-        if ams_box_mapping and not printer.primary_multi_color_box:
+        if ams_box_mapping and not printer.multi_color_box:
             raise AnycubicAPIError(ErrorsGeneral.no_ace_for_map)
 
-        if ams_box_mapping is None and printer.primary_multi_color_box:
+        if ams_box_mapping is None and printer.multi_color_box:
             raise AnycubicAPIError(ErrorsGeneral.no_map_for_ace)
 
         print_request = AnycubicStartPrintRequestCloud(
@@ -1818,6 +1756,8 @@ class AnycubicAPIFunctions(AnycubicAPIBase):
 
             try_count += 1
 
+        if not result:
+            raise AnycubicFileNotFoundError("Print order was not accepted after three attempts")
         return result
 
     async def print_with_cloud_gcode_id(
@@ -1830,10 +1770,10 @@ class AnycubicAPIFunctions(AnycubicAPIBase):
         if printer is None:
             raise AnycubicAPIError(ErrorsGeneral.no_printer_to_print)
 
-        if slot_index_list is not None and not printer.primary_multi_color_box:
+        if slot_index_list is not None and not printer.multi_color_box:
             raise AnycubicAPIError(ErrorsGeneral.no_ace_for_slot_list)
 
-        if slot_index_list is None and printer.primary_multi_color_box:
+        if slot_index_list is None and printer.multi_color_box:
             raise AnycubicAPIError(ErrorsGeneral.no_slot_list_for_ace)
 
         proj = await self.fetch_project_gcode_info_fdm(gcode_id)
@@ -1890,10 +1830,10 @@ class AnycubicAPIFunctions(AnycubicAPIBase):
         if printer is None:
             raise AnycubicAPIError(ErrorsGeneral.no_printer_to_print)
 
-        if slot_index_list is not None and not printer.primary_multi_color_box:
+        if slot_index_list is not None and not printer.multi_color_box:
             raise AnycubicAPIError(ErrorsGeneral.no_ace_for_slot_list)
 
-        if slot_index_list is None and printer.primary_multi_color_box:
+        if slot_index_list is None and printer.multi_color_box:
             raise AnycubicAPIError(ErrorsGeneral.no_slot_list_for_ace)
 
         cloud_file_id = await self.upload_file_to_cloud(
@@ -1901,7 +1841,7 @@ class AnycubicAPIFunctions(AnycubicAPIBase):
             file_name=file_name,
             file_bytes=file_bytes,
         )
-        latest_cloud_file = await self.get_latest_cloud_file()
+        latest_cloud_file = await self.get_cloud_file_for_id(cloud_file_id)
 
         if not latest_cloud_file or latest_cloud_file.id != cloud_file_id:
             raise AnycubicAPIError(ErrorsGeneral.file_upload_mismatch)
@@ -1927,10 +1867,10 @@ class AnycubicAPIFunctions(AnycubicAPIBase):
         if printer is None:
             raise AnycubicAPIError(ErrorsGeneral.no_printer_to_print)
 
-        if slot_index_list is not None and not printer.primary_multi_color_box:
+        if slot_index_list is not None and not printer.multi_color_box:
             raise AnycubicAPIError(ErrorsGeneral.no_ace_for_slot_list)
 
-        if slot_index_list is None and printer.primary_multi_color_box:
+        if slot_index_list is None and printer.multi_color_box:
             raise AnycubicAPIError(ErrorsGeneral.no_slot_list_for_ace)
 
         if slot_index_list is not None:

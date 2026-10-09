@@ -38,8 +38,7 @@ export class AnycubicViewFilesUdisk extends AnycubicViewFilesBase {
   }
 
   deleteFile = (ev: DomClickEvent<EvtTargFileInfo>): void => {
-    const fileInfo: AnycubicFileLocal = ev.currentTarget
-      .file_info as AnycubicFileLocal;
+    const fileInfo: AnycubicFileLocal = ev.currentTarget.file_info;
     if (this.selectedPrinterDevice && fileInfo.name) {
       this._isDeleting = true;
       this.hass

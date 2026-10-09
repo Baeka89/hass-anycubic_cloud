@@ -5,10 +5,13 @@ import os
 from typing import Any
 
 from homeassistant.components import frontend, panel_custom
-from homeassistant.components.http import StaticPathConfig
+from homeassistant.components.http.server import StaticPathConfig
 from homeassistant.core import HomeAssistant
 
 from .const import (
+    CONF_CARD_CONFIG,
+    CONF_ENABLE_PANEL,
+    COORDINATOR,
     CUSTOM_COMPONENTS,
     DOMAIN,
     INTEGRATION_FOLDER,
@@ -89,3 +92,20 @@ async def async_unregister_panel(
             frontend.async_remove_panel(hass, DOMAIN)
         except Exception:  # noqa: BLE001 - defensive, see docstring above
             LOGGER.exception("Failed to unregister the Anycubic Cloud panel")
+
+
+async def async_sync_panel(hass: HomeAssistant) -> None:
+    """Keep the shared panel while any loaded account enables it."""
+    coordinators = [value[COORDINATOR] for _, value in
+                    sorted(hass.data.get(DOMAIN, {}).items())]
+    enabled = [co.entry for co in coordinators
+               if co.entry.options.get(CONF_ENABLE_PANEL, True)]
+    state_key = f"{DOMAIN}_panel_config"
+    config = process_card_config(enabled[0].options.get(CONF_CARD_CONFIG)) if enabled else None
+    if config is None:
+        await async_unregister_panel(hass)
+        hass.data.pop(state_key, None)
+    elif hass.data.get(state_key) != config or DOMAIN not in hass.data.get("frontend_panels", {}):
+        await async_unregister_panel(hass)
+        await async_register_panel(hass, config)
+        hass.data[state_key] = config

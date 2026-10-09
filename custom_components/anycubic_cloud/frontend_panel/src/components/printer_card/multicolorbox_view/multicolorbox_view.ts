@@ -10,7 +10,7 @@ import { customElementIfUndef } from "../../../internal/register-custom-element"
 
 import { fireEvent } from "../../../fire_event";
 
-import "../../ui/toggle-switch.ts";
+import "../../ui/toggle-switch";
 
 import {
   getPrinterEntityId,
@@ -105,11 +105,12 @@ export class AnycubicPrintercardMulticolorboxview extends LitElement {
     }
 
     if (
+      changedProperties.has("box_id") ||
       changedProperties.has("hass") ||
       changedProperties.has("printerEntities") ||
       changedProperties.has("printerEntityIdPart")
     ) {
-      this.spoolList = (
+      const spools = (
         getPrinterSensorStateObj(
           this.hass,
           this.printerEntities,
@@ -119,6 +120,7 @@ export class AnycubicPrintercardMulticolorboxview extends LitElement {
           { spool_info: [] },
         ) as AnycubicSpoolInfoEntity
       ).attributes.spool_info;
+      this.spoolList = Array.isArray(spools) ? spools : [];
       this._runoutRefillState = getPrinterSwitchStateObj(
         this.hass,
         this.printerEntities,
@@ -136,9 +138,11 @@ export class AnycubicPrintercardMulticolorboxview extends LitElement {
             <div class="ac-switch-label">${this._buttonRefill}</div>
             <anycubic-ui-toggle-switch
               .checked=${this._runoutRefillState?.state === "on"}
-              .disabled=${this._changingRunout ||
-              !this._runoutRefillState ||
-              this._runoutRefillState.state === "unavailable"}
+              .disabled=${
+                this._changingRunout ||
+                !this._runoutRefillState ||
+                this._runoutRefillState.state === "unavailable"
+              }
               @ac-toggle-change=${this._handleRunoutRefillChanged}
             ></anycubic-ui-toggle-switch>
           </div>
@@ -208,7 +212,7 @@ export class AnycubicPrintercardMulticolorboxview extends LitElement {
     this.hass
       .callService("switch", "toggle", {
         entity_id: getPrinterEntityId(
-          this.printerEntityIdPart,
+          this.printerEntities,
           "switch",
           this._runoutRefillId,
         ),

@@ -10,7 +10,7 @@ import {
   LitTemplateResult,
 } from "../../../types";
 
-import "./stat_line.ts";
+import "./stat_line";
 
 @customElementIfUndef("anycubic-printercard-stat-time")
 export class AnycubicPrintercardStatTime extends LitElement {
@@ -32,6 +32,9 @@ export class AnycubicPrintercardStatTime extends LitElement {
   @property({ type: Boolean })
   public use_24hr?: boolean;
 
+  @property({ attribute: "time-zone" })
+  public timeZone?: string;
+
   @property({ attribute: "is-seconds", type: Boolean })
   public isSeconds?: boolean;
 
@@ -44,7 +47,10 @@ export class AnycubicPrintercardStatTime extends LitElement {
   protected override willUpdate(changedProperties: PropertyValues): void {
     super.willUpdate(changedProperties);
 
-    if (!changedProperties.has("timeEntity")) {
+    if (
+      !changedProperties.has("timeEntity") &&
+      !changedProperties.has("isSeconds")
+    ) {
       return;
     }
 
@@ -52,7 +58,7 @@ export class AnycubicPrintercardStatTime extends LitElement {
       clearInterval(this.lastIntervalId);
     }
 
-    this.currentTime = getEntityTotalSeconds(this.timeEntity);
+    this.currentTime = getEntityTotalSeconds(this.timeEntity, this.isSeconds);
 
     this.lastIntervalId = setInterval(() => {
       this._incTime();
@@ -84,6 +90,7 @@ export class AnycubicPrintercardStatTime extends LitElement {
         this.timeType,
         this.round,
         this.use_24hr,
+        this.timeZone,
       )}
     ></anycubic-printercard-stat-line>`;
   }
@@ -93,7 +100,7 @@ export class AnycubicPrintercardStatTime extends LitElement {
       this.currentTime === 0 ||
       (this.currentTime && !isNaN(this.currentTime as number))
     ) {
-      this.currentTime = Number(this.currentTime) + this.direction;
+      this.currentTime = Math.max(0, Number(this.currentTime) + this.direction);
     }
   }
 

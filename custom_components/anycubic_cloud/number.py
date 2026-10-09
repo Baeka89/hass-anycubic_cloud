@@ -2,11 +2,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from homeassistant.components.number import NumberEntity, NumberEntityDescription
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import PERCENTAGE, Platform, UnitOfTemperature, UnitOfTime
+from homeassistant.const import (
+    PERCENTAGE,
+    Platform,
+    UnitOfTemperature,
+    UnitOfTime,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -145,7 +150,7 @@ class AnycubicNumber(AnycubicCloudEntity, NumberEntity):
     """Representation of a Anycubic Cloud number control."""
 
     entity_description: AnycubicNumberEntityDescription
-    
+
     _attr_has_entity_name = True
 
     def __init__(
@@ -157,8 +162,7 @@ class AnycubicNumber(AnycubicCloudEntity, NumberEntity):
     ) -> None:
         """Initiate Anycubic Number."""
         super().__init__(hass, coordinator, printer_id, entity_description)
-        self._attr_name = entity_description.name
-        
+
         # Standardwerte für die manuellen Eingabefelder lokal vorbesetzen
         if "drying_temperature_input" in entity_description.key:
             self._attr_native_value = 50.0
@@ -171,7 +175,7 @@ class AnycubicNumber(AnycubicCloudEntity, NumberEntity):
         # Die manuellen Eingaberegler sind immer verfügbar, da sie UI-Helfer sind
         if "input" in self.entity_description.key:
             return True
-        return printer_state_for_key(
+        return self.coordinator.last_update_success and printer_state_for_key(
             self.coordinator,
             self._printer_id,
             self.entity_description.key
@@ -205,15 +209,6 @@ class AnycubicNumber(AnycubicCloudEntity, NumberEntity):
             self.async_write_ha_state()
             return
 
-        if key in ("target_hotbed_temp", "target_nozzle_temp", "fan_speed_pct"):
-            if key == "target_hotbed_temp":
-                await self.coordinator.api.set_bed_temp(target_value)
-            elif key == "target_nozzle_temp":
-                await self.coordinator.api.set_nozzle_temp(target_value)
-            elif key == "fan_speed_pct":
-                await self.coordinator.api.set_fan_speed(target_value)
-        else:
-            # Dynamischer Fallback für ACE Befehle an den Coordinator übergeben
-            await self.coordinator.set_number_value(self._printer_id, key, target_value)
+        await self.coordinator.set_number_value(self._printer_id, key, target_value)
 
         await self.coordinator.async_request_refresh()

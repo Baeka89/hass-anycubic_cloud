@@ -30,7 +30,7 @@ import {
 
 import { commonModalStyle } from "../../ui/modal-styles";
 
-import "../../ui/select-dropdown.ts";
+import "../../ui/select-dropdown";
 
 const animOptionsCard: motionOptions = {
   keyframeOptions: {
@@ -112,8 +112,7 @@ export class AnycubicPrintercardMulticolorboxModalSpool extends LitElement {
   @state()
   private _changingSlot: boolean = false;
 
-  // eslint-disable-next-line @typescript-eslint/require-await
-  async firstUpdated(): Promise<void> {
+  firstUpdated(): void {
     this.addEventListener("click", (e) => {
       this._closeModal(e);
     });
@@ -332,7 +331,7 @@ export class AnycubicPrintercardMulticolorboxModalSpool extends LitElement {
     }
   }
 
-  private _closeModal = (e?: Event | undefined): void => {
+  private _closeModal = (e?: Event): void => {
     if (e) {
       e.stopPropagation();
     }

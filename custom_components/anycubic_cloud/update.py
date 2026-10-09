@@ -108,21 +108,31 @@ class AnycubicUpdateEntity(AnycubicCloudEntity, UpdateEntity):
         super().__init__(hass, coordinator, printer_id, entity_description)
 
     @property
-    def installed_version(self) -> str:
+    def installed_version(self) -> str | None:
         """Version currently in use."""
-        return str(printer_state_for_key(self.coordinator, self._printer_id, self.entity_description.key))
+        version = printer_state_for_key(self.coordinator, self._printer_id, self.entity_description.key)
+        return str(version) if version is not None else None
 
     @property
-    def latest_version(self) -> str:
+    def latest_version(self) -> str | None:
         """Latest version available for install."""
         fw_attr = printer_attributes_for_key(self.coordinator, self._printer_id, self.entity_description.key)
-        return str(fw_attr['latest_version']) if fw_attr else "error"
+        version = fw_attr.get("latest_version") if fw_attr else None
+        return str(version) if version is not None else None
 
     @property
     def in_progress(self) -> bool:
         """Update installation in progress."""
         fw_attr = printer_attributes_for_key(self.coordinator, self._printer_id, self.entity_description.key)
         return bool(fw_attr['in_progress']) if fw_attr else False
+
+    @property
+    def update_percentage(self) -> float | None:
+        attrs = printer_attributes_for_key(self.coordinator, self._printer_id, self.entity_description.key)
+        value = attrs.get("in_progress") if attrs else None
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            return max(0.0, min(100.0, float(value)))
+        return None
 
     async def async_install(
         self, version: str | None, backup: bool, **kwargs: Any

@@ -3,7 +3,11 @@ from __future__ import annotations
 import re
 from enum import IntEnum
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    cast,
+)
 
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC, DeviceInfo
 
@@ -33,6 +37,9 @@ class AnycubicMQTTConnectMode(IntEnum):
     Never_Connect = 5
 
 
+DEFAULT_MQTT_CONNECT_MODE = AnycubicMQTTConnectMode.Printing_Only
+
+
 def build_printer_device_info(
     coordinator_data: dict[str, Any],
     printer_id: int | str,
@@ -40,7 +47,7 @@ def build_printer_device_info(
     printers = coordinator_data.get('printers', {})
     # Sucht flexibel nach Integer ODER String-Schlüssel
     printer = printers.get(int(printer_id)) or printers.get(str(printer_id))
-    
+
     if not printer:
         raise KeyError(f"Printer ID {printer_id} not found in coordinator data. Available: {list(printers.keys())}")
 
@@ -51,7 +58,7 @@ def build_printer_device_info(
         manufacturer=MANUFACTURER,
         model=printer_data["machine_name"],
         name=printer_data["name"],
-        connections={(CONNECTION_NETWORK_MAC, printer_data["machine_mac"])},
+        connections={(CONNECTION_NETWORK_MAC, printer_data["machine_mac"])} if printer_data.get("machine_mac") else set(),
         sw_version=printer_data["fw_version"],
         hw_version=f"Printer ID: {printer_id}",
         serial_number=f"{printer_id}",
@@ -106,11 +113,12 @@ def printer_attributes_for_key(
 ) -> dict[str, Any] | None:
     printers = coordinator.data.get('printers', {})
     printer = printers.get(int(printer_id)) or printers.get(str(printer_id))
-    
+
     if not printer or 'attributes' not in printer:
         return None
-        
-    return printer['attributes'].get(attribute_key)
+
+    attributes = printer['attributes'].get(attribute_key)
+    return attributes if isinstance(attributes, dict) else None
 
 
 def printer_state_connected_ace_units(
@@ -197,6 +205,7 @@ def check_descriptor_state_ace_primary_unavailable(
     description: AnycubicCloudEntityDescription,
     supports_ace: bool,
     connected_ace_units: int,
+    connected_ace_ids: set[int] | None = None,
 ) -> bool:
     return (
         description.printer_entity_type in [
@@ -204,7 +213,7 @@ def check_descriptor_state_ace_primary_unavailable(
             PrinterEntityType.DRY_PRESET_PRIMARY,
         ]
         and supports_ace
-        and connected_ace_units < 1
+        and (0 not in connected_ace_ids if connected_ace_ids is not None else connected_ace_units < 1)
     )
 
 
@@ -212,6 +221,7 @@ def check_descriptor_state_ace_secondary_unavailable(
     description: AnycubicCloudEntityDescription,
     supports_ace: bool,
     connected_ace_units: int,
+    connected_ace_ids: set[int] | None = None,
 ) -> bool:
     return (
         description.printer_entity_type in [
@@ -219,7 +229,7 @@ def check_descriptor_state_ace_secondary_unavailable(
             PrinterEntityType.DRY_PRESET_SECONDARY,
         ]
         and supports_ace
-        and connected_ace_units < 2
+        and (1 not in connected_ace_ids if connected_ace_ids is not None else connected_ace_units < 2)
     )
 
 
@@ -227,6 +237,7 @@ def check_descriptor_state_drying_available(
     description: AnycubicCloudEntityDescription,
     supports_ace: bool,
     connected_ace_units: int,
+    connected_ace_ids: set[int] | None = None,
 ) -> bool:
     # Wichtig: `and` bindet in Python stärker als `or`. Ohne die äußere Klammer
     # würde `supports_ace` nur den ersten (primären) Zweig gaten und der
@@ -234,11 +245,11 @@ def check_descriptor_state_drying_available(
     return supports_ace and (
         (
             description.printer_entity_type == PrinterEntityType.DRY_PRESET_PRIMARY
-            and connected_ace_units >= 1
+            and (0 in connected_ace_ids if connected_ace_ids is not None else connected_ace_units >= 1)
         )
         or (
             description.printer_entity_type == PrinterEntityType.DRY_PRESET_SECONDARY
-            and connected_ace_units >= 2
+            and (1 in connected_ace_ids if connected_ace_ids is not None else connected_ace_units >= 2)
         )
     )
 
@@ -248,11 +259,13 @@ def check_descriptor_state_drying_unavailable(
     supports_ace: bool,
     connected_ace_units: int,
     entry_options: MappingProxyType[str, Any],
+    connected_ace_ids: set[int] | None = None,
 ) -> bool:
     drying_available = check_descriptor_state_drying_available(
         description,
         supports_ace,
         connected_ace_units,
+        connected_ace_ids,
     )
 
     if not drying_available:
@@ -275,9 +288,11 @@ def printer_entity_unique_id(
     coordinator: AnycubicCloudDataUpdateCoordinator,
     printer_id: int | str,
     entity_suffix: str,
+    *, global_entity: bool = False,
 ) -> str:
-    mac = printer_state_for_key(coordinator, printer_id, 'machine_mac')
-    return f"{mac}-{entity_suffix}" if mac else f"{printer_id}-{entity_suffix}"
+    user_id = coordinator.data.get("user_info", {}).get("id", "unknown_user")
+    device_id = "bridge" if global_entity else str(printer_id)
+    return f"{user_id}:{device_id}:{entity_suffix}"
 
 
 def state_string_active(state: Any) -> str:
@@ -329,6 +344,8 @@ def validate_value_is_type[_T: Any](
             if not isinstance(v, value_type):
                 return None
         return value
+    elif value_type is float and type(value) in (int, float):
+        return cast(_T, float(value))
     elif isinstance(value, value_type):
         return value
     return None
@@ -348,7 +365,7 @@ def get_value_from_dict_if_type[_T: Any](
                 value_type,
                 allow_lists,
             )
-        )
+        ) is not None
     ):
         return val
     return None
@@ -361,7 +378,7 @@ def update_dict_and_validate(
     value_type: Any,
     allow_lists: bool = False,
 ) -> None:
-    if val := get_value_from_dict_if_type(input_dict, key, value_type, allow_lists):
+    if (val := get_value_from_dict_if_type(input_dict, key, value_type, allow_lists)) is not None:
         output_dict[key] = val
 
 

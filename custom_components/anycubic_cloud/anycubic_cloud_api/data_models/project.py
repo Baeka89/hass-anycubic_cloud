@@ -752,8 +752,7 @@ class AnycubicProject:
         key: str,
         value: Any,
     ) -> None:
-        if self._settings.get(key):
-            self._settings[key] = value
+        self._settings[key] = value
 
     def _get_inner_print_setting(self, key: str) -> Any:
         return self._settings.get('settings', {}).get(key)
@@ -891,7 +890,7 @@ class AnycubicProject:
 
     @property
     def print_is_paused(self) -> bool:
-        return self._pause != 0 and self.print_in_progress
+        return self._pause is not None and self._pause != 0 and self.print_in_progress
 
     @property
     def print_supplies_usage(self) -> int | None:

@@ -122,6 +122,12 @@ export class LitMovable extends LitElement {
 
   constructor() {
     super();
+    this._onPointerMove = (event) => {
+      if (this.isMoving && event.pointerId === this.pointerId) this.motionHandler(event);
+    };
+    this._onPointerUp = (event) => {
+      if (event.pointerId === this.pointerId) this.unbind(event);
+    };
   }
 
   get vertical() {
@@ -359,10 +365,14 @@ export class LitMovable extends LitElement {
     }
   }
   unbind(event) {
+    if (this.pointerId != null && document.body.hasPointerCapture(this.pointerId)) {
+      document.body.releasePointerCapture(this.pointerId);
+    }
     this.pointerId = null;
-    document.body.removeEventListener("pointermove", (e) =>
-      this.motionHandler(e),
-    );
+    document.body.removeEventListener("pointermove", this._onPointerMove);
+    document.body.removeEventListener("pointerup", this._onPointerUp);
+    document.body.removeEventListener("pointercancel", this._onPointerUp);
+    this.listening = false;
     this.moveEnd(event);
   }
 
@@ -433,7 +443,13 @@ export class LitMovable extends LitElement {
     this.reposition(moveState.coords);
     this.eventBroker("move", event);
   }
+  disconnectedCallback() {
+    this.unbind({});
+    super.disconnectedCallback();
+  }
+
   pointerdown(event) {
+    if (this.disabled) return;
     document.body.setPointerCapture(event.pointerId);
     event.preventDefault();
     event.stopPropagation();
@@ -442,27 +458,9 @@ export class LitMovable extends LitElement {
     }
 
     if (!this.listening) {
-      document.body.addEventListener(
-        "pointerup",
-        (event) => {
-          if (this.isMoving) {
-            this.unbind(event);
-          }
-        },
-        false,
-      );
-      document.body.addEventListener(
-        "pointermove",
-        (event) => {
-          if (
-            this.pointerId !== undefined &&
-            event.pointerId === this.pointerId
-          ) {
-            this.motionHandler(event);
-          }
-        },
-        false,
-      );
+      document.body.addEventListener("pointerup", this._onPointerUp);
+      document.body.addEventListener("pointercancel", this._onPointerUp);
+      document.body.addEventListener("pointermove", this._onPointerMove);
     }
     this.listening = true;
     this.moveInit(event);

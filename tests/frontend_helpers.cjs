@@ -1,0 +1,22 @@
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
+const root=path.resolve(__dirname,'../custom_components/anycubic_cloud/frontend_panel');
+const ts=require(path.join(root,'node_modules/typescript'));
+require.extensions['.ts']=(module,file)=>module._compile(ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS,experimentalDecorators:true,useDefineForClassFields:false}}).outputText,file);
+const helpers=require(path.join(root,'src/helpers.ts'));
+const realDate=Date;
+class FixedDate extends realDate {static now(){return realDate.parse('2026-10-07T10:00:00Z');}}
+global.Date=FixedDate;
+assert.equal(helpers.formatFutureTime(0,true,true,'Europe/Berlin'),'12:00');
+assert.equal(helpers.formatFutureTime(0,true,true,'UTC'),'10:00');
+assert.equal(helpers.formatFutureTime(3600,true,true,'Europe/Berlin'),'13:00');
+global.Date=realDate;
+const entities={'button.xyz':{entity_id:'button.xyz',translation_key:'print_pause'},'sensor.xyz':{entity_id:'sensor.xyz',translation_key:'curr_nozzle_temp'}};
+assert.equal(helpers.getPrinterEntityId(entities,'button','pause_print'),'button.xyz');
+assert.equal(helpers.getStrictMatchingEntity(entities,undefined,'sensor','nozzle_temperature').entity_id,'sensor.xyz');
+assert.equal(helpers.getPrinterEntityId(entities,'button','absent'),undefined);
+assert.equal(helpers.getAceBoxId({'sensor.any':{entity_id:'sensor.any',translation_key:'secondary_ace_spools'}}),1);
+assert.equal(helpers.getAceBoxId({'sensor.any':{entity_id:'sensor.any',translation_key:'ace_spools'}}),0);
+assert.equal(helpers.formatDuration(31*86400,false),'31d0s');
+assert.equal(helpers.formatDuration(365*86400+3601,false),'365d1h1s');
+assert.equal(Object.keys(helpers.getPrinterDevices({devices:{bridge:{id:'bridge',manufacturer:'Anycubic',model:'Cloud API Bridge'}}})).length,1);
+console.log('Frontend helpers: 11 assertions passed');

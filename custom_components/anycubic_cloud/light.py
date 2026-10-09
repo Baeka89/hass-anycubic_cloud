@@ -25,7 +25,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from homeassistant.components.light import ColorMode, LightEntity, LightEntityDescription
+from homeassistant.components.light import LightEntity, LightEntityDescription
+from homeassistant.components.light.const import ColorMode
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
@@ -113,9 +114,10 @@ class AnycubicLight(AnycubicCloudEntity, LightEntity):
         this printer's light_type (e.g. right after startup, before anyone
         has queried or toggled this specific light since HA last connected).
         """
-        return printer_state_for_key(
+        state = printer_state_for_key(
             self.coordinator, self._printer_id, self.entity_description.key
         )
+        return bool(state) if state is not None else None
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the light on."""

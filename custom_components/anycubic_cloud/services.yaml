@@ -1,1 +1,958 @@
-{}
+multi_color_box_set_slot_pla:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: anycubic_cloud
+    device_id:
+      required: false
+      selector:
+        device:
+          filter:
+          - integration: anycubic_cloud
+    printer_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+    box_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 1
+    slot_number:
+      required: true
+      selector:
+        number:
+          min: 1
+          mode: box
+          max: 4
+    slot_color_red:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 255
+    slot_color_green:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 255
+    slot_color_blue:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 255
+multi_color_box_set_slot_petg:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: anycubic_cloud
+    device_id:
+      required: false
+      selector:
+        device:
+          filter:
+          - integration: anycubic_cloud
+    printer_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+    box_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 1
+    slot_number:
+      required: true
+      selector:
+        number:
+          min: 1
+          mode: box
+          max: 4
+    slot_color_red:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 255
+    slot_color_green:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 255
+    slot_color_blue:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 255
+multi_color_box_set_slot_abs:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: anycubic_cloud
+    device_id:
+      required: false
+      selector:
+        device:
+          filter:
+          - integration: anycubic_cloud
+    printer_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+    box_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 1
+    slot_number:
+      required: true
+      selector:
+        number:
+          min: 1
+          mode: box
+          max: 4
+    slot_color_red:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 255
+    slot_color_green:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 255
+    slot_color_blue:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 255
+multi_color_box_set_slot_pacf:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: anycubic_cloud
+    device_id:
+      required: false
+      selector:
+        device:
+          filter:
+          - integration: anycubic_cloud
+    printer_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+    box_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 1
+    slot_number:
+      required: true
+      selector:
+        number:
+          min: 1
+          mode: box
+          max: 4
+    slot_color_red:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 255
+    slot_color_green:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 255
+    slot_color_blue:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 255
+multi_color_box_set_slot_pc:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: anycubic_cloud
+    device_id:
+      required: false
+      selector:
+        device:
+          filter:
+          - integration: anycubic_cloud
+    printer_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+    box_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 1
+    slot_number:
+      required: true
+      selector:
+        number:
+          min: 1
+          mode: box
+          max: 4
+    slot_color_red:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 255
+    slot_color_green:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 255
+    slot_color_blue:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 255
+multi_color_box_set_slot_asa:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: anycubic_cloud
+    device_id:
+      required: false
+      selector:
+        device:
+          filter:
+          - integration: anycubic_cloud
+    printer_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+    box_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 1
+    slot_number:
+      required: true
+      selector:
+        number:
+          min: 1
+          mode: box
+          max: 4
+    slot_color_red:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 255
+    slot_color_green:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 255
+    slot_color_blue:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 255
+multi_color_box_set_slot_hips:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: anycubic_cloud
+    device_id:
+      required: false
+      selector:
+        device:
+          filter:
+          - integration: anycubic_cloud
+    printer_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+    box_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 1
+    slot_number:
+      required: true
+      selector:
+        number:
+          min: 1
+          mode: box
+          max: 4
+    slot_color_red:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 255
+    slot_color_green:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 255
+    slot_color_blue:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 255
+multi_color_box_set_slot_pa:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: anycubic_cloud
+    device_id:
+      required: false
+      selector:
+        device:
+          filter:
+          - integration: anycubic_cloud
+    printer_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+    box_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 1
+    slot_number:
+      required: true
+      selector:
+        number:
+          min: 1
+          mode: box
+          max: 4
+    slot_color_red:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 255
+    slot_color_green:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 255
+    slot_color_blue:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 255
+multi_color_box_set_slot_pla_se:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: anycubic_cloud
+    device_id:
+      required: false
+      selector:
+        device:
+          filter:
+          - integration: anycubic_cloud
+    printer_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+    box_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 1
+    slot_number:
+      required: true
+      selector:
+        number:
+          min: 1
+          mode: box
+          max: 4
+    slot_color_red:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 255
+    slot_color_green:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 255
+    slot_color_blue:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 255
+multi_color_box_filament_extrude:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: anycubic_cloud
+    device_id:
+      required: false
+      selector:
+        device:
+          filter:
+          - integration: anycubic_cloud
+    printer_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+    box_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 1
+    slot_number:
+      required: true
+      selector:
+        number:
+          min: 1
+          mode: box
+          max: 4
+    finished:
+      required: false
+      selector:
+        boolean: {}
+multi_color_box_filament_retract:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: anycubic_cloud
+    device_id:
+      required: false
+      selector:
+        device:
+          filter:
+          - integration: anycubic_cloud
+    printer_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+    box_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+          max: 1
+print_and_upload_save_in_cloud:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: anycubic_cloud
+    device_id:
+      required: false
+      selector:
+        device:
+          filter:
+          - integration: anycubic_cloud
+    printer_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+    slot_number:
+      required: false
+      selector:
+        object: {}
+    uploaded_gcode_file:
+      required: true
+      selector:
+        file:
+          accept: .gcode
+print_and_upload_no_cloud_save:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: anycubic_cloud
+    device_id:
+      required: false
+      selector:
+        device:
+          filter:
+          - integration: anycubic_cloud
+    printer_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+    slot_number:
+      required: false
+      selector:
+        object: {}
+    uploaded_gcode_file:
+      required: true
+      selector:
+        file:
+          accept: .gcode
+delete_file_local:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: anycubic_cloud
+    device_id:
+      required: false
+      selector:
+        device:
+          filter:
+          - integration: anycubic_cloud
+    printer_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+    filename:
+      required: true
+      selector:
+        text: {}
+delete_file_udisk:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: anycubic_cloud
+    device_id:
+      required: false
+      selector:
+        device:
+          filter:
+          - integration: anycubic_cloud
+    printer_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+    filename:
+      required: true
+      selector:
+        text: {}
+delete_file_cloud:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: anycubic_cloud
+    device_id:
+      required: false
+      selector:
+        device:
+          filter:
+          - integration: anycubic_cloud
+    printer_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+    file_id:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+change_print_speed_mode:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: anycubic_cloud
+    device_id:
+      required: false
+      selector:
+        device:
+          filter:
+          - integration: anycubic_cloud
+    printer_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+    speed_mode:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+change_print_target_nozzle_temperature:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: anycubic_cloud
+    device_id:
+      required: false
+      selector:
+        device:
+          filter:
+          - integration: anycubic_cloud
+    printer_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+    temperature:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+change_print_target_hotbed_temperature:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: anycubic_cloud
+    device_id:
+      required: false
+      selector:
+        device:
+          filter:
+          - integration: anycubic_cloud
+    printer_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+    temperature:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+change_print_fan_speed:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: anycubic_cloud
+    device_id:
+      required: false
+      selector:
+        device:
+          filter:
+          - integration: anycubic_cloud
+    printer_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+    speed:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+change_print_aux_fan_speed:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: anycubic_cloud
+    device_id:
+      required: false
+      selector:
+        device:
+          filter:
+          - integration: anycubic_cloud
+    printer_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+    speed:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+change_print_box_fan_speed:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: anycubic_cloud
+    device_id:
+      required: false
+      selector:
+        device:
+          filter:
+          - integration: anycubic_cloud
+    printer_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+    speed:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+change_print_bottom_layers:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: anycubic_cloud
+    device_id:
+      required: false
+      selector:
+        device:
+          filter:
+          - integration: anycubic_cloud
+    printer_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+    layers:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+change_print_bottom_time:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: anycubic_cloud
+    device_id:
+      required: false
+      selector:
+        device:
+          filter:
+          - integration: anycubic_cloud
+    printer_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+    time:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+          step: 0.1
+change_print_off_time:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: anycubic_cloud
+    device_id:
+      required: false
+      selector:
+        device:
+          filter:
+          - integration: anycubic_cloud
+    printer_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+    time:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+          step: 0.1
+change_print_on_time:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: anycubic_cloud
+    device_id:
+      required: false
+      selector:
+        device:
+          filter:
+          - integration: anycubic_cloud
+    printer_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+    time:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+          step: 0.1
+print_existing_cloud_file:
+  fields:
+    config_entry:
+      required: true
+      selector:
+        config_entry:
+          integration: anycubic_cloud
+    device_id:
+      required: false
+      selector:
+        device:
+          filter:
+          - integration: anycubic_cloud
+    printer_id:
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+    gcode_id:
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+    slot_number:
+      required: false
+      selector:
+        object: {}

@@ -16,7 +16,7 @@
 
 Diese Custom Integration ermöglicht die Anbindung von **Anycubic 3D-Druckern** an Home Assistant. Da Anycubic den lokalen MQTT-Zugriff zunehmend einschränkt, nutzt diese Integration die Cloud-Schnittstelle, um Statuswerte, Temperaturen und Druckfortschritte bereitzustellen.
 
-Dieser Fork ist optimiert für aktuelle Home Assistant Versionen (2026.x, mindestens **2026.5.0**) und passt sich automatisch an deine Systemsprache an (Deutsch & Englisch vollständig übersetzt - Entities, Einrichtungs- und Options-Dialoge).
+Dieser Fork ist optimiert für aktuelle Home Assistant Versionen (2026.x, mindestens **2026.9.0**) und passt sich automatisch an deine Systemsprache an (Deutsch & Englisch vollständig übersetzt - Entities, Einrichtungs- und Options-Dialoge).
 
 ### Unterstützte Modelle
 
@@ -34,7 +34,7 @@ Die Integration funktioniert erfolgreich mit:
 
 * **Sensoren:** Temperaturen (Düse/Bett), Lüfter, Druckgeschwindigkeit, Firmware-Status.
 * **Job-Überwachung:** Fortschritt (%), Restlaufzeit, Dateiname und Vorschaubilder.
-* **Steuerung:** Start/Pause/Fortsetzen/Abbrechen von Drucken, Zieltemperaturen, Lüfter- und Geschwindigkeitsmodus, Filament Rückzug/Vorschub, Druckauftrag abschließen.
+* **Steuerung:** Start/Pause/Fortsetzen/Abbrechen von Drucken, Zieltemperaturen, Lüfter- und Geschwindigkeitsmodus, ACE-Filament-Vorschub/Rückzug über Services mit explizitem Slot.
 * **Drucken ohne erneuten Upload:** Service, um eine bereits in der Cloud gespeicherte Datei direkt zu drucken.
 * **Drucker-Licht (experimentell):** Ein-/Ausschalten des Kamera-/Boxlichts, sofern der Drucker das meldet - wird von der Panel-Karte jetzt automatisch erkannt.
 * **ACE Pro Management:** Steuerung der Trocknung (5 konfigurierbare Presets + freie Custom-Trocknung mit eigener Temperatur/Dauer), Filament-Spulen und Farben, primäre & sekundäre ACE-Einheit, Restfüllstand-Nachfüllung.
@@ -46,7 +46,7 @@ Die Integration funktioniert erfolgreich mit:
 
 Das Panel und die Dashboard-Karte ("Anycubic Printer Card") erkennen jetzt automatisch, welche Art von Gerät gerade ausgewählt ist, und zeigen die passende Ansicht:
 
-* **Drucker** - die gewohnte Karte mit Temperaturen, Jobfortschritt, Geschwindigkeits-/Lüftermodus, plus neu: Licht-Toggle, Filament Rückzug/Vorschub, "Druckauftrag abschließen" und ein Firmware-Update-Hinweis.
+* **Drucker** - die gewohnte Karte mit Temperaturen, Jobfortschritt, Geschwindigkeits-/Lüftermodus, plus neu: Licht-Toggle und ein Firmware-Update-Hinweis. ACE-Filament-Funktionen verwenden die dokumentierten Services.
 * **ACE Pro Box** - eine eigene Karte mit Spulen/Farben, Trocknungsstatus (aktuelle/Soll-Temperatur, Restzeit), allen 5 Trocknungs-Presets sowie einer neuen Custom-Trocknung (frei wählbare Temperatur + Dauer).
 * **Cloud-Bridge (Anbindung)** - eine schlanke Karte nur mit dem, was es dafür tatsächlich gibt: MQTT-Verbindungs-Schalter und Reconnect-Button.
 
@@ -68,7 +68,7 @@ Wenn dir diese Integration hilft, freue ich mich über eine kleine Unterstützun
 
 This custom integration connects **Anycubic 3D Printers** to Home Assistant using the Anycubic Cloud API. It provides real-time telemetry and control even as local MQTT access becomes more restricted.
 
-This fork requires Home Assistant **2026.5.0** or newer and automatically adapts to your system language (German & English are fully translated - entities, setup, and options dialogs).
+This fork requires Home Assistant **2026.9.0** or newer and automatically adapts to your system language (German & English are fully translated - entities, setup, and options dialogs).
 
 ### Supported Models
 
@@ -86,7 +86,7 @@ Confirmed working with:
 
 * **Printer Sensors:** Temperature (Nozzle/Bed), fan speed, print speed, firmware status.
 * **Job Sensors:** Progress, remaining time, file name, and image previews.
-* **Controls:** Start, Pause, Resume, Cancel print jobs, target temperatures, fan and speed mode, filament retract/extrude, clear completed job.
+* **Controls:** Start, Pause, Resume, Cancel print jobs, target temperatures, fan and speed mode. ACE filament feed/retract uses services with an explicit slot.
 * **Print without re-uploading:** service to print a file that's already stored in your cloud storage.
 * **Printer Light (experimental):** turn the camera/box light on or off, if your printer reports support for it - now auto-detected by the panel card.
 * **ACE Pro Features:** Drying management (5 configurable presets plus a free-form custom drying option), spool colors, primary & secondary ACE unit support, runout refill.
@@ -98,7 +98,7 @@ Confirmed working with:
 
 The panel and the dashboard card ("Anycubic Printer Card") now detect which kind of device is selected and render the matching view instead of one generic card:
 
-* **Printer** - the familiar card with temperatures, job progress, speed/fan mode, plus new: a light toggle, filament retract/extrude, "clear completed job", and a firmware-update badge.
+* **Printer** - the familiar card with temperatures, job progress, speed/fan mode, plus new: a light toggle, and a firmware-update badge. ACE filament operations use the documented services.
 * **ACE Pro box** - its own card with spool/color info, drying status (current/target temperature, remaining time), all 5 drying presets, and a new custom-drying option (freely settable temperature + duration).
 * **Cloud Bridge (connection)** - a minimal card with only what actually exists for it: an MQTT connection switch and a reconnect button.
 
@@ -213,7 +213,7 @@ Besides the entities above, these are available under **Developer Tools → Acti
 
 ### Technical Components / Technische Komponenten
 
-* `manifest.json`: Metadata, 2026.x compatibility (`min_ha_version`), and dependencies.
+* `manifest.json`: Metadata, cloud polling classification, and pinned dependencies; HACS declares the minimum HA version.
 * `config_flow.py`: Setup, re-authentication, and options flow.
 * `coordinator.py`: Central polling/update logic, MQTT connection management, and device registration (printer / ACE Pro box(es) / Cloud Bridge as separate devices, linked via `via_device`).
 * `sensor.py` / `binary_sensor.py` / `number.py` / `select.py` / `button.py` / `switch.py` / `image.py` / `update.py` / `light.py`: Entity platforms.
@@ -225,3 +225,10 @@ See [CHANGELOG.md](CHANGELOG.md) for release notes.
 ### Thanks / Danke
 
 Special thanks to **@WaresWichall** for the original cloud integration and **@dangreco** for the initial foundation. This fork is maintained by **@Baeka89** to ensure compatibility with modern Home Assistant versions.
+
+
+## MQTT-TLS-Kompatibilität / MQTT TLS compatibility (0.9.9)
+
+Deutsch: Unter **Integration → Konfigurieren → MQTT-Verbindung & Trocknungspresets** ist „MQTT-Serverzertifikat und Hostnamen prüfen“ standardmäßig eingeschaltet. Nur bei einem diagnostizierten TLS-Kompatibilitätsproblem kann die Option bewusst ausgeschaltet werden. Dann bleiben TLS-Verschlüsselung und Clientzertifikat aktiv, aber die Identität des Servers wird nicht geprüft; außerdem wird eine breitere Cipher-Auswahl verwendet. Es gibt keinen automatischen Rückfall nach einem Verbindungsfehler. Speichern lädt die Integration neu. Die Live-Verbindung zum Anycubic-Broker ist damit noch nicht nachgewiesen.
+
+English: In the integration's **Configure → MQTT Connection & Drying Presets** step, server-certificate and hostname verification is enabled by default. Explicitly disable it only for a diagnosed TLS compatibility issue. TLS encryption and the client certificate remain active, but the server identity is not verified and the cipher selection is broader. Connection failures never disable verification automatically. Saving reloads the integration. A live connection to the Anycubic broker has not been established by these offline tests.

@@ -35,6 +35,7 @@ import {
 } from "../../../types";
 
 import {
+  getAceBoxId,
   getAceEntityIdPart,
   getAnycubicDeviceType,
   getBridgeEntityIdPart,
@@ -56,15 +57,15 @@ import {
   undefinedDefault,
 } from "../../../helpers";
 
-import "../camera_view/camera_view.ts";
-import "../multicolorbox_view/multicolorbox_view.ts";
-import "../printer_view/printer_view.ts";
-import "../stats/stats_component.ts";
-import "../multicolorbox_view/multicolorbox_modal_drying.ts";
-import "../multicolorbox_view/multicolorbox_modal_spool.ts";
-import "../multicolorbox_view/multicolorbox_modal_settings.ts";
-import "../printsettings/printsettings_modal.ts";
-import "../../ui/toggle-switch.ts";
+import "../camera_view/camera_view";
+import "../multicolorbox_view/multicolorbox_view";
+import "../printer_view/printer_view";
+import "../stats/stats_component";
+import "../multicolorbox_view/multicolorbox_modal_drying";
+import "../multicolorbox_view/multicolorbox_modal_spool";
+import "../multicolorbox_view/multicolorbox_modal_settings";
+import "../printsettings/printsettings_modal";
+import "../../ui/toggle-switch";
 
 const animOptionsCard: motionOptions = {
   keyframeOptions: {
@@ -283,6 +284,7 @@ export class AnycubicPrintercardCard extends LitElement {
     }
 
     if (
+      changedProperties.has("hass") ||
       changedProperties.has("selectedPrinterID") ||
       changedProperties.has("selectedPrinterDevice")
     ) {
@@ -334,9 +336,11 @@ export class AnycubicPrintercardCard extends LitElement {
         entity_id: this.cameraEntityId,
       });
     }
-    const autoLightEntityId = this.printerEntityIdPart
-      ? getPrinterEntityId(this.printerEntityIdPart, "light", "printer_light")
-      : undefined;
+    const autoLightEntityId = getPrinterEntityId(
+      this.printerEntities,
+      "light",
+      "printer_light",
+    );
     const autoLightExists =
       !!autoLightEntityId &&
       !!getEntityState(this.hass, { entity_id: autoLightEntityId });
@@ -490,7 +494,7 @@ export class AnycubicPrintercardCard extends LitElement {
                 .selectedPrinterDevice=${this.selectedPrinterDevice}
                 .printerEntities=${this.printerEntities}
                 .printerEntityIdPart=${this.printerEntityIdPart}
-                .box_id=${0}
+                .box_id=${getAceBoxId(this.printerEntities)}
                 .inline=${true}
               ></anycubic-printercard-multicolorbox_modal_drying>
             </div>
@@ -532,7 +536,7 @@ export class AnycubicPrintercardCard extends LitElement {
           .language=${this.language}
           .printerEntities=${this.printerEntities}
           .printerEntityIdPart=${this.printerEntityIdPart}
-          .box_id=${0}
+          .box_id=${getAceBoxId(this.printerEntities)}
         ></anycubic-printercard-multicolorbox_modal_settings>
       </div>
     `;
@@ -560,16 +564,20 @@ export class AnycubicPrintercardCard extends LitElement {
               <span class="ac-switch-row-label">${this._labelBridgeMqtt}</span>
               <anycubic-ui-toggle-switch
                 .checked=${this._bridgeMqttState?.state === "on"}
-                .disabled=${this._togglingBridgeMqtt ||
-                !this._bridgeMqttState ||
-                this._bridgeMqttState.state === "unavailable"}
+                .disabled=${
+                  this._togglingBridgeMqtt ||
+                  !this._bridgeMqttState ||
+                  this._bridgeMqttState.state === "unavailable"
+                }
                 @ac-toggle-change=${this._toggleBridgeMqtt}
               ></anycubic-ui-toggle-switch>
             </div>
             <ha-control-button
-              .disabled=${this._refreshingBridge ||
-              !this._bridgeRefreshState ||
-              this._bridgeRefreshState.state === "unavailable"}
+              .disabled=${
+                this._refreshingBridge ||
+                !this._bridgeRefreshState ||
+                this._bridgeRefreshState.state === "unavailable"
+              }
               @click=${this._pressBridgeRefresh}
             >
               <ha-svg-icon .path=${mdiRefresh}></ha-svg-icon>
@@ -629,17 +637,19 @@ export class AnycubicPrintercardCard extends LitElement {
 
     return html`
       <div class="ac-printer-card-header ${classMap(classesHeader)}">
-        ${this.powerEntityId
-          ? html`
-              <button
-                class="ac-printer-card-button-small"
-                .disabled=${this._togglingPower}
-                @click=${this._togglePowerEntity}
-              >
-                <ha-svg-icon .path=${mdiPower}></ha-svg-icon>
-              </button>
-            `
-          : nothing}
+        ${
+          this.powerEntityId
+            ? html`
+                <button
+                  class="ac-printer-card-button-small"
+                  .disabled=${this._togglingPower}
+                  @click=${this._togglePowerEntity}
+                >
+                  <ha-svg-icon .path=${mdiPower}></ha-svg-icon>
+                </button>
+              `
+            : nothing
+        }
 
         <button
           class="ac-printer-card-button-name"
@@ -654,19 +664,21 @@ export class AnycubicPrintercardCard extends LitElement {
           </p>
           ${this._renderFwBadge()}
         </button>
-        ${this._effectiveLightEntityId
-          ? html`
-              <button
-                class="ac-printer-card-button-small"
-                .disabled=${this._togglingLight}
-                @click=${this._toggleLightEntity}
-              >
-                <ha-svg-icon
-                  .path=${this.lightIsOn ? mdiLightbulbOn : mdiLightbulbOff}
-                ></ha-svg-icon>
-              </button>
-            `
-          : nothing}
+        ${
+          this._effectiveLightEntityId
+            ? html`
+                <button
+                  class="ac-printer-card-button-small"
+                  .disabled=${this._togglingLight}
+                  @click=${this._toggleLightEntity}
+                >
+                  <ha-svg-icon
+                    .path=${this.lightIsOn ? mdiLightbulbOn : mdiLightbulbOff}
+                  ></ha-svg-icon>
+                </button>
+              `
+            : nothing
+        }
       </div>
     `;
   }
@@ -712,13 +724,17 @@ export class AnycubicPrintercardCard extends LitElement {
             .scaleFactor=${this.scaleFactor}
             .toggleVideo=${this._toggleVideo}
           ></anycubic-printercard-printer_view>
-          ${this.vertical
-            ? html`<p class="ac-printer-card-info-vertprog">
-                ${this.round
-                  ? Math.round(this.progressPercent)
-                  : this.progressPercent}%
-              </p>`
-            : nothing}
+          ${
+            this.vertical
+              ? html`<p class="ac-printer-card-info-vertprog">
+                  ${
+                    this.round
+                      ? Math.round(this.progressPercent)
+                      : this.progressPercent
+                  }%
+                </p>`
+              : nothing
+          }
         </div>
         <div
           class="ac-printer-card-info-statscontainer ${classMap(classesMain)}"
@@ -788,7 +804,7 @@ export class AnycubicPrintercardCard extends LitElement {
   private _openAceSettingsModal = (): void => {
     fireEvent(this._printerCardContainer, "ac-mcbsettings-modal", {
       modalOpen: true,
-      box_id: 0,
+      box_id: getAceBoxId(this.printerEntities),
     });
   };
 

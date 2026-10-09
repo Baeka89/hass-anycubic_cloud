@@ -3,7 +3,8 @@ from __future__ import annotations
 from typing import Any
 
 from ..exceptions.error_strings import ErrorsDataParsing
-from ..exceptions.exceptions import AnycubicDataParsingError
+from ..exceptions.exceptions import AnycubicAPIError, AnycubicDataParsingError
+from ..helpers.helpers import parse_integer_id
 
 
 class AnycubicMaterialMapping:
@@ -436,7 +437,12 @@ class AnycubicSpoolInfo:
         edit_status: int,
         status: int,
     ) -> None:
-        self._index = int(index)
+        try:
+            self._index = parse_integer_id(index)
+            if not 0 <= self._index <= 3:
+                raise ValueError("ACE slot index must be between 0 and 3")
+        except ValueError as error:
+            raise AnycubicDataParsingError(ErrorsDataParsing.ace.format(index)) from error
         self._sku = str(sku)
         self._material_type = str(material_type)
         self._color = list([
@@ -529,7 +535,10 @@ class AnycubicMultiColorBox:
         target_nozzle_temp: int | None,
         slots: list[dict[str, Any]],
     ) -> None:
-        self._id: int = int(id)
+        try:
+            self._id: int = parse_integer_id(id)
+        except ValueError as error:
+            raise AnycubicDataParsingError(ErrorsDataParsing.ace.format(id)) from error
         self._status: int = int(status)
         self._model_id: int = int(model_id)
         self._auto_feed: int = int(auto_feed)
@@ -542,9 +551,12 @@ class AnycubicMultiColorBox:
         self._slots: list[AnycubicSpoolInfo] = list()
         for x in slots:
             if spool := AnycubicSpoolInfo.from_json(x):
+                if any(previous._index == spool._index for previous in self._slots):
+                    raise AnycubicDataParsingError(ErrorsDataParsing.ace.format(slots))
                 self._slots.append(spool)
             else:
                 raise AnycubicDataParsingError(ErrorsDataParsing.ace.format(slots))
+        self._slots.sort(key=lambda spool: spool._index)
 
     def set_auto_feed(self, auto_feed: int) -> None:
         self._auto_feed = int(auto_feed)
@@ -565,12 +577,15 @@ class AnycubicMultiColorBox:
         if slot_list is None:
             return
 
+        replacements: dict[int, AnycubicSpoolInfo] = {}
         for slot in slot_list:
-            slot_index = slot['index']
-            if spool := AnycubicSpoolInfo.from_json(slot):
-                self._slots[slot_index] = spool
-            else:
+            spool = AnycubicSpoolInfo.from_json(slot)
+            if spool is None or spool._index in replacements:
                 raise AnycubicDataParsingError(ErrorsDataParsing.ace.format(slot_list))
+            replacements[spool._index] = spool
+        slots = {spool._index: spool for spool in self._slots}
+        slots.update(replacements)
+        self._slots = [slots[index] for index in sorted(slots)]
 
     def build_mapping_for_material_list(
         self,
@@ -588,7 +603,9 @@ class AnycubicMultiColorBox:
             if slot_index < 0 or slot_index > 3:
                 continue
 
-            ams_slot = box_slots[slot_index]
+            ams_slot = next((slot for slot in box_slots if slot._index == slot_index), None)
+            if ams_slot is None:
+                raise AnycubicAPIError("The selected ACE slot is not present")
             material = AnycubicMaterialMapping(
                 spool_index=spool_index,
                 filament_used=mat_conf['filament_used'],
@@ -821,6 +838,10 @@ class AnycubicMachineFirmwareInfo:
         self._is_updating: bool = False
 
     @property
+    def box_id(self) -> int | None:
+        return self._box_id
+
+    @property
     def firmware_version(self) -> str:
         return self._firmware_version
 
@@ -933,7 +954,10 @@ class AnycubicMachineFirmwareInfo:
         self._time_cost = int(time_cost) if time_cost is not None else None
 
     def set_box_id(self, box_id: int | None) -> None:
-        self._box_id = int(box_id) if box_id is not None else None
+        try:
+            self._box_id = parse_integer_id(box_id) if box_id is not None else None
+        except ValueError as error:
+            raise AnycubicDataParsingError(ErrorsDataParsing.ace_fw_version.format(box_id)) from error
 
     def set_is_updating(self, is_updating: bool) -> None:
         self._is_updating = bool(is_updating)

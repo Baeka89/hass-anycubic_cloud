@@ -1,9 +1,4 @@
-import { utc as dfnsUtc } from "@date-fns/utc";
-import {
-  Duration as dfnsDuration,
-  format as dfnsFormat,
-  intervalToDuration as dfnsIntervalToDuration,
-} from "date-fns";
+import { Duration as dfnsDuration } from "date-fns";
 
 import { fireEvent } from "./fire_event";
 import {
@@ -79,7 +74,7 @@ export function toTitleCase(str: string): string {
 
 export function buildImageUrlFromEntity(entityState: HassEntity): string {
   const token: string = entityState.attributes.access_token as string;
-  return `${window.location.origin}/api/image_proxy/${entityState.entity_id}?token=${token}`;
+  return `${window.location.origin}/api/image_proxy/${entityState.entity_id}?token=${token}&v=${encodeURIComponent(entityState.state)}`;
 }
 
 export function buildCameraUrlFromEntity(entityState: HassEntity): string {
@@ -119,7 +114,7 @@ export function getEntityStateString(
   entityInfo: HassEntityInfo | undefined,
 ): string {
   const entityState = getEntityState(hass, entityInfo);
-  return entityState ? String(entityState.state) : "";
+  return entityState ? entityState.state : "";
 }
 
 export function getEntityStateBinary(
@@ -171,10 +166,7 @@ export function getPrinterDevices(hass: HomeAssistant): HassDeviceList {
   for (const key in hass.devices) {
     const dev = hass.devices[key];
 
-    if (
-      dev.manufacturer === "Anycubic" &&
-      getAnycubicDeviceType(dev) !== AnycubicDeviceType.BRIDGE
-    ) {
+    if (dev.manufacturer === "Anycubic") {
       printers[dev.id] = dev;
     }
   }
@@ -198,31 +190,31 @@ export function getPrinterEntities(
   return entities;
 }
 
-export function getMatchingEntity(
-  entities: HassEntityInfos,
-  match_domain: string,
-  match_suffix: string,
-): HassEntityInfo | undefined {
-  for (const key in entities) {
-    const ent = entities[key];
-    const splitID = key.split(".");
-    const domain: string = splitID[0];
-    const entity_id: string = splitID[1];
-
-    if (domain === match_domain && entity_id.endsWith(match_suffix)) {
-      return ent;
-    }
-  }
-  return undefined;
+export function getAceBoxId(entities: HassEntityInfos): number {
+  return Object.values(entities).some((entity) =>
+    entity.translation_key?.startsWith("secondary_"),
+  )
+    ? 1
+    : 0;
 }
 
-export function getPrinterEntityId(
-  printerEntityIdPart: string | undefined,
-  domain: string,
-  suffix: string,
-): string {
-  return domain + "." + String(printerEntityIdPart) + suffix;
-}
+const entityKeyAliases: Record<string, string> = {
+  nozzle_temperature: "curr_nozzle_temp",
+  hotbed_temperature: "curr_hotbed_temp",
+  target_nozzle_temperature: "target_nozzle_temp",
+  target_hotbed_temperature: "target_hotbed_temp",
+  fan_speed: "fan_speed_pct",
+  printer_firmware: "fw_version",
+  ace_firmware: "multi_color_box_fw_version",
+  ace_run_out_refill: "multi_color_box_runout_refill",
+  drying_active: "dry_status_is_drying",
+  drying_remaining_time: "dry_status_remaining_time",
+  drying_total_duration: "dry_status_total_duration",
+  refresh_mqtt_connection: "manual_mqtt_connection_refresh",
+  pause_print: "print_pause",
+  resume_print: "print_resume",
+  stop_print: "print_stop",
+};
 
 export function getStrictMatchingEntity(
   entities: HassEntityInfos,
@@ -230,42 +222,52 @@ export function getStrictMatchingEntity(
   match_domain: string,
   match_suffix: string,
 ): HassEntityInfo | undefined {
-  // "entities" ist bereits auf genau ein Gerät gefiltert (siehe
-  // getPrinterEntities). Zwei Vergleichswege, in dieser Reihenfolge:
-  //
-  // 1. translation_key === match_suffix: das ist der zuverlässigste Weg,
-  //    da translation_key exakt dem entspricht, was im Backend-Code
-  //    (button.py/number.py/sensor.py usw.) als translation_key=... steht -
-  //    unabhängig von der HA-Sprache und unabhängig davon, wann/wie die
-  //    Entity ursprünglich angelegt wurde (Entity-IDs bleiben in der
-  //    Registry auch nach Umbenennungen des Geräts stabil, translation_key
-  //    dagegen nicht).
-  // 2. entity_id endsWith match_suffix: Fallback für ältere, vor der
-  //    Umstrukturierung angelegte Entities, deren ID zufällig noch dem
-  //    erratenen Muster entspricht.
-  for (const key in entities) {
-    const ent = entities[key];
-    const splitID = key.split(".");
-    const domain: string = splitID[0];
-
-    if (domain !== match_domain) {
-      continue;
-    }
-    if (ent.translation_key === match_suffix) {
-      return ent;
+  const canonical = entityKeyAliases[match_suffix] ?? match_suffix;
+  const keys = [canonical, `secondary_${canonical}`];
+  for (const requested of keys) {
+    for (const ent of Object.values(entities)) {
+      if (
+        ent.entity_id.split(".")[0] === match_domain &&
+        ent.translation_key === requested
+      ) {
+        return ent;
+      }
     }
   }
-  for (const key in entities) {
-    const ent = entities[key];
-    const splitID = key.split(".");
-    const domain: string = splitID[0];
-    const entity_id: string = splitID[1];
-
-    if (domain === match_domain && entity_id.endsWith(match_suffix)) {
-      return ent;
+  // Legacy suffixes only when no translation key is available.
+  for (const requested of [canonical, match_suffix]) {
+    for (const ent of Object.values(entities)) {
+      if (
+        !ent.translation_key &&
+        ent.entity_id.split(".")[0] === match_domain &&
+        ent.entity_id.split(".")[1].endsWith(`_${requested}`)
+      ) {
+        return ent;
+      }
     }
   }
   return undefined;
+}
+
+export function getMatchingEntity(
+  entities: HassEntityInfos,
+  match_domain: string,
+  match_suffix: string,
+): HassEntityInfo | undefined {
+  return getStrictMatchingEntity(
+    entities,
+    undefined,
+    match_domain,
+    match_suffix,
+  );
+}
+
+export function getPrinterEntityId(
+  entities: HassEntityInfos,
+  domain: string,
+  key: string,
+): string | undefined {
+  return getStrictMatchingEntity(entities, undefined, domain, key)?.entity_id;
 }
 
 // Leitet aus einer Menge von Entities das gemeinsame Geräte-ID-Präfix ab,
@@ -286,12 +288,6 @@ export function getEntityIdPartBySuffix(
     }
   }
   return undefined;
-}
-
-export function getPrinterEntityIdPart(
-  entities: HassEntityInfos,
-): string | undefined {
-  return getEntityIdPartBySuffix(entities, "binary_sensor", "printer_online");
 }
 
 // ACE-Boxen haben keinen printer_online-Sensor mehr (der lebt jetzt auf dem
@@ -333,6 +329,15 @@ export function getCommonEntityIdPart(
     return undefined;
   }
   return prefix.slice(0, lastUnderscore + 1);
+}
+
+export function getPrinterEntityIdPart(
+  entities: HassEntityInfos,
+): string | undefined {
+  return (
+    getCommonEntityIdPart(entities) ??
+    getEntityIdPartBySuffix(entities, "binary_sensor", "printer_online")
+  );
 }
 
 export function getAceEntityIdPart(
@@ -527,7 +532,7 @@ export function getPrinterBinarySensorState(
   suffix: string,
   onValue: string | boolean,
   offValue: string | boolean,
-  undefValue: string | boolean | undefined = undefined,
+  undefValue?: string | boolean,
 ): string | boolean | undefined {
   const entInfo = getStrictMatchingEntity(
     entities,
@@ -768,12 +773,13 @@ export const navigateToPage = (
 };
 
 export function milliSecondsToDuration(milliSeconds: number): dfnsDuration {
-  const epoch = new Date(0);
-  const secondsAfterEpoch = new Date(milliSeconds);
-  return dfnsIntervalToDuration({
-    start: epoch,
-    end: secondsAfterEpoch,
-  });
+  const totalSeconds = Math.max(0, Math.floor(milliSeconds / 1000));
+  return {
+    days: Math.floor(totalSeconds / 86400),
+    hours: Math.floor((totalSeconds % 86400) / 3600),
+    minutes: Math.floor((totalSeconds % 3600) / 60),
+    seconds: totalSeconds % 60,
+  };
 }
 
 export function secondsToDuration(seconds: number): dfnsDuration {
@@ -805,6 +811,7 @@ export const formatFutureTime = (
   futureSeconds: number | string | undefined,
   round: boolean,
   use_24hr: boolean,
+  timeZone?: string,
 ): string => {
   if (
     futureSeconds !== 0 &&
@@ -812,11 +819,14 @@ export const formatFutureTime = (
   ) {
     return "invalid time";
   }
-  const fmtSeconds = round ? "" : ":ss";
-  const fmtString = use_24hr ? `HH:mm${fmtSeconds}` : `h:mm${fmtSeconds} a`;
-  const newDate = new Date();
-  newDate.setSeconds(newDate.getSeconds() + Number(futureSeconds));
-  return dfnsFormat(newDate, fmtString, { in: dfnsUtc });
+  const newDate = new Date(Date.now() + Number(futureSeconds) * 1000);
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone,
+    hour: "2-digit",
+    minute: "2-digit",
+    ...(round ? {} : { second: "2-digit" }),
+    hourCycle: use_24hr ? "h23" : "h12",
+  }).format(newDate);
 };
 
 export const calculateTimeStat = (
@@ -824,12 +834,13 @@ export const calculateTimeStat = (
   timeType: CalculatedTimeType,
   round: boolean = false,
   use_24hr: boolean = false,
+  timeZone?: string,
 ): string => {
   switch (timeType) {
     case CalculatedTimeType.Remaining:
       return formatDuration(time, round);
     case CalculatedTimeType.ETA:
-      return formatFutureTime(time, round, use_24hr);
+      return formatFutureTime(time, round, use_24hr, timeZone);
     case CalculatedTimeType.Elapsed:
       return formatDuration(time, round);
     default:
@@ -990,9 +1001,7 @@ export function speedModesFromStateObj(
   speedModeState: AnycubicSpeedModeEntity,
 ): AnycubicSpeedModes {
   const speedModeAttr: AnycubicSpeedMode[] =
-    (speedModeState.attributes.available_modes as
-      | AnycubicSpeedMode[]
-      | undefined) ?? [];
+    speedModeState.attributes.available_modes ?? [];
   return speedModeAttr.reduce(
     (modes, mode) => ({ ...modes, [mode.mode]: mode.description }),
     {},
@@ -1002,8 +1011,7 @@ export function speedModesFromStateObj(
 export function materialTypeFromString(
   material_type?: string,
 ): AnycubicMaterialType | undefined {
-  return material_type &&
-    (Object.values(AnycubicMaterialType) as string[]).includes(material_type)
-    ? AnycubicMaterialType[material_type.toUpperCase() as AnycubicMaterialType]
-    : undefined;
+  return Object.values(AnycubicMaterialType).find(
+    (materialType) => materialType === material_type,
+  );
 }

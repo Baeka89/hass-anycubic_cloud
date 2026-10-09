@@ -10,7 +10,7 @@ import {
   LitTemplateResult,
 } from "../../../types";
 
-import "./animated_printer.ts";
+import "./animated_printer";
 
 @customElementIfUndef("anycubic-printercard-printer_view")
 export class AnycubicPrintercardPrinterview extends LitElement {

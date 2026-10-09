@@ -1,6 +1,148 @@
 # Changelog
 
-All notable changes to this project are documented in this file.
+All notable changes to this project are documented here. / Alle wesentlichen Projektänderungen sind hier dokumentiert.
+
+## [0.9.31]
+
+### English 🇺🇸
+
+- Fix the eleven confirmed findings from audits eight through ten without changing the frontend design or normal workflows.
+- Validate command acknowledgements, ACE box/slot IDs and drying targets; preserve valid state when a batch fails.
+- Keep signed URL parameters and undecodable MQTT payloads out of error logs; synchronize REST and MQTT firmware updates.
+- Validate the print target before consuming uploaded files; use slot IDs for material mappings and retain valid local/USB file lists on parsing errors.
+- Cancel account background callbacks during unload and prevent delayed queries from running afterward.
+- Preserve drying-duration values and existing TLS options. Add eleven offline regression tests.
+
+### Deutsch 🇩🇪
+
+- Elf bestätigte Befunde aus den Prüfungen acht bis zehn behoben, ohne Frontend-Design oder reguläre Bedienabläufe zu ändern.
+- Befehlsbestätigungen, ACE-Box-/Slot-IDs und Trocknungsziele validieren; gültigen Zustand bei fehlerhaften Antworten erhalten.
+- Signierte URL-Parameter und nicht dekodierbare MQTT-Payloads aus Fehlerlogs entfernen; REST- und MQTT-Firmwareänderungen synchronisieren.
+- Druckziel vor Verbrauch der Upload-Datei prüfen; Materialmapping nach Slot-ID zuordnen und gültige lokale/USB-Dateilisten bei Parsingfehlern erhalten.
+- Hintergrundaufgaben beim Entladen des Kontos abbrechen und nachträgliche Abfragen verhindern.
+- Trocknungsdauerwerte und bestehende TLS-Optionen unverändert lassen. Elf Offline-Regressionstests ergänzen.
+
+## [0.9.10]
+
+### English 🇺🇸
+
+- Fix all six confirmed seventh-audit findings.
+- Reject nonintegral/boolean ACE firmware IDs and apply firmware batches only after full validation, preserving existing references and OTA state.
+- Complete bounded upload cleanup despite cancellation, including cancellation during successful-upload unlock.
+- Validate token responses so missing/invalid token data follows login retries.
+- Redact URL queries, fragments and user credentials in logs and HTTP exception chains, preserving HTTP status for reauthentication.
+- Update the slow-response warning timestamp to enforce the configured interval.
+
+### Deutsch 🇩🇪
+
+- Alle sechs bestätigten Befunde der siebten Prüfung behoben.
+- Nicht ganzzahlige/boolesche ACE-Firmware-IDs abweisen; Firmwareantworten erst nach vollständiger Validierung übernehmen und bestehende Referenzen sowie OTA-Zustand erhalten.
+- Begrenzte Upload-Bereinigung auch bei Abbruch abschließen, einschließlich Abbruch während des Entsperrens nach erfolgreichem Upload.
+- Tokenantworten validieren, damit fehlende/ungültige Tokendaten die Login-Wiederholungen durchlaufen.
+- URL-Query, Fragment und Benutzerinformationen in Logs und HTTP-Exceptionketten redigieren; HTTP-Status für Reauthentifizierung erhalten.
+- Warnzeitstempel für langsame Antworten fortschreiben und das konfigurierte Intervall einhalten.
+
+## [0.9.9]
+
+### English 🇺🇸
+
+- Add an explicit MQTT TLS verification option, enabled by default. Disabling it selects compatibility mode with no server-identity verification and a broader cipher selection; there is no automatic fallback.
+- Ignore firmware metadata for unsupported ACE box IDs without rejecting known boxes. Duplicate known IDs and malformed metadata remain errors.
+- Restore English and German entries for 0.9.4–0.9.9 beneath the changelog title.
+- Light and S1 temperature behavior are unchanged; the ACE drying-duration unit remains unresolved.
+
+### Deutsch 🇩🇪
+
+- Explizite Option zur MQTT-TLS-Prüfung ergänzt, standardmäßig aktiv. Deaktivieren wählt den Kompatibilitätsmodus ohne Prüfung der Serveridentität und mit breiterer Cipher-Auswahl; kein automatischer Rückfall.
+- Firmwaremetadaten unbekannter ACE-Box-IDs werden ignoriert, bekannte Boxen bleiben auswertbar. Doppelte bekannte IDs und fehlerhafte Metadaten bleiben Fehler.
+- Englische und deutsche Einträge für 0.9.4–0.9.9 unter dem CHANGELOG-Titel wiederhergestellt.
+- Licht- und S1-Temperaturverhalten bleiben unverändert; die Einheit der ACE-Trocknungsdauer bleibt ungeklärt.
+
+## [0.9.8]
+
+### English 🇺🇸
+
+- Fix the eight confirmed findings from the fifth and sixth audits: ACE devices/entities/mappings use actual box IDs; successful uploads are not rejected by global quota changes and are followed by their own file IDs.
+- Persist authentication snapshots only after successful storage, serialize writes and validate user responses before field access.
+- Serialize auto-feed actions per printer/box, update replaced box objects after acknowledgements and report rejected firmware actions.
+- Prevent stale or invalid printer targets and duplicate submissions in the print panel.
+
+### Deutsch 🇩🇪
+
+- Acht bestätigte Befunde der fünften und sechsten Prüfung behoben: ACE-Geräte, Entitäten und Zuordnungen nutzen tatsächliche Box-IDs; bestätigte Uploads werden nicht durch globale Quotenänderungen abgelehnt und über ihre eigenen Datei-IDs verfolgt.
+- Authentifizierungsstände erst nach erfolgreicher Speicherung quittieren, Schreibvorgänge serialisieren und Benutzerantworten vor Feldzugriffen validieren.
+- Auto-Feed-Aktionen pro Drucker und Box serialisieren, ersetzte Boxobjekte nach Bestätigung aktualisieren und abgelehnte Firmwareaktionen melden.
+- Veraltete oder ungültige Druckziele und doppelte Aufträge im Druckpanel verhindern.
+
+## [0.9.7]
+
+### English 🇺🇸
+
+- Validate ACE services by actual box ID and report unloaded config entries clearly.
+- Route authenticated API HTTP 401 responses through token refresh and HA reauthentication.
+- Await MQTT workers before restart and ignore stale client callbacks and cleanup.
+- Freeze elapsed and remaining print statistics while paused or inactive.
+
+### Deutsch 🇩🇪
+
+- ACE-Serviceziele anhand tatsächlicher Box-ID prüfen und entladene Konfigurationen verständlich melden.
+- HTTP 401 authentifizierter API-Aufrufe an Token-Erneuerung und HA-Reauthentifizierung weitergeben.
+- Vor MQTT-Neustart das Worker-Ende abwarten; veraltete Clientcallbacks und Cleanup ignorieren.
+- Vergangene und verbleibende Druckzeit bei Pause oder inaktivem Druck anhalten.
+
+## [0.9.6]
+
+### English 🇺🇸
+
+- Validate HTTP status and API response structure. Resolve ACE firmware, MQTT updates and auto-feed targets by explicit box ID.
+- Refresh images on coordinator updates, version frontend image URLs and retain validated content types; handle empty diagnostics and consistent MQTT defaults.
+- Refresh debug registries, correct German documentation, frontend lint/types and strict HA 2026.9 imports.
+- Declare tslib and lit-html, complete the lockfile and reject unresolved browser imports. Correct the insufficient 0.9.5 build verification using fresh npm ci and rebuild both bundles.
+- Add backend/browser regressions; ACE drying-duration unit verification remains deferred.
+
+### Deutsch 🇩🇪
+
+- HTTP-Status und API-Antwortstruktur validieren. ACE-Firmware, MQTT-Aktualisierungen und Auto-Feed anhand expliziter Box-ID zuordnen.
+- Bilder bei Coordinator-Updates erneuern, Frontend-Bild-URLs versionieren und validierte Inhaltstypen erhalten; leere Diagnosen und einheitliche MQTT-Standards behandeln.
+- Debug-Registries aktualisieren, deutsche Dokumentation, Frontend-Lint/Typen und strikte HA-2026.9-Imports korrigieren.
+- Tslib und lit-html deklarieren, Lockfile vervollständigen und unaufgelöste Browser-Imports ablehnen. Unzureichenden Buildnachweis für 0.9.5 durch frisches npm ci und Neubau beider Bundles korrigieren.
+- Backend-/Browser-Regressionstests ergänzen; Prüfung der ACE-Trocknungsdauer-Einheit bleibt zurückgestellt.
+
+## [0.9.5]
+
+### English 🇺🇸
+
+- Fix all 20 second-audit findings: MQTT readiness/subscription failures, ACE firmware/state/service validation, G-code parsing and firmware progress.
+- Use stable account-scoped entity IDs, migrate registry entries in place and disable redundant bridge controls without deleting entries.
+- Refresh delayed registries, restore previews and bridge selection; correct ACE configuration, box switching, duration formatting and later capabilities.
+- Add backend/browser coverage and rebuild both bundles; ACE drying-duration unit remains deferred.
+
+### Deutsch 🇩🇪
+
+- Alle 20 Befunde der zweiten Prüfung behoben: MQTT-Bereitschaft und Subscription-Fehler, ACE-Firmware/Zustand/Servicevalidierung, G-Code-Parsing und Firmwarefortschritt.
+- Stabile kontobezogene Entity-IDs verwenden, bestehende Registry-Einträge migrieren und redundante Bridge-Steuerungen ohne Löschen deaktivieren.
+- Spätere Registries berücksichtigen, Vorschaubilder und Bridge-Auswahl wiederherstellen; ACE-Konfiguration, Boxwechsel, Dauerformatierung und nachträgliche Fähigkeiten korrigieren.
+- Backend-/Browser-Tests ergänzen und beide Bundles neu bauen; ACE-Trocknungsdauer-Einheit bleibt zurückgestellt.
+
+## [0.9.4]
+
+### English 🇺🇸
+
+- Correct ACE target IDs, entity controls, print failure propagation and upload cleanup.
+- Repair MQTT threading/reconnect/options and enable server CA/hostname verification.
+- Resolve entities through the HA registry, handle missing spools/delayed registries and use the HA timezone for ETA.
+- Register cloud-file printing and service selectors, paginate file lists and fix account/panel/device state.
+- Update tooling, translations and generated assets for HA 2026.9; add offline regressions.
+- Remove unsupported buttons and a credential-bearing screenshot; ACE feed/retract services require explicit slots. No guessed drying-duration conversion.
+
+### Deutsch 🇩🇪
+
+- ACE-Ziel-IDs, Entity-Steuerungen, Druckfehlermeldungen und Upload-Cleanup korrigieren.
+- MQTT-Threading, Reconnect und Optionen reparieren; Server-CA und Hostname prüfen.
+- Entities über die HA-Registry zuordnen, fehlende Spulen und spätere Registries behandeln; ETA in HA-Zeitzone berechnen.
+- Cloud-Dateidruck und Service-Selektoren registrieren, Dateilisten paginieren und Konto-/Panel-/Gerätezustand korrigieren.
+- Werkzeuge, Übersetzungen und generierte Dateien für HA 2026.9 aktualisieren; Offline-Regressionstests ergänzen.
+- Nicht unterstützte Buttons und Screenshot mit Zugangsdaten entfernen; ACE-Feed/Retract-Services benötigen explizite Slots. Keine geratene Trocknungsdauer-Umrechnung.
 
 ## [0.9.3]
 

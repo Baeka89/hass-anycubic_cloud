@@ -140,7 +140,7 @@ export class AnycubicPrintercardAnimatedPrinter extends LitElement {
         this.hass,
         this.printerEntities,
         this.printerEntityIdPart,
-        "job_preview",
+        "job_image_url",
       );
       if (this.imagePreviewUrl !== prevUrl) {
         this.imagePreviewUrl = prevUrl;
@@ -232,37 +232,41 @@ export class AnycubicPrintercardAnimatedPrinter extends LitElement {
 
     return html`
       <div class="ac-printercard-animatedprinter">
-        ${this.dimensions
-          ? html` <div class="ac-apr-scalable">
-              <div class="ac-apr-frame">
-                <div class="ac-apr-hole"></div>
-              </div>
-              <div class="ac-apr-buildarea">
-                <div class="ac-apr-animprint">
-                  ${this.imagePreviewBgUrl
-                    ? html`
-                        <div
-                          class="ac-apr-imgprev"
-                          style=${styleMap(stylesPreview)}
-                        ></div>
-                      `
-                    : nothing}
+        ${
+          this.dimensions
+            ? html` <div class="ac-apr-scalable">
+                <div class="ac-apr-frame">
+                  <div class="ac-apr-hole"></div>
                 </div>
-              </div>
-              <div class="ac-apr-buildplate"></div>
-              <div
-                class="ac-apr-xaxis"
-                ${animate({ ...animOptionsAxis })}
-              ></div>
-              <div
-                class="ac-apr-gantry"
-                ${animate({ ...animOptionsAxis })}
-                ${animate(this._gantryAnimOptions)}
-              >
-                <div class="ac-apr-nozzle"></div>
-              </div>
-            </div>`
-          : nothing}
+                <div class="ac-apr-buildarea">
+                  <div class="ac-apr-animprint">
+                    ${
+                      this.imagePreviewBgUrl
+                        ? html`
+                            <div
+                              class="ac-apr-imgprev"
+                              style=${styleMap(stylesPreview)}
+                            ></div>
+                          `
+                        : nothing
+                    }
+                  </div>
+                </div>
+                <div class="ac-apr-buildplate"></div>
+                <div
+                  class="ac-apr-xaxis"
+                  ${animate({ ...animOptionsAxis })}
+                ></div>
+                <div
+                  class="ac-apr-gantry"
+                  ${animate({ ...animOptionsAxis })}
+                  ${animate(this._gantryAnimOptions)}
+                >
+                  <div class="ac-apr-nozzle"></div>
+                </div>
+              </div>`
+            : nothing
+        }
       </div>
     `;
   }

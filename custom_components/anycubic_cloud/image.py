@@ -5,14 +5,10 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from homeassistant.components.image import (
-    Image,
-    ImageEntity,
-    ImageEntityDescription,
-)
+from homeassistant.components.image import ImageEntity, ImageEntityDescription
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
@@ -85,6 +81,7 @@ class AnycubicCloudImage(AnycubicCloudEntity, ImageEntity):
         super().__init__(hass, coordinator, printer_id, entity_description)
         ImageEntity.__init__(self, hass)
         self._known_image_url = None
+        self._check_image_url()
 
     def _reset_cached_image(self) -> None:
         self._cached_image = None
@@ -105,14 +102,11 @@ class AnycubicCloudImage(AnycubicCloudEntity, ImageEntity):
     def image_last_updated(self) -> datetime | None:
         return self._attr_image_last_updated
 
-    async def _async_load_image_from_url(self, url: str) -> Image | None:
-        """Load an image by url."""
-        if response := await self._fetch_url(url):
-            return Image(
-                content=response.content,
-                content_type="image/png",
-            )
-        return None
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Publish the new image timestamp together with coordinator changes."""
+        self._check_image_url()
+        super()._handle_coordinator_update()
 
     async def async_image(self) -> bytes | None:
         """Return bytes of image."""

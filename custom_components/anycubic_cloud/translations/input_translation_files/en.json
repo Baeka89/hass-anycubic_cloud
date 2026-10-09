@@ -159,7 +159,8 @@
   "config": {
     "abort": {
       "already_configured": "Already configured.",
-      "reauth_successful": "Re-authentication successful."
+      "reauth_successful": "Re-authentication successful.",
+      "wrong_account": "The credentials belong to a different Anycubic account."
     },
     "error": {
       "invalid_auth": "Invalid authentication.",
@@ -258,7 +259,9 @@
           "drying_preset_duration_4": "Preset 4: duration (hours)",
           "drying_preset_temperature_4": "Preset 4: temperature (°C)",
           "drying_preset_duration_5": "Preset 5: duration (hours)",
-          "drying_preset_temperature_5": "Preset 5: temperature (°C)"
+          "drying_preset_temperature_5": "Preset 5: temperature (°C)",
+          "update_retry_count": "Update retries per cycle",
+          "mqtt_verify_tls": "Verify MQTT server certificate and hostname"
         },
         "data_description": {
           "mqtt_connect_mode": "How aggressively the integration keeps a live MQTT connection to the printer open.",
@@ -271,7 +274,9 @@
           "drying_preset_duration_4": "How long 'Drying Preset 4' dries for.",
           "drying_preset_temperature_4": "What temperature 'Drying Preset 4' dries at.",
           "drying_preset_duration_5": "How long 'Drying Preset 5' dries for.",
-          "drying_preset_temperature_5": "What temperature 'Drying Preset 5' dries at."
+          "drying_preset_temperature_5": "What temperature 'Drying Preset 5' dries at.",
+          "update_retry_count": "How many times a failed cloud update cycle is retried (with exponential backoff: 1s, 2s, 4s, ...) before it counts as failed. 0 disables retries (old behavior).",
+          "mqtt_verify_tls": "Enabled by default. Disable only to explicitly use compatibility mode without server verification and with a broader cipher selection. The connection remains encrypted, but the server identity is not verified. No automatic fallback; saving reloads the integration."
         }
       }
     }
@@ -372,6 +377,15 @@
       },
       "secondary_dry_stop": {
         "name": "Stop Drying"
+      },
+      "request_file_list_local": {
+        "name": "Refresh local files"
+      },
+      "request_file_list_udisk": {
+        "name": "Refresh USB files"
+      },
+      "request_file_list_cloud": {
+        "name": "Refresh cloud files"
       }
     },
     "image": {
@@ -496,6 +510,18 @@
       },
       "secondary_dry_status_remaining_time": {
         "name": "[%key:common::secondary%] [%key:common::drying%] [%key:common::remaining_time%]"
+      },
+      "curr_chamber_temp": {
+        "name": "Chamber Temperature"
+      },
+      "features": {
+        "name": "Supported Features"
+      },
+      "target_chamber_temp": {
+        "name": "Target Chamber Temperature"
+      },
+      "unknown_type_function_ids": {
+        "name": "Unknown Capability IDs"
       }
     },
     "switch": {
@@ -557,6 +583,9 @@
     "light": {
       "printer_light": {
         "name": "Printer Light"
+      },
+      "printer_box_light": {
+        "name": "Room Light"
       }
     }
   },
@@ -794,5 +823,11 @@
       "[%dictkey:common::service_fieldsets::fields#print_existing%]": {}
     }
   },
-  "exceptions": {}
+  "exceptions": {},
+  "issues": {
+    "degraded_cloud_connection": {
+      "title": "Anycubic Cloud connection persistently degraded",
+      "description": "The connection to the Anycubic Cloud for **{name}** has failed repeatedly, even after automatic retries. This usually points to a temporary Anycubic Cloud outage or a local network/DNS problem, not a problem with your printer itself.\n\nThe integration keeps trying automatically in the background - no action is required. This notice will clear itself automatically once an update succeeds again."
+    }
+  }
 }

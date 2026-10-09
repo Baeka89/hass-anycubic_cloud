@@ -143,7 +143,7 @@ export class HSLCanvas extends LitElement {
   }
 
   render() {
-    const hw = { height: this.size + "p", width: this.size + "px" };
+    const hw = { height: this.size + "px", width: this.size + "px" };
     const { top, left, bounds } = this.circlePos;
     return html` <div
       class="outer"
