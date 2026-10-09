@@ -26,7 +26,7 @@
       },
       "auth_mode_web": {
         "title": "Authentifizierungsmodus - Web",
-        "description": "Rufe deinen Token von https://cloud-universe.anycubic.com/file ab (Anleitung siehe readme).",
+        "description": "Rufe deinen Token von {url} ab (Anleitung siehe readme).",
         "data": {
           "user_token": "Benutzer-Token"
         }

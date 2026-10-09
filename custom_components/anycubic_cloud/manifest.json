@@ -1,4 +1,6 @@
 {
+  "domain": "anycubic_cloud",
+  "name": "Anycubic Cloud v2",
   "codeowners": [
     "@Baeka89"
   ],
@@ -10,15 +12,13 @@
     "frontend"
   ],
   "documentation": "https://github.com/Baeka89/hass-anycubic_cloud",
-  "domain": "anycubic_cloud",
   "integration_type": "hub",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/Baeka89/hass-anycubic_cloud/issues",
   "loggers": [],
-  "name": "Anycubic Cloud v2",
   "requirements": [
-    "aiofiles==25.1.0",
-    "paho-mqtt==2.1.0"
+    "aiofiles>=25.1.0",
+    "paho-mqtt>=2.1.0"
   ],
   "version": "0.9.31"
 }

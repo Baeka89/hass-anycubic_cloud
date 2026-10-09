@@ -260,6 +260,9 @@ class AnycubicCloudConfigFlow(ConfigFlow, domain=DOMAIN):
                 }
             ),
             errors=errors,
+            description_placeholders={
+                "url": "https://cloud-universe.anycubic.com/file",
+            },
         )
 
     async def async_step_auth_mode_slicer(
