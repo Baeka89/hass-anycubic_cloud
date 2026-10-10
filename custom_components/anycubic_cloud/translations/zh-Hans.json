@@ -1,0 +1,1075 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "已配置。",
+      "reauth_successful": "重新认证成功。"
+    },
+    "error": {
+      "invalid_auth": "无效的认证。",
+      "invalid_token": "无效的用户Token。",
+      "cannot_connect": "无法连接。",
+      "no_printers": "未找到打印机。",
+      "invalid_printer": "无效的打印机。"
+    },
+    "step": {
+      "auth_mode_web": {
+        "title": "认证模式 - Web",
+        "description": "按照readme中的步骤从 https://cloud-universe.anycubic.com/file 获取您的Token。",
+        "data": {
+          "user_token": "用户Token"
+        }
+      },
+      "auth_mode_slicer": {
+        "title": "认证模式 - Slicer Next",
+        "description": "按照readme中的步骤从 %AppData%\\AnycubicSlicerNext\\AnycubicSlicerNext.conf 获取您的Token。",
+        "data": {
+          "user_token": "Slicer 访问Token"
+        }
+      },
+      "auth_mode_android": {
+        "title": "认证模式 - Android App",
+        "description": "需要同时提供Token和device_id。",
+        "data": {
+          "user_token": "用户Token",
+          "user_device_id": "设备ID (Android需要)"
+        }
+      },
+      "printer": {
+        "title": "选择您的打印机。",
+        "data": {
+          "printer_ids": "监控的打印机"
+        }
+      },
+      "auth_mode_pick": {
+        "title": "认证模式",
+        "description": "您想使用哪种认证模式？",
+        "menu_options": {
+          "auth_mode_web": "Web (无MQTT)",
+          "auth_mode_slicer": "Slicer Next (Win)",
+          "auth_mode_android": "Android"
+        }
+      },
+      "reauth_or_choose_printer": {
+        "title": "重新认证或选择打印机",
+        "description": "您是重新认证还是更改监控的打印机？",
+        "menu_options": {
+          "reauth": "重新认证",
+          "printer": "更改打印机"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "options_menu": {
+        "title": "纵维立方云选项",
+        "menu_options": {
+          "mqtt": "MQTT 设置",
+          "drying": "烘干预设",
+          "card_config": "面板卡片配置",
+          "debug": "调试设置"
+        }
+      },
+      "mqtt": {
+        "title": "MQTT 设置",
+        "data": {
+          "mqtt_connect_mode": "MQTT 连接模式"
+        }
+      },
+      "drying": {
+        "title": "烘干预设",
+        "data": {
+          "drying_preset_duration_1": "烘干预设 1 持续时间",
+          "drying_preset_temperature_1": "烘干预设 1 温度",
+          "drying_preset_duration_2": "烘干预设 2 持续时间",
+          "drying_preset_temperature_2": "烘干预设 2 温度",
+          "drying_preset_duration_3": "烘干预设 3 持续时间",
+          "drying_preset_temperature_3": "烘干预设 3 温度",
+          "drying_preset_duration_4": "烘干预设 4 持续时间",
+          "drying_preset_temperature_4": "烘干预设 4 温度"
+        }
+      },
+      "card_config": {
+        "title": "面板卡片配置",
+        "data": {
+          "card_config": "面板卡片配置 (YAML格式)"
+        }
+      },
+      "debug": {
+        "title": "调试设置",
+        "data": {
+          "debug_mqtt_msg": "调试记录所有MQTT消息",
+          "debug_api_calls": "调试记录所有API调用"
+        }
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "job_in_progress": {
+        "name": "任务进行中"
+      },
+      "job_complete": {
+        "name": "任务完成"
+      },
+      "job_failed": {
+        "name": "任务失败"
+      },
+      "job_is_paused": {
+        "name": "任务已暂停"
+      },
+      "printer_online": {
+        "name": "打印机在线"
+      },
+      "mqtt_connection_active": {
+        "name": "MQTT连接活跃"
+      },
+      "is_busy": {
+        "name": "忙碌中"
+      },
+      "is_available": {
+        "name": "可用"
+      },
+      "dry_status_is_drying": {
+        "name": "烘干进行中"
+      },
+      "secondary_dry_status_is_drying": {
+        "name": "辅助烘干进行中"
+      }
+    },
+    "button": {
+      "drying_start_preset_1": {
+        "name": "烘干预设 1"
+      },
+      "drying_start_preset_2": {
+        "name": "烘干预设 2"
+      },
+      "drying_start_preset_3": {
+        "name": "烘干预设 3"
+      },
+      "drying_start_preset_4": {
+        "name": "烘干预设 4"
+      },
+      "drying_stop": {
+        "name": "烘干停止"
+      },
+      "secondary_drying_start_preset_1": {
+        "name": "辅助烘干预设 1"
+      },
+      "secondary_drying_start_preset_2": {
+        "name": "辅助烘干预设 2"
+      },
+      "secondary_drying_start_preset_3": {
+        "name": "辅助烘干预设 3"
+      },
+      "secondary_drying_start_preset_4": {
+        "name": "辅助烘干预设 4"
+      },
+      "secondary_drying_stop": {
+        "name": "辅助烘干停止"
+      },
+      "pause_print": {
+        "name": "暂停打印"
+      },
+      "resume_print": {
+        "name": "恢复打印"
+      },
+      "cancel_print": {
+        "name": "取消打印"
+      },
+      "request_file_list_local": {
+        "name": "请求文件列表 (本地)"
+      },
+      "request_file_list_udisk": {
+        "name": "请求文件列表 (U盘)"
+      },
+      "request_file_list_cloud": {
+        "name": "请求文件列表 (云)"
+      },
+      "refresh_mqtt_connection": {
+        "name": "刷新MQTT连接"
+      }
+    },
+    "image": {
+      "job_image_url": {
+        "name": "任务预览"
+      }
+    },
+    "sensor": {
+      "current_status": {
+        "name": "当前状态"
+      },
+      "curr_nozzle_temp": {
+        "name": "喷嘴温度"
+      },
+      "curr_hotbed_temp": {
+        "name": "热床温度"
+      },
+      "job_name": {
+        "name": "任务名称"
+      },
+      "job_progress": {
+        "name": "任务进度 %"
+      },
+      "job_time_elapsed": {
+        "name": "任务已用时间"
+      },
+      "job_time_remaining": {
+        "name": "任务剩余时间"
+      },
+      "job_eta": {
+        "name": "任务预计完成"
+      },
+      "job_state": {
+        "name": "任务状态"
+      },
+      "job_current_layer": {
+        "name": "任务当前层"
+      },
+      "job_total_layers": {
+        "name": "任务总层数"
+      },
+      "job_speed_mode": {
+        "name": "任务速度模式"
+      },
+      "job_z_thick": {
+        "name": "任务 Z 厚度"
+      },
+      "job_model_height": {
+        "name": "任务模型高度"
+      },
+      "job_anti_alias_count": {
+        "name": "任务抗锯齿"
+      },
+      "job_on_time": {
+        "name": "任务开灯时间"
+      },
+      "job_off_time": {
+        "name": "任务关灯时间"
+      },
+      "job_bottom_time": {
+        "name": "任务底层曝光时间"
+      },
+      "job_bottom_layers": {
+        "name": "任务底层数"
+      },
+      "job_z_up_height": {
+        "name": "任务 Z 抬高高度"
+      },
+      "job_z_up_speed": {
+        "name": "任务 Z 抬高速度"
+      },
+      "job_z_down_speed": {
+        "name": "任务 Z 下降速度"
+      },
+      "target_nozzle_temp": {
+        "name": "目标喷嘴温度"
+      },
+      "target_hotbed_temp": {
+        "name": "目标热床温度"
+      },
+      "print_speed_pct": {
+        "name": "打印速度 %"
+      },
+      "fan_speed_pct": {
+        "name": "风扇速度 %"
+      },
+      "file_list_local": {
+        "name": "文件列表 (本地)"
+      },
+      "file_list_udisk": {
+        "name": "文件列表 (U盘)"
+      },
+      "file_list_cloud": {
+        "name": "文件列表 (云端)"
+      },
+      "ace_spools": {
+        "name": "ACE 料盘"
+      },
+      "ace_current_temperature": {
+        "name": "ACE 当前温度"
+      },
+      "dry_status_target_temperature": {
+        "name": "烘干目标温度"
+      },
+      "dry_status_total_duration": {
+        "name": "烘干总持续时间"
+      },
+      "dry_status_remaining_time": {
+        "name": "烘干剩余时间"
+      },
+      "secondary_ace_spools": {
+        "name": "辅助 ACE 料盘"
+      },
+      "secondary_ace_current_temperature": {
+        "name": "辅助 ACE 当前温度"
+      },
+      "secondary_dry_status_target_temperature": {
+        "name": "辅助烘干目标温度"
+      },
+      "secondary_dry_status_total_duration": {
+        "name": "辅助烘干总持续时间"
+      },
+      "secondary_dry_status_remaining_time": {
+        "name": "辅助烘干剩余时间"
+      }
+    },
+    "switch": {
+      "multi_color_box_runout_refill": {
+        "name": "ACE 缺料续料"
+      },
+      "secondary_multi_color_box_runout_refill": {
+        "name": "辅助 ACE 缺料续料"
+      },
+      "manual_mqtt_connection_enabled": {
+        "name": "手动MQTT连接已启用"
+      }
+    },
+    "update": {
+      "fw_version": {
+        "name": "打印机固件"
+      },
+      "multi_color_box_fw_version": {
+        "name": "ACE 固件"
+      },
+      "secondary_multi_color_box_fw_version": {
+        "name": "辅助 ACE 固件"
+      }
+    }
+  },
+  "services": {
+    "multi_color_box_set_slot_pla": {
+      "name": "ACE 设置槽位 - PLA",
+      "description": "在ACE单元中设置PLA槽位属性。",
+      "fields": {
+        "config_entry": {
+          "name": "配置条目",
+          "description": "用于此服务的配置条目。"
+        },
+        "device_id": {
+          "name": "打印机设备",
+          "description": "打印机设备 (如果不使用ID)。"
+        },
+        "printer_id": {
+          "name": "打印机ID",
+          "description": "打印机ID (如果不使用设备)。"
+        },
+        "box_id": {
+          "name": "盒子ID",
+          "description": "盒子ID (0-1)。"
+        },
+        "slot_number": {
+          "name": "槽位编号",
+          "description": "槽位编号 (1-4)。"
+        },
+        "slot_color_red": {
+          "name": "槽位颜色-红",
+          "description": "槽位颜色-红 (0-255)。"
+        },
+        "slot_color_green": {
+          "name": "槽位颜色-绿",
+          "description": "槽位颜色-绿 (0-255)。"
+        },
+        "slot_color_blue": {
+          "name": "槽位颜色-蓝",
+          "description": "槽位颜色-蓝 (0-255)。"
+        }
+      }
+    },
+    "multi_color_box_set_slot_petg": {
+      "name": "ACE 设置槽位 - PETG",
+      "description": "在ACE单元中设置PETG槽位属性。",
+      "fields": {
+        "config_entry": {
+          "name": "配置条目",
+          "description": "用于此服务的配置条目。"
+        },
+        "device_id": {
+          "name": "打印机设备",
+          "description": "打印机设备 (如果不使用ID)。"
+        },
+        "printer_id": {
+          "name": "打印机ID",
+          "description": "打印机ID (如果不使用设备)。"
+        },
+        "box_id": {
+          "name": "盒子ID",
+          "description": "盒子ID (0-1)。"
+        },
+        "slot_number": {
+          "name": "槽位编号",
+          "description": "槽位编号 (1-4)。"
+        },
+        "slot_color_red": {
+          "name": "槽位颜色-红",
+          "description": "槽位颜色-红 (0-255)。"
+        },
+        "slot_color_green": {
+          "name": "槽位颜色-绿",
+          "description": "槽位颜色-绿 (0-255)。"
+        },
+        "slot_color_blue": {
+          "name": "槽位颜色-蓝",
+          "description": "槽位颜色-蓝 (0-255)。"
+        }
+      }
+    },
+    "multi_color_box_set_slot_abs": {
+      "name": "ACE 设置槽位 - ABS",
+      "description": "在ACE单元中设置ABS槽位属性。",
+      "fields": {
+        "config_entry": {
+          "name": "配置条目",
+          "description": "用于此服务的配置条目。"
+        },
+        "device_id": {
+          "name": "打印机设备",
+          "description": "打印机设备 (如果不使用ID)。"
+        },
+        "printer_id": {
+          "name": "打印机ID",
+          "description": "打印机ID (如果不使用设备)。"
+        },
+        "box_id": {
+          "name": "盒子ID",
+          "description": "盒子ID (0-1)。"
+        },
+        "slot_number": {
+          "name": "槽位编号",
+          "description": "槽位编号 (1-4)。"
+        },
+        "slot_color_red": {
+          "name": "槽位颜色-红",
+          "description": "槽位颜色-红 (0-255)。"
+        },
+        "slot_color_green": {
+          "name": "槽位颜色-绿",
+          "description": "槽位颜色-绿 (0-255)。"
+        },
+        "slot_color_blue": {
+          "name": "槽位颜色-蓝",
+          "description": "槽位颜色-蓝 (0-255)。"
+        }
+      }
+    },
+    "multi_color_box_set_slot_pacf": {
+      "name": "ACE 设置槽位 - PACF",
+      "description": "在ACE单元中设置PACF槽位属性。",
+      "fields": {
+        "config_entry": {
+          "name": "配置条目",
+          "description": "用于此服务的配置条目。"
+        },
+        "device_id": {
+          "name": "打印机设备",
+          "description": "打印机设备 (如果不使用ID)。"
+        },
+        "printer_id": {
+          "name": "打印机ID",
+          "description": "打印机ID (如果不使用设备)。"
+        },
+        "box_id": {
+          "name": "盒子ID",
+          "description": "盒子ID (0-1)。"
+        },
+        "slot_number": {
+          "name": "槽位编号",
+          "description": "槽位编号 (1-4)。"
+        },
+        "slot_color_red": {
+          "name": "槽位颜色-红",
+          "description": "槽位颜色-红 (0-255)。"
+        },
+        "slot_color_green": {
+          "name": "槽位颜色-绿",
+          "description": "槽位颜色-绿 (0-255)。"
+        },
+        "slot_color_blue": {
+          "name": "槽位颜色-蓝",
+          "description": "槽位颜色-蓝 (0-255)。"
+        }
+      }
+    },
+    "multi_color_box_set_slot_pc": {
+      "name": "ACE 设置槽位 - PC",
+      "description": "在ACE单元中设置PC槽位属性。",
+      "fields": {
+        "config_entry": {
+          "name": "配置条目",
+          "description": "用于此服务的配置条目。"
+        },
+        "device_id": {
+          "name": "打印机设备",
+          "description": "打印机设备 (如果不使用ID)。"
+        },
+        "printer_id": {
+          "name": "打印机ID",
+          "description": "打印机ID (如果不使用设备)。"
+        },
+        "box_id": {
+          "name": "盒子ID",
+          "description": "盒子ID (0-1)。"
+        },
+        "slot_number": {
+          "name": "槽位编号",
+          "description": "槽位编号 (1-4)。"
+        },
+        "slot_color_red": {
+          "name": "槽位颜色-红",
+          "description": "槽位颜色-红 (0-255)。"
+        },
+        "slot_color_green": {
+          "name": "槽位颜色-绿",
+          "description": "槽位颜色-绿 (0-255)。"
+        },
+        "slot_color_blue": {
+          "name": "槽位颜色-蓝",
+          "description": "槽位颜色-蓝 (0-255)。"
+        }
+      }
+    },
+    "multi_color_box_set_slot_asa": {
+      "name": "ACE 设置槽位 - ASA",
+      "description": "在ACE单元中设置ASA槽位属性。",
+      "fields": {
+        "config_entry": {
+          "name": "配置条目",
+          "description": "用于此服务的配置条目。"
+        },
+        "device_id": {
+          "name": "打印机设备",
+          "description": "打印机设备 (如果不使用ID)。"
+        },
+        "printer_id": {
+          "name": "打印机ID",
+          "description": "打印机ID (如果不使用设备)。"
+        },
+        "box_id": {
+          "name": "盒子ID",
+          "description": "盒子ID (0-1)。"
+        },
+        "slot_number": {
+          "name": "槽位编号",
+          "description": "槽位编号 (1-4)。"
+        },
+        "slot_color_red": {
+          "name": "槽位颜色-红",
+          "description": "槽位颜色-红 (0-255)。"
+        },
+        "slot_color_green": {
+          "name": "槽位颜色-绿",
+          "description": "槽位颜色-绿 (0-255)。"
+        },
+        "slot_color_blue": {
+          "name": "槽位颜色-蓝",
+          "description": "槽位颜色-蓝 (0-255)。"
+        }
+      }
+    },
+    "multi_color_box_set_slot_hips": {
+      "name": "ACE 设置槽位 - HIPS",
+      "description": "在ACE单元中设置HIPS槽位属性。",
+      "fields": {
+        "config_entry": {
+          "name": "配置条目",
+          "description": "用于此服务的配置条目。"
+        },
+        "device_id": {
+          "name": "打印机设备",
+          "description": "打印机设备 (如果不使用ID)。"
+        },
+        "printer_id": {
+          "name": "打印机ID",
+          "description": "打印机ID (如果不使用设备)。"
+        },
+        "box_id": {
+          "name": "盒子ID",
+          "description": "盒子ID (0-1)。"
+        },
+        "slot_number": {
+          "name": "槽位编号",
+          "description": "槽位编号 (1-4)。"
+        },
+        "slot_color_red": {
+          "name": "槽位颜色-红",
+          "description": "槽位颜色-红 (0-255)。"
+        },
+        "slot_color_green": {
+          "name": "槽位颜色-绿",
+          "description": "槽位颜色-绿 (0-255)。"
+        },
+        "slot_color_blue": {
+          "name": "槽位颜色-蓝",
+          "description": "槽位颜色-蓝 (0-255)。"
+        }
+      }
+    },
+    "multi_color_box_set_slot_pa": {
+      "name": "ACE 设置槽位 - PA",
+      "description": "在ACE单元中设置PA槽位属性。",
+      "fields": {
+        "config_entry": {
+          "name": "配置条目",
+          "description": "用于此服务的配置条目。"
+        },
+        "device_id": {
+          "name": "打印机设备",
+          "description": "打印机设备 (如果不使用ID)。"
+        },
+        "printer_id": {
+          "name": "打印机ID",
+          "description": "打印机ID (如果不使用设备)。"
+        },
+        "box_id": {
+          "name": "盒子ID",
+          "description": "盒子ID (0-1)。"
+        },
+        "slot_number": {
+          "name": "槽位编号",
+          "description": "槽位编号 (1-4)。"
+        },
+        "slot_color_red": {
+          "name": "槽位颜色-红",
+          "description": "槽位颜色-红 (0-255)。"
+        },
+        "slot_color_green": {
+          "name": "槽位颜色-绿",
+          "description": "槽位颜色-绿 (0-255)。"
+        },
+        "slot_color_blue": {
+          "name": "槽位颜色-蓝",
+          "description": "槽位颜色-蓝 (0-255)。"
+        }
+      }
+    },
+    "multi_color_box_set_slot_pla_se": {
+      "name": "ACE 设置槽位 - PLA SE",
+      "description": "在ACE单元中设置PLA SE槽位属性。",
+      "fields": {
+        "config_entry": {
+          "name": "配置条目",
+          "description": "用于此服务的配置条目。"
+        },
+        "device_id": {
+          "name": "打印机设备",
+          "description": "打印机设备 (如果不使用ID)。"
+        },
+        "printer_id": {
+          "name": "打印机ID",
+          "description": "打印机ID (如果不使用设备)。"
+        },
+        "box_id": {
+          "name": "盒子ID",
+          "description": "盒子ID (0-1)。"
+        },
+        "slot_number": {
+          "name": "槽位编号",
+          "description": "槽位编号 (1-4)。"
+        },
+        "slot_color_red": {
+          "name": "槽位颜色-红",
+          "description": "槽位颜色-红 (0-255)。"
+        },
+        "slot_color_green": {
+          "name": "槽位颜色-绿",
+          "description": "槽位颜色-绿 (0-255)。"
+        },
+        "slot_color_blue": {
+          "name": "槽位颜色-蓝",
+          "description": "槽位颜色-蓝 (0-255)。"
+        }
+      }
+    },
+    "multi_color_box_filament_extrude": {
+      "name": "ACE Filament Extrude",
+      "description": "Activate filament extrude on ACE.",
+      "fields": {
+        "config_entry": {
+          "name": "Config Entry",
+          "description": "The config entry to use for this service."
+        },
+        "device_id": {
+          "name": "Printer Device",
+          "description": "Printer Device (if not using ID)."
+        },
+        "printer_id": {
+          "name": "Printer ID",
+          "description": "Printer ID (if not using device)."
+        },
+        "box_id": {
+          "name": "Box ID",
+          "description": "Box ID (0-1)."
+        },
+        "slot_number": {
+          "name": "Slot Number",
+          "description": "Slot Number (1-4)."
+        },
+        "finished": {
+          "name": "Extrude Finished",
+          "description": "End filament extrusion command."
+        }
+      }
+    },
+    "multi_color_box_filament_retract": {
+      "name": "ACE Filament Retract",
+      "description": "Activate filament retract on ACE.",
+      "fields": {
+        "config_entry": {
+          "name": "Config Entry",
+          "description": "The config entry to use for this service."
+        },
+        "device_id": {
+          "name": "Printer Device",
+          "description": "Printer Device (if not using ID)."
+        },
+        "printer_id": {
+          "name": "Printer ID",
+          "description": "Printer ID (if not using device)."
+        },
+        "box_id": {
+          "name": "Box ID",
+          "description": "Box ID (0-1)."
+        }
+      }
+    },
+    "print_and_upload_save_in_cloud": {
+      "name": "Print and upload (save in user cloud).",
+      "description": "Print and upload, save in user cloud store.",
+      "fields": {
+        "config_entry": {
+          "name": "Config Entry",
+          "description": "The config entry to use for this service."
+        },
+        "device_id": {
+          "name": "Printer Device",
+          "description": "Printer Device (if not using ID)."
+        },
+        "printer_id": {
+          "name": "Printer ID",
+          "description": "Printer ID (if not using device)."
+        },
+        "slot_number": {
+          "name": "Slot Number List",
+          "description": "Slot Number List (1-4) to map to print colours. e.g. [1, 2]"
+        },
+        "uploaded_gcode_file": {
+          "name": "Gcode File",
+          "description": "The sliced .gcode file."
+        }
+      }
+    },
+    "print_and_upload_no_cloud_save": {
+      "name": "Print and upload (no cloud save).",
+      "description": "Print and upload, but don't save in user cloud store.",
+      "fields": {
+        "config_entry": {
+          "name": "Config Entry",
+          "description": "The config entry to use for this service."
+        },
+        "device_id": {
+          "name": "Printer Device",
+          "description": "Printer Device (if not using ID)."
+        },
+        "printer_id": {
+          "name": "Printer ID",
+          "description": "Printer ID (if not using device)."
+        },
+        "slot_number": {
+          "name": "Slot Number List",
+          "description": "Slot Number List (1-4) to map to print colours. e.g. [1, 2]"
+        },
+        "uploaded_gcode_file": {
+          "name": "Gcode File",
+          "description": "The sliced .gcode file."
+        }
+      }
+    },
+    "delete_file_local": {
+      "name": "Delete file (Local)",
+      "description": "Delete a file from printer local storage.",
+      "fields": {
+        "config_entry": {
+          "name": "Config Entry",
+          "description": "The config entry to use for this service."
+        },
+        "device_id": {
+          "name": "Printer Device",
+          "description": "Printer Device (if not using ID)."
+        },
+        "printer_id": {
+          "name": "Printer ID",
+          "description": "Printer ID (if not using device)."
+        },
+        "filename": {
+          "name": "File Name",
+          "description": "Full file name (with extension)"
+        }
+      }
+    },
+    "delete_file_udisk": {
+      "name": "Delete file (USB Disk)",
+      "description": "Delete a file from printer USB disk.",
+      "fields": {
+        "config_entry": {
+          "name": "Config Entry",
+          "description": "The config entry to use for this service."
+        },
+        "device_id": {
+          "name": "Printer Device",
+          "description": "Printer Device (if not using ID)."
+        },
+        "printer_id": {
+          "name": "Printer ID",
+          "description": "Printer ID (if not using device)."
+        },
+        "filename": {
+          "name": "File Name",
+          "description": "Full file name (with extension)"
+        }
+      }
+    },
+    "delete_file_cloud": {
+      "name": "Delete file (Cloud)",
+      "description": "Delete a file from user cloud store.",
+      "fields": {
+        "config_entry": {
+          "name": "Config Entry",
+          "description": "The config entry to use for this service."
+        },
+        "device_id": {
+          "name": "Printer Device",
+          "description": "Printer Device (if not using ID)."
+        },
+        "printer_id": {
+          "name": "Printer ID",
+          "description": "Printer ID (if not using device)."
+        },
+        "file_id": {
+          "name": "File ID",
+          "description": "Cloud file ID"
+        }
+      }
+    },
+    "change_print_speed_mode": {
+      "name": "修改打印速度模式",
+      "description": "修改打印速度模式",
+      "fields": {
+        "config_entry": {
+          "name": "配置条目",
+          "description": "用于此服务的配置条目。"
+        },
+        "device_id": {
+          "name": "打印机设备",
+          "description": "打印机设备 (如果不使用ID)。"
+        },
+        "printer_id": {
+          "name": "打印机ID",
+          "description": "打印机ID (如果不使用设备)。"
+        },
+        "speed_mode": {
+          "name": "速度模式",
+          "description": "速度模式"
+        }
+      }
+    },
+    "change_print_target_nozzle_temperature": {
+      "name": "修改打印喷嘴温度",
+      "description": "修改打印喷嘴温度",
+      "fields": {
+        "config_entry": {
+          "name": "配置条目",
+          "description": "用于此服务的配置条目。"
+        },
+        "device_id": {
+          "name": "打印机设备",
+          "description": "打印机设备 (如果不使用ID)。"
+        },
+        "printer_id": {
+          "name": "打印机ID",
+          "description": "打印机ID (如果不使用设备)。"
+        },
+        "temperature": {
+          "name": "喷嘴温度",
+          "description": "喷嘴温度"
+        }
+      }
+    },
+    "change_print_target_hotbed_temperature": {
+      "name": "修改打印热床温度",
+      "description": "修改打印热床温度",
+      "fields": {
+        "config_entry": {
+          "name": "配置条目",
+          "description": "用于此服务的配置条目。"
+        },
+        "device_id": {
+          "name": "打印机设备",
+          "description": "打印机设备 (如果不使用ID)。"
+        },
+        "printer_id": {
+          "name": "打印机ID",
+          "description": "打印机ID (如果不使用设备)。"
+        },
+        "temperature": {
+          "name": "热床温度",
+          "description": "热床温度"
+        }
+      }
+    },
+    "change_print_fan_speed": {
+      "name": "修改打印风扇速度",
+      "description": "修改打印风扇速度",
+      "fields": {
+        "config_entry": {
+          "name": "配置条目",
+          "description": "用于此服务的配置条目。"
+        },
+        "device_id": {
+          "name": "打印机设备",
+          "description": "打印机设备 (如果不使用ID)。"
+        },
+        "printer_id": {
+          "name": "打印机ID",
+          "description": "打印机ID (如果不使用设备)。"
+        },
+        "speed": {
+          "name": "风扇速度",
+          "description": "风扇速度"
+        }
+      }
+    },
+    "change_print_aux_fan_speed": {
+      "name": "修改打印辅助风扇速度",
+      "description": "修改打印辅助风扇速度",
+      "fields": {
+        "config_entry": {
+          "name": "配置条目",
+          "description": "用于此服务的配置条目。"
+        },
+        "device_id": {
+          "name": "打印机设备",
+          "description": "打印机设备 (如果不使用ID)。"
+        },
+        "printer_id": {
+          "name": "打印机ID",
+          "description": "打印机ID (如果不使用设备)。"
+        },
+        "speed": {
+          "name": "辅助风扇速度",
+          "description": "辅助风扇速度"
+        }
+      }
+    },
+    "change_print_box_fan_speed": {
+      "name": "修改打印箱体风扇速度",
+      "description": "修改打印箱体风扇速度",
+      "fields": {
+        "config_entry": {
+          "name": "配置条目",
+          "description": "用于此服务的配置条目。"
+        },
+        "device_id": {
+          "name": "打印机设备",
+          "description": "打印机设备 (如果不使用ID)。"
+        },
+        "printer_id": {
+          "name": "打印机ID",
+          "description": "打印机ID (如果不使用设备)。"
+        },
+        "speed": {
+          "name": "箱体风扇速度",
+          "description": "箱体风扇速度"
+        }
+      }
+    },
+    "change_print_bottom_layers": {
+      "name": "修改打印底层数",
+      "description": "修改打印底层数",
+      "fields": {
+        "config_entry": {
+          "name": "配置条目",
+          "description": "用于此服务的配置条目。"
+        },
+        "device_id": {
+          "name": "打印机设备",
+          "description": "打印机设备 (如果不使用ID)。"
+        },
+        "printer_id": {
+          "name": "打印机ID",
+          "description": "打印机ID (如果不使用设备)。"
+        },
+        "layers": {
+          "name": "底层数",
+          "description": "底层数"
+        }
+      }
+    },
+    "change_print_bottom_time": {
+      "name": "修改打印底层曝光时间",
+      "description": "修改打印底层曝光时间",
+      "fields": {
+        "config_entry": {
+          "name": "配置条目",
+          "description": "用于此服务的配置条目。"
+        },
+        "device_id": {
+          "name": "打印机设备",
+          "description": "打印机设备 (如果不使用ID)。"
+        },
+        "printer_id": {
+          "name": "打印机ID",
+          "description": "打印机ID (如果不使用设备)。"
+        },
+        "time": {
+          "name": "底层曝光时间",
+          "description": "底层曝光时间"
+        }
+      }
+    },
+    "change_print_off_time": {
+      "name": "修改打印关灯时间",
+      "description": "修改打印关灯时间",
+      "fields": {
+        "config_entry": {
+          "name": "配置条目",
+          "description": "用于此服务的配置条目。"
+        },
+        "device_id": {
+          "name": "打印机设备",
+          "description": "打印机设备 (如果不使用ID)。"
+        },
+        "printer_id": {
+          "name": "打印机ID",
+          "description": "打印机ID (如果不使用设备)。"
+        },
+        "time": {
+          "name": "关灯时间",
+          "description": "关灯时间"
+        }
+      }
+    },
+    "change_print_on_time": {
+      "name": "修改打印开灯时间",
+      "description": "修改打印开灯时间",
+      "fields": {
+        "config_entry": {
+          "name": "配置条目",
+          "description": "用于此服务的配置条目。"
+        },
+        "device_id": {
+          "name": "打印机设备",
+          "description": "打印机设备 (如果不使用ID)。"
+        },
+        "printer_id": {
+          "name": "打印机ID",
+          "description": "打印机ID (如果不使用设备)。"
+        },
+        "time": {
+          "name": "开灯时间",
+          "description": "开灯时间"
+        }
+      }
+    }
+  },
+  "exceptions": {}
+}
