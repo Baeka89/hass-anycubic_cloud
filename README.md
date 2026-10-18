@@ -1,234 +1,141 @@
-# Anycubic Cloud Integration for Home Assistant
+# Anycubic Cloud Integration
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
-[![Maintainer](https://img.shields.io/badge/Maintainer-Baeka89-blue.svg)](https://github.com/Baeka89)
-[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://paypal.me/misomazo)
+[![HACS Custom](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/default/pull/11723)
 
 [Deutsch](#deutsch) | [English](#english)
 
----
+<a id="deutsch"></a>
 
-<a name="deutsch"></a>
+## Deutsch
 
-## Deutsch 🇩🇪
+### 1. Anycubic Cloud
 
-### Über dieses Projekt
+Anycubic-Cloud-Integration für Home Assistant.
 
-Diese Custom Integration ermöglicht die Anbindung von **Anycubic 3D-Druckern** an Home Assistant. Da Anycubic den lokalen MQTT-Zugriff zunehmend einschränkt, nutzt diese Integration die Cloud-Schnittstelle, um Statuswerte, Temperaturen und Druckfortschritte bereitzustellen.
+### 2. Projektzweck und Funktionsumfang
 
-Dieser Fork ist optimiert für aktuelle Home Assistant Versionen (2026.x, mindestens **2026.9.0**) und passt sich automatisch an deine Systemsprache an (Deutsch & Englisch vollständig übersetzt - Entities, Einrichtungs- und Options-Dialoge).
+Die Integration verbindet Anycubic-Cloud-Konten mit Home Assistant. Sie stellt Druckerstatus, Temperaturen, Druckfortschritt, Dateiverwaltung und geräteabhängige Steuerung bereit. Drucker, ACE-Boxen und Cloud-Anbindung erhalten getrennte Geräteansichten. Das vorhandene Seitenleisten-Panel und die Dashboard-Karte bleiben erhalten.
 
-### Unterstützte Modelle
+### 3. Unterstützte Systeme, Geräte und Voraussetzungen
 
-Die Integration funktioniert erfolgreich mit:
+Home Assistant ab **2026.9.0**, HACS oder manuelle Installation, ein Anycubic-Konto und Internetzugang sind erforderlich. Im bisherigen Projekt aufgeführt: Kobra 3 Combo, Kobra S1, Kobra 2, Kobra 2 Pro, Kobra 2 Max sowie Photon Mono M5s und M7 Pro mit Basisunterstützung. Diese Veröffentlichung enthält keine erneuten Hardwaretests; verfügbare Entitäten und Steuerungen hängen von Modell, Firmware und Cloud-Antworten ab.
 
-* **Kobra 3 Combo**
-* **Kobra S1**
-* **Kobra 2**
-* **Kobra 2 Pro**
-* **Kobra 2 Max**
-* **Photon Mono M5s** (Basis-Support)
-* **M7 Pro** (Basis-Support)
+### 4. Installation
 
-### Features
+1. In HACS dieses Repository als benutzerdefiniertes Repository der Kategorie **Integration** hinzufügen: https://github.com/Baeka89/hass-anycubic_cloud. Die offizielle Katalogaufnahme ist beantragt, aber noch nicht bestätigt.
+2. **Anycubic Cloud** installieren und Home Assistant neu starten.
+3. Unter **Einstellungen → Geräte & Dienste → Integration hinzufügen** nach **Anycubic Cloud** suchen.
 
-* **Sensoren:** Temperaturen (Düse/Bett), Lüfter, Druckgeschwindigkeit, Firmware-Status.
-* **Job-Überwachung:** Fortschritt (%), Restlaufzeit, Dateiname und Vorschaubilder.
-* **Steuerung:** Start/Pause/Fortsetzen/Abbrechen von Drucken, Zieltemperaturen, Lüfter- und Geschwindigkeitsmodus, ACE-Filament-Vorschub/Rückzug über Services mit explizitem Slot.
-* **Drucken ohne erneuten Upload:** Service, um eine bereits in der Cloud gespeicherte Datei direkt zu drucken.
-* **Drucker-Licht (experimentell):** Ein-/Ausschalten des Kamera-/Boxlichts, sofern der Drucker das meldet - wird von der Panel-Karte jetzt automatisch erkannt.
-* **ACE Pro Management:** Steuerung der Trocknung (5 konfigurierbare Presets + freie Custom-Trocknung mit eigener Temperatur/Dauer), Filament-Spulen und Farben, primäre & sekundäre ACE-Einheit, Restfüllstand-Nachfüllung.
-* **Eigene Geräte pro Baugruppe:** Drucker, ACE Pro Box(en) und Cloud-Bridge (Anbindung) werden als **drei getrennte Home-Assistant-Geräte** registriert, statt alles auf ein Gerät zu bündeln.
-* **Dateimanager:** Integriertes, optional abschaltbares Panel zur Dateiverwaltung auf dem Drucker.
-* **Erneute Authentifizierung:** Läuft ein Token ab, kann er direkt über Home Assistant erneuert werden - ohne die Integration neu einzurichten (siehe unten).
+Alternativ den vollständigen Ordner `custom_components/anycubic_cloud` aus dem Release nach `/config/custom_components/anycubic_cloud` kopieren und Home Assistant neu starten. `/config` bezeichnet das Home-Assistant-Konfigurationsverzeichnis; dessen Hostpfad hängt von der Installation ab.
 
-### Seitenleisten-Panel: eigene Karte pro Gerät 🆕
+### 5. Einrichtung und Authentifizierung
 
-Das Panel und die Dashboard-Karte ("Anycubic Printer Card") erkennen jetzt automatisch, welche Art von Gerät gerade ausgewählt ist, und zeigen die passende Ansicht:
+Die Einrichtung bietet Web-Token, Slicer-Token und Android-App-Zugangsdaten an; anschließend werden die Drucker ausgewählt.
 
-* **Drucker** - die gewohnte Karte mit Temperaturen, Jobfortschritt, Geschwindigkeits-/Lüftermodus, plus neu: Licht-Toggle und ein Firmware-Update-Hinweis. ACE-Filament-Funktionen verwenden die dokumentierten Services.
-* **ACE Pro Box** - eine eigene Karte mit Spulen/Farben, Trocknungsstatus (aktuelle/Soll-Temperatur, Restzeit), allen 5 Trocknungs-Presets sowie einer neuen Custom-Trocknung (frei wählbare Temperatur + Dauer).
-* **Cloud-Bridge (Anbindung)** - eine schlanke Karte nur mit dem, was es dafür tatsächlich gibt: MQTT-Verbindungs-Schalter und Reconnect-Button.
+**Web:** Bei https://cloud-universe.anycubic.com/file anmelden, in den Browser-Entwicklerwerkzeugen unter Local Storage den Wert `XX-Token` kopieren und ohne umschließende Anführungszeichen eingeben. Web-Token verwenden Cloud-Polling, da MQTT damit serverseitig eingeschränkt ist.
 
-Jede Karte zeigt außerdem kleine Verknüpfungs-Chips zu zusammengehörigen Geräten (z. B. von der ACE-Box direkt zurück zum Drucker), und die Datei-/Druck-Tabs oben im Panel erscheinen nur noch, wenn tatsächlich ein Drucker ausgewählt ist.
+**Slicer:** Den eigenen Zugriffstoken aus den lokalen Slicer-Dateien beziehungsweise Debug-Logs entnehmen. Bisher dokumentierte Windows-Pfade: `%AppData%\AnycubicSlicerNext\log\debug_*.log` (letzter Eintrag `accessToken = `) und bei älteren Versionen `%AppData%\AnycubicSlicerNext\AnycubicSlicerNext.conf` (`access_token`). macOS: `~/Library/Application Support/AnycubicSlicerNext/AnycubicSlicerNext.conf`. Speicherformat und Pfade können mit Slicer-Versionen wechseln; diese Veröffentlichung prüft sie nicht live.
 
-### Unterstützung
+**Android:** Die eigenen Werte `access_token` und `device_id` sind erforderlich; ihre Extraktion ist nicht Bestandteil dieser Anleitung. Zugangsdaten nicht in Issues oder Logs veröffentlichen.
 
-Wenn dir diese Integration hilft, freue ich mich über eine kleine Unterstützung für die Weiterentwicklung:
+Bei abgelaufenen Zugangsdaten die von Home Assistant angebotene erneute Authentifizierung verwenden; die vorhandene Konfiguration bleibt dabei erhalten.
 
-👉 **[Spende via PayPal](https://paypal.me/misomazo)**
+### 6. Konfiguration und Optionen
 
----
+Unter **Konfigurieren** stehen MQTT-Verbindungsmodus, TLS-Prüfung, Wiederholungen, fünf Trocknungspresets, Panel-Einstellungen und Debug-Logging zur Verfügung. MQTT kann nur beim Drucken, beim Drucken/Trocknen, bei Online-Druckern, dauerhaft oder niemals verbunden werden. Beispiel: Web-Authentifizierung und „Niemals über MQTT verbinden“ verwenden Cloud-Polling. Das Panel kann ausgeblendet werden; eine leere Kartenkonfiguration verwendet die vorhandenen Standardwerte.
 
-<a name="english"></a>
+Die Prüfung des MQTT-Serverzertifikats und Hostnamens ist standardmäßig aktiv. Nur bei diagnostizierten Kompatibilitätsproblemen bewusst ausschalten: TLS bleibt verschlüsselt, die Serveridentität wird dann aber nicht geprüft. Es gibt keinen automatischen Rückfall. Das Speichern der Optionen lädt die Integration neu. Die Einheit der an die Cloud gesendeten ACE-Trocknungsdauer bleibt ungeklärt; diese Veröffentlichung ändert ihre Werte nicht.
 
-## English 🇺🇸
+### 7. Verwendung
 
-### About this Project
+Die Druckeransicht bietet modellabhängige Statuswerte, Druckfortschritt, Temperaturen, Lüfter-/Geschwindigkeitssteuerung und experimentelle Lichtsteuerung. ACE-Ansichten enthalten Spulen, Farben und Trocknung; die Cloud-Ansicht enthält MQTT-Steuerung und erneute Verbindung.
 
-This custom integration connects **Anycubic 3D Printers** to Home Assistant using the Anycubic Cloud API. It provides real-time telemetry and control even as local MQTT access becomes more restricted.
+Unter **Entwicklerwerkzeuge → Aktionen** stehen unter anderem `anycubic_cloud.print_existing_cloud_file`, `print_and_upload_save_in_cloud`, `print_and_upload_no_cloud_save`, `delete_file_local`, `delete_file_udisk`, `delete_file_cloud`, `multi_color_box_filament_extrude`, `multi_color_box_filament_retract` sowie materialabhängige `multi_color_box_set_slot_<material>`-Aktionen bereit. Den jeweils vollständigen Namen mit Domäne und die angebotenen Felder im Aktionsdialog verwenden. Keine Entitäts-IDs anhand des Anzeigenamens erraten. Die Dashboard-Karte heißt **Anycubic Printer Card**.
 
-This fork requires Home Assistant **2026.9.0** or newer and automatically adapts to your system language (German & English are fully translated - entities, setup, and options dialogs).
+### 8. Aktualisierung
 
-### Supported Models
+Vor dem Update eine Home-Assistant-Sicherung erstellen. In HACS v0.9.32 installieren oder bei manueller Installation den vollständigen Integrationsordner ersetzen; anschließend Home Assistant neu starten. Gegenüber v0.9.31 sind keine Entitätsmigrationen oder geänderten Steuerungsabläufe vorgesehen. Die vorhandenen Symbole werden lokal mitgeliefert.
 
-Confirmed working with:
+### 9. Bekannte Einschränkungen und Fehlerbehebung
 
-* **Kobra 3 Combo**
-* **Kobra S1**
-* **Kobra 2**
-* **Kobra 2 Pro**
-* **Kobra 2 Max**
-* **Photon Mono M5s** (Basic support)
-* **M7 Pro** (Basic support)
+Cloud- und MQTT-Verbindungen hängen von Anycubic und der Netzverbindung ab. Bei Web-Token erfolgt die Aktualisierung per Polling. Lichtsteuerung bleibt experimentell; es gibt keine neue Lösung für S1-Temperaturverhalten oder die ungeklärte ACE-Trocknungsdauer-Einheit. Hardware, Cloud-Zugriff und Broker-TLS werden durch diese Brand-Veröffentlichung nicht live geprüft. Bei Problemen den fehlgeschlagenen Prüf- oder Home-Assistant-Logabschnitt mit geschwärzten Zugangsdaten melden. Lokale Brand-Dateien vermeiden für die HACS-Brand-Prüfung den bisherigen Rückgriff auf den externen Brands-Dienst; andere Prüfungen können weiterhin Netzwerkzugriff benötigen.
 
-### Features
+### 10. Entwicklung und Tests
 
-* **Printer Sensors:** Temperature (Nozzle/Bed), fan speed, print speed, firmware status.
-* **Job Sensors:** Progress, remaining time, file name, and image previews.
-* **Controls:** Start, Pause, Resume, Cancel print jobs, target temperatures, fan and speed mode. ACE filament feed/retract uses services with an explicit slot.
-* **Print without re-uploading:** service to print a file that's already stored in your cloud storage.
-* **Printer Light (experimental):** turn the camera/box light on or off, if your printer reports support for it - now auto-detected by the panel card.
-* **ACE Pro Features:** Drying management (5 configurable presets plus a free-form custom drying option), spool colors, primary & secondary ACE unit support, runout refill.
-* **Dedicated devices:** the printer, ACE Pro box(es), and the Cloud Bridge (connection) are registered as **three separate Home Assistant devices** instead of one combined device.
-* **Sidebar Panel:** Integrated, optionally hideable file manager and printer dashboard.
-* **Re-authentication:** If your token expires, renew it directly from Home Assistant - no need to remove and re-add the integration (see below).
+Entwicklungsanleitung: [DEVELOPMENT.md](DEVELOPMENT.md). Die GitHub-Workflows prüfen Python, Regressionstests, Übersetzungsgenerierung, TypeScript, Frontend-Builds, Hassfest und HACS. Der Veröffentlichungsablauf prüft zusätzlich PNG-Struktur, Abmessungen, Originaldatei-Prüfsummen, Versionskonsistenz und unveränderte Laufzeitquellen. Der tatsächlich abgeschlossene Prüfungsumfang steht im Release und Changelog.
 
-### Sidebar Panel: a dedicated card per device 🆕
+### 11. Versionshistorie
 
-The panel and the dashboard card ("Anycubic Printer Card") now detect which kind of device is selected and render the matching view instead of one generic card:
+[CHANGELOG.md](CHANGELOG.md) · [GitHub-Releases](https://github.com/Baeka89/hass-anycubic_cloud/releases). Historische Zwischenstände werden in dieser Änderung nicht umnummeriert oder entfernt.
 
-* **Printer** - the familiar card with temperatures, job progress, speed/fan mode, plus new: a light toggle, and a firmware-update badge. ACE filament operations use the documented services.
-* **ACE Pro box** - its own card with spool/color info, drying status (current/target temperature, remaining time), all 5 drying presets, and a new custom-drying option (freely settable temperature + duration).
-* **Cloud Bridge (connection)** - a minimal card with only what actually exists for it: an MQTT connection switch and a reconnect button.
+### 12. Unterstützung, Mitwirkung, Danksagung und Lizenz
 
-Each card also shows small chips linking to related devices (e.g. from the ACE box straight back to its printer), and the file/print tabs at the top of the panel only appear when a printer is actually selected.
+Fehler und Beiträge: [Issues](https://github.com/Baeka89/hass-anycubic_cloud/issues) und Pull Requests. Betreuer: [Baeka89](https://github.com/Baeka89). Danke an WaresWichall und dangreco für die ursprüngliche Arbeit. [Unterstützung via PayPal](https://paypal.me/misomazo). Integrationscode: [GNU GPL v3](LICENSE); vorhandene Marken und Symbole bleiben ihren jeweiligen Rechteinhabern zugeordnet. Die Herkunft der unverändert übernommenen Brand-Dateien ist in `brand/SOURCE.md` dokumentiert.
 
-### Support
+<a id="english"></a>
 
-If you find this integration useful, please consider supporting its development:
+## English
 
-👉 **[Donate via PayPal](https://paypal.me/misomazo)**
+### 1. Anycubic Cloud
 
----
+Anycubic Cloud integration for Home Assistant.
 
-## How to Install / Installation
+### 2. Purpose and features
 
-1. **Add Repository:** Add this URL to **HACS** as a "Custom Repository" (Category: Integration).
-2. **Install:** Search for "Anycubic Cloud" in HACS and install it.
-3. **Restart:** Restart Home Assistant.
-4. **Setup:** Go to Settings > Devices & Services > Add Integration > **Anycubic Cloud**.
+The integration connects Anycubic Cloud accounts to Home Assistant. It provides printer status, temperatures, print progress, file management and device-dependent controls. Printers, ACE boxes and the cloud connection have separate device views. The existing sidebar panel and dashboard card are retained.
 
----
+### 3. Supported systems, devices and requirements
 
-## Authentication Methods / Authentifizierungsmethoden
+Home Assistant **2026.9.0** or newer, HACS or manual installation, an Anycubic account and internet access are required. Previously listed models: Kobra 3 Combo, Kobra S1, Kobra 2, Kobra 2 Pro, Kobra 2 Max, plus Photon Mono M5s and M7 Pro with basic support. This release includes no new hardware testing; available entities and controls depend on model, firmware and cloud responses.
 
-The setup wizard asks you to pick one of three methods. All three end up validated against the Anycubic Cloud API and, if successful, continue to printer selection.
+### 4. Installation
 
-### 1. Web Authentication (Recommended / Empfohlen)
+1. In HACS, add https://github.com/Baeka89/hass-anycubic_cloud as a custom repository with category **Integration**. Default-catalog inclusion has been requested but is not confirmed.
+2. Install **Anycubic Cloud** and restart Home Assistant.
+3. Under **Settings → Devices & services → Add integration**, search for **Anycubic Cloud**.
 
-1. Log in to [Anycubic Cloud Web](https://cloud-universe.anycubic.com/file).
-2. Open Browser Dev Tools (F12) → Console.
-3. Type `window.localStorage["XX-Token"]` and copy the result (without the surrounding quotes).
-4. Paste it into the **"Web Interface Token"** step of the config flow.
+Alternatively, copy the complete `custom_components/anycubic_cloud` directory from the release to `/config/custom_components/anycubic_cloud` and restart Home Assistant. `/config` denotes the Home Assistant configuration directory; its host path depends on your installation.
 
-> ⚠️ **Known limitation:** Anycubic currently blocks MQTT (real-time push updates) for web tokens on the server side. Web-authenticated entries still work, but printer data refreshes via Cloud polling (roughly every 60 seconds) instead of instantly.
+### 5. Setup and authentication
 
-### 2. Anycubic Slicer Next
+Setup offers web tokens, slicer tokens and Android app credentials, followed by printer selection.
 
-Since Slicer Next 1.4.1.2, the token is no longer stored as plain text in `AnycubicSlicerNext.conf`. Instead, extract it from the debug log:
+**Web:** Sign in at https://cloud-universe.anycubic.com/file, copy `XX-Token` from Local Storage in the browser developer tools and enter it without surrounding quotes. Web tokens use cloud polling because MQTT is restricted server-side.
 
-1. Log in to Anycubic Slicer Next once, then close it.
-2. **Windows (PowerShell):** find the newest `debug_*.log` under `%AppData%\AnycubicSlicerNext\log\`, then copy the value after the **last** `accessToken = ` entry in that file. One-liner that copies it straight to your clipboard:
+**Slicer:** Obtain your access token from local slicer files or debug logs. Previously documented Windows locations: `%AppData%\AnycubicSlicerNext\log\debug_*.log` (last `accessToken = ` entry), or `%AppData%\AnycubicSlicerNext\AnycubicSlicerNext.conf` (`access_token`) for older versions. macOS: `~/Library/Application Support/AnycubicSlicerNext/AnycubicSlicerNext.conf`. Storage formats and paths may change with slicer versions; this release does not verify them live.
 
-   ```powershell
-   $log = Get-ChildItem "$env:AppData\AnycubicSlicerNext\log" -Filter "debug_*.log" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-   $token = Select-String -Path $log.FullName -Pattern 'accessToken = ([^,\s]+)' | Select-Object -Last 1
-   $token.Matches.Groups[1].Value | Set-Clipboard
-   ```
+**Android:** Your own `access_token` and `device_id` are required; extraction is outside this guide. Do not publish credentials in issues or logs.
 
-3. **macOS / older Windows versions (pre-1.4.1.2):** the token can still be read directly as plain text from `AnycubicSlicerNext.conf`:
-   - macOS: `~/Library/Application Support/AnycubicSlicerNext/AnycubicSlicerNext.conf`
-   - Windows: `%AppData%\AnycubicSlicerNext\AnycubicSlicerNext.conf`
+When credentials expire, use the reauthentication offered by Home Assistant; existing configuration is retained.
 
-   Copy the `access_token` value directly.
-4. Paste the token into the **"Anycubic Slicer Next Token"** step of the config flow. The token is now a JWT (three dot-separated parts) - this is normal.
-5. Home Assistant exchanges this value against Anycubic's servers for a session token automatically; you don't need to do anything else.
+### 6. Configuration and options
 
-### 3. Android App Credentials
+**Configure** provides MQTT connection mode, TLS verification, retries, five drying presets, panel settings and debug logging. MQTT can connect while printing, while printing/drying, while printers are online, always or never. Example: web authentication with “Never connect MQTT” uses cloud polling. The panel can be hidden; an empty card configuration uses existing defaults.
 
-1. Retrieve your account's `access_token` and `device_id` from the Anycubic Android app (e.g. via a rooted device / traffic inspection tool - not covered here).
-2. Paste both values into the **"Android App Credentials"** step of the config flow (`Slicer Access Token` field takes the `access_token`, plus a separate `Device ID` field).
+MQTT server-certificate and hostname verification is enabled by default. Explicitly disable it only for diagnosed compatibility problems: TLS remains encrypted, but server identity is no longer verified. There is no automatic fallback. Saving options reloads the integration. The unit of ACE drying-duration values sent to the cloud remains unresolved; this release does not change those values.
 
----
+### 7. Usage
 
-## Re-Authenticating / Erneut authentifizieren
+The printer view provides model-dependent status, print progress, temperatures, fan/speed controls and experimental light control. ACE views contain spools, colours and drying; the cloud view contains MQTT controls and reconnect.
 
-If your token expires or is replaced (e.g. you logged out elsewhere, or Slicer Next issued a new one), Home Assistant will mark the integration as needing attention instead of silently failing:
+**Developer tools → Actions** includes `anycubic_cloud.print_existing_cloud_file`, `print_and_upload_save_in_cloud`, `print_and_upload_no_cloud_save`, `delete_file_local`, `delete_file_udisk`, `delete_file_cloud`, `multi_color_box_filament_extrude`, `multi_color_box_filament_retract` and material-specific `multi_color_box_set_slot_<material>` actions. Use each complete domain-qualified name and the fields shown in the action dialog. Do not guess entity IDs from display names. The dashboard card is named **Anycubic Printer Card**.
 
-1. **Settings → Devices & Services** → the Anycubic Cloud card will show a **"Re-authenticate"** button.
-2. Click it, confirm, then repeat whichever authentication method (Web / Slicer Next / Android) you used originally, with your **new** token.
-3. Your printers, MQTT mode, drying presets, and panel configuration are all kept - only the credentials are updated.
+### 8. Updating
 
-*(Deutsch: Läuft dein Token ab, zeigt Home Assistant unter Einstellungen → Geräte & Dienste einen "Erneut authentifizieren"-Button. Einfach anklicken und den neuen Token nach der gleichen Methode wie beim Ersteinrichten eingeben - Drucker, MQTT-Modus, Trocknungs-Presets und Panel-Konfiguration bleiben dabei erhalten.)*
+Create a Home Assistant backup before updating. Install v0.9.32 in HACS, or replace the complete integration directory for manual installations; then restart Home Assistant. Compared with v0.9.31, no entity migrations or changed control workflows are intended. Existing icons are bundled locally.
 
----
+### 9. Known limitations and troubleshooting
 
-## Configuration Options / Konfigurationsoptionen
+Cloud and MQTT connections depend on Anycubic and network connectivity. Web tokens use polling. Light control remains experimental; there is no new solution for S1 temperature behaviour or the unresolved ACE drying-duration unit. Hardware, cloud access and broker TLS are not tested live by this brand release. Report the failing validation or Home Assistant log section with credentials redacted. Local brand files avoid the previous fallback to the external brands service during HACS brand validation; other checks may still require network access.
 
-After setup, click **"Configure"** on the integration to open the options flow. It walks through three pages, all saved together at the end:
+### 10. Development and tests
 
-1. **MQTT connection mode / MQTT-Verbindungsmodus** - controls when the integration opens a live MQTT connection to the printer (versus relying on Cloud polling only):
+Development guide: [DEVELOPMENT.md](DEVELOPMENT.md). GitHub workflows check Python, regressions, translation generation, TypeScript, frontend builds, Hassfest and HACS. The publication process additionally checks PNG structure, dimensions, original-file checksums, version consistency and unchanged runtime sources. Completed validation scope is recorded in the release and changelog.
 
-   | Option (German label shown in UI) | Behaviour |
-   |---|---|
-   | Nur beim Drucken verbinden | Connect only while a print job is active |
-   | Beim Drucken & Trocknen verbinden | Connect while printing *or* drying (ACE) |
-   | Verbinden wenn Drucker Online | Connect whenever the printer is online |
-   | Immer verbunden bleiben | Always stay connected |
-   | Niemals über MQTT verbinden | Never use MQTT, Cloud polling only |
+### 11. Version history
 
-   Plus up to **5 drying presets** (duration in hours + target temperature in °C each), used by the "Start custom drying" button/number entities. Full descriptions and what each value does are shown directly in this step of the UI.
+[CHANGELOG.md](CHANGELOG.md) · [GitHub releases](https://github.com/Baeka89/hass-anycubic_cloud/releases). Historical intermediate records are not renumbered or removed by this change.
 
-2. **Card / Panel configuration**:
-   - A toggle to show/hide the sidebar panel link entirely - turn it off if you don't use it.
-   - An optional YAML object to customize the sidebar panel card's layout (units, which stats to show, linking an existing light/outlet/camera entity to the card, custom ACE slot colors, etc.). Leaving it empty is fine - defaults apply. The options-flow step itself lists every available key, its default, and several copy-paste examples.
-   - *Tip:* for a dashboard card (not the sidebar panel), add "Anycubic Printer Card" via the normal **Edit Dashboard → Add Card** picker instead - that gives you a full visual settings editor rather than hand-written YAML.
+### 12. Support, contributions, acknowledgements and licence
 
-3. **Debug logging** - toggle verbose logging of API calls and/or MQTT messages, useful when reporting an issue.
-
----
-
-## Services
-
-Besides the entities above, these are available under **Developer Tools → Actions** (search for "Anycubic Cloud"):
-
-* **`print_existing_cloud_file`** - start printing a file that's already stored in your Anycubic cloud storage (look up its `gcode_id` in the `file_list_cloud` sensor's `file_info` attribute) without uploading it again. Optional `slot_number` list for ACE color mapping.
-* **`print_and_upload_save_in_cloud`** / **`print_and_upload_no_cloud_save`** - upload a new `.gcode` file and start printing it, with or without keeping a copy in your cloud storage.
-* **`multi_color_box_set_slot_<material>`** (one per material: `pla`, `petg`, `abs`, `pacf`, `pc`, `asa`, `hips`, `pa`, `pla_se`) - assign a material + RGB color to a specific ACE slot (1-4) on the primary or secondary ACE unit (`box_id` 0/1).
-* **`multi_color_box_filament_extrude`** / **`multi_color_box_filament_retract`** - manually feed or retract filament on the ACE unit.
-* **`delete_file_local`** / **`delete_file_udisk`** / **`delete_file_cloud`** - remove a file from the printer's local storage, USB stick, or your cloud storage.
-
----
-
-### Technical Components / Technische Komponenten
-
-* `manifest.json`: Metadata, cloud polling classification, and pinned dependencies; HACS declares the minimum HA version.
-* `config_flow.py`: Setup, re-authentication, and options flow.
-* `coordinator.py`: Central polling/update logic, MQTT connection management, and device registration (printer / ACE Pro box(es) / Cloud Bridge as separate devices, linked via `via_device`).
-* `sensor.py` / `binary_sensor.py` / `number.py` / `select.py` / `button.py` / `switch.py` / `image.py` / `update.py` / `light.py`: Entity platforms.
-* `anycubic_cloud_api/`: Standalone Anycubic Cloud API client (REST + MQTT).
-* `panel.py` + `frontend_panel/`: Sidebar file manager and printer dashboard panel, with dedicated card layouts for the printer, ACE Pro box, and Cloud Bridge devices.
-
-See [CHANGELOG.md](CHANGELOG.md) for release notes.
-
-### Thanks / Danke
-
-Special thanks to **@WaresWichall** for the original cloud integration and **@dangreco** for the initial foundation. This fork is maintained by **@Baeka89** to ensure compatibility with modern Home Assistant versions.
-
-
-## MQTT-TLS-Kompatibilität / MQTT TLS compatibility (0.9.9)
-
-Deutsch: Unter **Integration → Konfigurieren → MQTT-Verbindung & Trocknungspresets** ist „MQTT-Serverzertifikat und Hostnamen prüfen“ standardmäßig eingeschaltet. Nur bei einem diagnostizierten TLS-Kompatibilitätsproblem kann die Option bewusst ausgeschaltet werden. Dann bleiben TLS-Verschlüsselung und Clientzertifikat aktiv, aber die Identität des Servers wird nicht geprüft; außerdem wird eine breitere Cipher-Auswahl verwendet. Es gibt keinen automatischen Rückfall nach einem Verbindungsfehler. Speichern lädt die Integration neu. Die Live-Verbindung zum Anycubic-Broker ist damit noch nicht nachgewiesen.
-
-English: In the integration's **Configure → MQTT Connection & Drying Presets** step, server-certificate and hostname verification is enabled by default. Explicitly disable it only for a diagnosed TLS compatibility issue. TLS encryption and the client certificate remain active, but the server identity is not verified and the cipher selection is broader. Connection failures never disable verification automatically. Saving reloads the integration. A live connection to the Anycubic broker has not been established by these offline tests.
+Report bugs and contribute through [issues](https://github.com/Baeka89/hass-anycubic_cloud/issues) and pull requests. Maintainer: [Baeka89](https://github.com/Baeka89). Thanks to WaresWichall and dangreco for the original work. [Support via PayPal](https://paypal.me/misomazo). Integration code: [GNU GPL v3](LICENSE); existing trademarks and icons remain associated with their respective rights holders. The origin of unchanged brand files is documented in `brand/SOURCE.md`.

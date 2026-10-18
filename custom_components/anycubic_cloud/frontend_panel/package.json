@@ -1,6 +1,6 @@
 {
   "name": "hass-anycubic-cloud-panel",
-  "version": "0.9.31",
+  "version": "0.9.32",
   "description": "anycubic panel for hass",
   "main": "src/index.ts",
   "scripts": {
