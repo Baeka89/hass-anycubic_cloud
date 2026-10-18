@@ -30,3 +30,5 @@ Version: 0.9.10 20261008 - Six seventh-audit fixes: ACE validation/atomic state,
 Version: 0.9.11 20261009 - Eleven audit fixes; existing UI, commands and drying-duration units preserved.
 
 Version: 0.9.31 - GitHub/HACS release of the repaired integration.
+
+Version: 0.9.32 2026-10-18 - Lokale Brand-Symbole / Local brand icons.

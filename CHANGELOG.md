@@ -1,6 +1,70 @@
 # Changelog
 
-All notable changes to this project are documented here. / Alle wesentlichen Projektänderungen sind hier dokumentiert.
+Deutsch: Veröffentlichte Änderungen und Updatehinweise. Historische Einträge bleiben unverändert.
+
+English: Published changes and update notes. Historical entries are retained unchanged.
+
+## [0.9.32] – 2026-10-18
+
+### Deutsch
+
+#### Hinzugefügt
+
+Vorhandene Anycubic-Brand-Symbole unverändert als lokale `brand/icon.png` (256 × 256) und `brand/icon@2x.png` (512 × 512) mit Herkunftsnachweis eingebunden.
+
+#### Geändert
+
+README auf einheitliche deutsche und englische Abschnitte gebracht; Herkunft, Installation und Updatehinweise dokumentiert.
+
+#### Behoben
+
+Fehlende lokale Brand-Dateien als Hindernis für die HACS-Katalogaufnahme behoben. Die Brand-Prüfung benötigt damit keinen Rückgriff auf den externen Brands-Dienst.
+
+#### Entfernt
+
+Keine.
+
+#### Updatehinweise
+
+Von v0.9.31 über HACS aktualisieren und Home Assistant neu starten. Keine Änderung von Entitäts-IDs, Steuerungsabläufen oder Panel-/Kartenlayout.
+
+#### Bekannte Einschränkungen
+
+HACS-Katalogaufnahme bleibt bis zur Annahme des bestehenden Antrags offen. Keine neue Lösung für Licht/S1-Temperaturen; ACE-Trocknungsdauer-Einheit bleibt ungeklärt. Keine Live-Hardware-, Cloud- oder Broker-TLS-Prüfung.
+
+#### Prüfungen
+
+Originaldateien: PNG-Struktur, CRC, Bilddaten und Abmessungen geprüft. Versionskonsistenz und unveränderte Laufzeitquellen geprüft; beide Frontend-Builds ausgeführt. Veröffentlichung erfolgt erst nach erfolgreichen Python-, TypeScript-, Hassfest- und HACS-Prüfungen auf GitHub.
+
+### English
+
+#### Added
+
+Existing Anycubic brand icons bundled unchanged as local `brand/icon.png` (256 × 256) and `brand/icon@2x.png` (512 × 512), with source attribution.
+
+#### Changed
+
+README reorganised into matching German and English sections; source, installation and update information documented.
+
+#### Fixed
+
+Missing local brand files resolved as a blocker for HACS default-catalog inclusion. Brand validation no longer needs the external brands-service fallback.
+
+#### Removed
+
+None.
+
+#### Update notes
+
+Update from v0.9.31 through HACS and restart Home Assistant. No changes to entity IDs, control workflows or panel/card layout.
+
+#### Known limitations
+
+HACS default-catalog inclusion remains pending acceptance of the existing application. No new solution for light/S1 temperatures; the ACE drying-duration unit remains unresolved. No live hardware, cloud or broker-TLS testing.
+
+#### Validation
+
+Original files checked for PNG structure, CRC, image data and dimensions. Version consistency and unchanged runtime sources checked; both frontend builds executed. Publication requires successful Python, TypeScript, Hassfest and HACS checks on GitHub.
 
 ## [0.9.31]
 
